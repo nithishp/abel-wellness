@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 const Features = () => {
   return (
-    <div className="min-h-screen min-w-screen ">
+    <div className="min-h-screen min-w-screen text-[#ededed]">
       <div className="w-[95vw] h-auto ">
         <div className="w-full flex flex-col lg:flex-row justify-start items-start lg:justify-between p-6 lg:p-10">
           <h1 className="text-3xl lg:text-5xl font-semibold max-w-[90vw] text-neutral-950 lg:max-w-[40vw] text-center lg:text-left">

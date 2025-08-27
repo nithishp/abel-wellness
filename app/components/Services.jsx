@@ -38,7 +38,7 @@ const Services = () => {
 
   return (
     <div className="min-h-screen h-auto min-w-screen section">
-      <div className="bg-[url('/service-bg.png')] bg-cover flex flex-col justify-evenly w-full h-auto  lg:h-[95vh] rounded-2xl">
+      <div className="bg-[url('/service-bg.png')] bg-cover flex flex-col justify-evenly w-full h-auto  lg:h-[95vh] rounded-2xl text-[#ededed]">
         <div className="w-full flex flex-col lg:flex-row justify-start items-start lg:justify-between p-6 lg:p-10">
           <h1 className="text-3xl lg:text-5xl font-semibold max-w-[90vw] lg:max-w-[40vw] text-center lg:text-left">
             Elevating oral health with personalized service.

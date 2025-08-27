@@ -117,7 +117,7 @@ const formatDate = (date) => {
 
 
   return (
-    <div className="min-h-screen w-screen p-10 flex flex-col lg:flex-row justify-evenly items-center gap-10">
+    <div className="min-h-screen w-screen p-10 flex flex-col lg:flex-row justify-evenly items-center gap-10 text-[#ededed]">
       <div className="hidden lg:flex justify-center items-center">
         <motion.div
           className="overflow-hidden flex items-center w-full justify-center"

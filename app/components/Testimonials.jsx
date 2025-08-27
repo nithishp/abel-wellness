@@ -20,7 +20,7 @@ const Testimonials = () => {
     }
   }
   return (
-    <div className="min-h-screen min-w-screen section">
+    <div className="min-h-screen min-w-screen section text-[#ededed]">
       <div className="bg-[url('/service-bg.png')] bg-cover w-[95vw] h-auto rounded-2xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 p-10 h-full row-auto gap-5">
           <h1 className="text-5xl col-span-2 font-semibold max-w-[40vw]">

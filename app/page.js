@@ -9,7 +9,7 @@ import Testimonials from "./components/Testimonials";
 
 export default function Home() {
   return (
-    <div className="min-h-screen scroll-container p-4 pb-0 bg-[#f1f1f1] overflow-hidden flex flex-col justify-center items-center gap-10">
+    <div className="min-h-screen scroll-container p-4 pb-0 bg-[#f1f1f1] overflow-hidden flex flex-col justify-center items-center gap-10 ">
       <Hero />
       <About />
       <Services />

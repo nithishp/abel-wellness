@@ -3,7 +3,7 @@ import React from 'react'
 
 const Footer = () => {
   return (
-    <footer className='w-screen h-auto lg:h-[30vh] bg-neutral-900 bg-[url("/service-bg.png")] bg-cover'>
+    <footer className='w-screen h-auto lg:h-[30vh] bg-neutral-900 bg-[url("/service-bg.png")] bg-cover text-[#ededed]'>
       <div className="w-full flex flex-col lg:flex-row justify-between p-10">
         <div className="lg:max-w-[20vw]">
           <h1 className="text-6xl font-semibold text-wrap">

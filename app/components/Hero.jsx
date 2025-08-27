@@ -6,7 +6,7 @@ import { CircleArrowDown, CircleArrowRight } from 'lucide-react';
 import { WordPullUp } from './ui/word-pull-up';
 const Hero = () => {
   return (
-    <div className=" bg-[url('/small-hero-bg.png')] lg:bg-[url('/hero-bg-image.png')] pl-3 section  w-full bg-cover h-[95vh] rounded-2xl flex flex-col items-start justify-center">
+    <div className=" bg-[url('/small-hero-bg.png')] lg:bg-[url('/hero-bg-image.png')] pl-3 section  w-full bg-cover h-[95vh] rounded-2xl flex flex-col items-start justify-center text-[#ededed]">
       <div className="flex flex-col items-start lg:pl-3">
         <WordPullUp
           className="text-lg font-medium text-neutral-900 lg:text-nowrap text-wrap max-w-[70vw] -mb-3 ml-3 "

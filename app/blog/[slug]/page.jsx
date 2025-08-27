@@ -103,17 +103,10 @@ const BlogPost = () => {
 
             <p className="text-xl text-gray-600 mb-8">{blog.description}</p>
 
-            <div className="prose prose-lg max-w-none">
-              {blog.content.split("\n").map((paragraph, index) =>
-                paragraph.trim() ? (
-                  <p key={index} className="mb-4 text-gray-700 leading-relaxed">
-                    {paragraph}
-                  </p>
-                ) : (
-                  <br key={index} />
-                )
-              )}
-            </div>
+            <div
+              className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-blue-500 prose-blockquote:text-gray-600 prose-code:text-blue-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded"
+              dangerouslySetInnerHTML={{ __html: blog.content }}
+            />
           </div>
         </article>
 
