@@ -1,12 +1,10 @@
-'use client'
+"use client";
 import { SiInstagram, SiLinkedin, SiTwitter, SiYoutube } from "react-icons/si";
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiArrowRight, FiArrowUpRight } from "react-icons/fi";
 
-
-
- const Nav = () => {
+const Nav = () => {
   const [active, setActive] = useState(false);
 
   return (
@@ -126,26 +124,22 @@ const HamburgerButton = ({ active, setActive }) => {
 
 const FooterCTAs = () => {
   return (
-  
-      
-
-      <motion.button
-        initial={{ opacity: 0, y: 8 }}
-        animate={{
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: 1.125,
-            duration: 0.5,
-            ease: "easeInOut",
-          },
-        }}
-        exit={{ opacity: 0, y: 8 }}
-        className="absolute bottom-2 right-2 flex items-center gap-2 rounded-full bg-violet-700 px-3 py-3 text-xl lg:text-4xl uppercase text-violet-200 transition-colors hover:bg-white hover:text-violet-600 md:bottom-4 md:right-4 md:px-6 md:text-2xl"
-      >
-        <span className="block">Book appointment</span> <FiArrowRight />
-      </motion.button>
-   
+    <motion.button
+      initial={{ opacity: 0, y: 8 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        transition: {
+          delay: 1.125,
+          duration: 0.5,
+          ease: "easeInOut",
+        },
+      }}
+      exit={{ opacity: 0, y: 8 }}
+      className="absolute bottom-2 right-2 flex items-center gap-2 rounded-full bg-violet-700 px-3 py-3 text-xl lg:text-4xl uppercase text-violet-200 transition-colors hover:bg-white hover:text-violet-600 md:bottom-4 md:right-4 md:px-6 md:text-2xl"
+    >
+      <span className="block">Book appointment</span> <FiArrowRight />
+    </motion.button>
   );
 };
 
@@ -153,6 +147,10 @@ const LINKS = [
   {
     title: "Home",
     href: "#",
+  },
+  {
+    title: "Blog",
+    href: "/blog",
   },
   {
     title: "About",
@@ -165,6 +163,10 @@ const LINKS = [
   {
     title: "Contact",
     href: "#",
+  },
+  {
+    title: "Admin",
+    href: "/admin",
   },
 ];
 
