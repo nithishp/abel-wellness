@@ -7,6 +7,7 @@ import {
   checkExistingSession,
 } from "@/lib/actions/admin.actions";
 import { FiEdit2, FiTrash2, FiEye, FiEyeOff, FiPlus } from "react-icons/fi";
+import { toast } from "sonner";
 
 const AdminDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -72,12 +73,21 @@ const AdminDashboard = () => {
         );
         setIsAuthenticated(true);
         setLoginData({ email: "", password: "" });
+
+        toast.success("Welcome back!", {
+          description:
+            "You have successfully logged in to the admin dashboard.",
+        });
       }
     } catch (error) {
       console.error("Login failed:", error);
       setLoginError(
         error.message || "Login failed. Please check your credentials."
       );
+      toast.error("Login failed", {
+        description:
+          error.message || "Please check your credentials and try again.",
+      });
     } finally {
       setLoginLoading(false);
     }
@@ -90,12 +100,20 @@ const AdminDashboard = () => {
       setAdmin(null);
       setBlogs([]);
       setLoginError(""); // Clear any login errors
+
+      toast.success("Logged out successfully", {
+        description: "You have been safely logged out of the admin dashboard.",
+      });
     } catch (error) {
       console.error("Logout failed:", error);
       // Force logout even if API call fails
       setIsAuthenticated(false);
       setAdmin(null);
       setBlogs([]);
+
+      toast.success("Logged out", {
+        description: "You have been logged out of the admin dashboard.",
+      });
     }
   };
 
@@ -114,6 +132,11 @@ const AdminDashboard = () => {
 
   const handleCreateBlog = async (e) => {
     e.preventDefault();
+
+    const loadingToast = toast.loading("Creating blog post...", {
+      description: "Please wait while we save your blog post.",
+    });
+
     try {
       const blogData = {
         ...blogForm,
@@ -143,15 +166,27 @@ const AdminDashboard = () => {
         published: false,
         featured: false,
       });
-      alert("Blog created successfully!");
+
+      toast.dismiss(loadingToast);
+      toast.success("Blog created successfully!", {
+        description: "Your new blog post has been published.",
+      });
     } catch (error) {
       console.error("Error creating blog:", error);
-      alert("Failed to create blog.");
+      toast.dismiss(loadingToast);
+      toast.error("Failed to create blog", {
+        description: "Please try again or check your connection.",
+      });
     }
   };
 
   const handleUpdateBlog = async (e) => {
     e.preventDefault();
+
+    const loadingToast = toast.loading("Updating blog post...", {
+      description: "Please wait while we save your changes.",
+    });
+
     try {
       const response = await fetch(`/api/admin/blogs?id=${editingBlog.$id}`, {
         method: "PUT",
@@ -176,15 +211,26 @@ const AdminDashboard = () => {
         published: false,
         featured: false,
       });
-      alert("Blog updated successfully!");
+
+      toast.dismiss(loadingToast);
+      toast.success("Blog updated successfully!", {
+        description: "Your changes have been saved.",
+      });
     } catch (error) {
       console.error("Error updating blog:", error);
-      alert("Failed to update blog.");
+      toast.dismiss(loadingToast);
+      toast.error("Failed to update blog", {
+        description: "Please try again or check your connection.",
+      });
     }
   };
 
   const handleDeleteBlog = async (blogId) => {
     if (window.confirm("Are you sure you want to delete this blog?")) {
+      const loadingToast = toast.loading("Deleting blog post...", {
+        description: "Please wait while we remove the blog post.",
+      });
+
       try {
         const response = await fetch(`/api/admin/blogs?id=${blogId}`, {
           method: "DELETE",
@@ -195,10 +241,17 @@ const AdminDashboard = () => {
         }
 
         await fetchBlogs();
-        alert("Blog deleted successfully!");
+
+        toast.dismiss(loadingToast);
+        toast.success("Blog deleted successfully!", {
+          description: "The blog post has been permanently removed.",
+        });
       } catch (error) {
         console.error("Error deleting blog:", error);
-        alert("Failed to delete blog.");
+        toast.dismiss(loadingToast);
+        toast.error("Failed to delete blog", {
+          description: "Please try again or check your connection.",
+        });
       }
     }
   };
@@ -221,9 +274,19 @@ const AdminDashboard = () => {
       }
 
       await fetchBlogs();
+      toast.success(
+        `Blog ${!currentStatus ? "published" : "unpublished"} successfully!`,
+        {
+          description: `The blog post is now ${
+            !currentStatus ? "visible to the public" : "hidden from the public"
+          }.`,
+        }
+      );
     } catch (error) {
       console.error("Error toggling blog status:", error);
-      alert("Failed to update blog status.");
+      toast.error("Failed to update blog status", {
+        description: "Please try again or check your connection.",
+      });
     }
   };
 

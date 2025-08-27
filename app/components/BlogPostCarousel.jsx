@@ -143,7 +143,15 @@ const BlogPostCarousel = () => {
 
 const Post = ({ imageUrl, imgUrl, author, title, description, slug }) => {
   // Handle both API data and fallback data structure
-  const imgSrc = imageUrl || imgUrl || "/api/placeholder/350/200";
+  // Use a dental-themed default image from Unsplash
+  const defaultImage =
+    "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=350&h=200&fit=crop&crop=center";
+  const imgSrc = imageUrl || imgUrl || defaultImage;
+
+  // Handle image loading errors
+  const handleImageError = (e) => {
+    e.target.src = defaultImage;
+  };
 
   return (
     <div
@@ -163,10 +171,7 @@ const Post = ({ imageUrl, imgUrl, author, title, description, slug }) => {
         src={imgSrc}
         className="mb-3 h-[200px] w-full rounded-lg object-cover"
         alt={`An image for blog post titled ${title}`}
-        onError={(e) => {
-          // Fallback image if the provided image fails to load
-          e.target.src = "/api/placeholder/350/200";
-        }}
+        onError={handleImageError}
       />
       <span className="rounded-md border-[1px] border-neutral-500 px-1.5 py-1 text-xs uppercase text-neutral-500">
         {author}
@@ -187,7 +192,8 @@ export default BlogPostCarousel;
 const fallbackPosts = [
   {
     id: 1,
-    imgUrl: "/imgs/blog/1.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=350&h=200&fit=crop&crop=center",
     author: "Dr. John Anderson",
     title: "The Importance of Regular Dental Checkups",
     description:
@@ -195,7 +201,8 @@ const fallbackPosts = [
   },
   {
     id: 2,
-    imgUrl: "/imgs/blog/2.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Sarah Wilson",
     title: "How to Maintain Healthy Teeth and Gums",
     description:
@@ -203,7 +210,8 @@ const fallbackPosts = [
   },
   {
     id: 3,
-    imgUrl: "/imgs/blog/3.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Michael Chen",
     title: "Understanding Different Types of Dental Procedures",
     description:
@@ -211,7 +219,8 @@ const fallbackPosts = [
   },
   {
     id: 4,
-    imgUrl: "/imgs/blog/4.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1643297654082-7c16ab80a48c?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Emily Davis",
     title: "The Latest Advances in Dental Technology",
     description:
@@ -219,7 +228,8 @@ const fallbackPosts = [
   },
   {
     id: 5,
-    imgUrl: "/imgs/blog/5.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Robert Martinez",
     title: "Preventing Tooth Decay in Children",
     description:
@@ -227,7 +237,8 @@ const fallbackPosts = [
   },
   {
     id: 6,
-    imgUrl: "/imgs/blog/6.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Lisa Thompson",
     title: "Cosmetic Dentistry: Options and Benefits",
     description:
@@ -235,7 +246,8 @@ const fallbackPosts = [
   },
   {
     id: 7,
-    imgUrl: "/imgs/blog/7.png",
+    imgUrl:
+      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=350&h=200&fit=crop&crop=center",
     author: "Dr. James Rodriguez",
     title: "Managing Dental Anxiety: Tips for Nervous Patients",
     description:

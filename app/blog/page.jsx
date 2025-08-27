@@ -74,7 +74,7 @@ const BlogsPage = () => {
                     alt={blog.title}
                     className="w-full h-48 object-cover"
                     onError={(e) => {
-                      e.target.src = "/api/placeholder/400/200";
+                      e.target.src = "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=200&fit=crop&crop=center";
                     }}
                   />
                 )}
