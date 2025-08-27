@@ -6,12 +6,6 @@ import {
   getCurrentAdmin,
   checkExistingSession,
 } from "@/lib/actions/admin.actions";
-import {
-  createBlog,
-  updateBlog,
-  deleteBlog,
-  toggleBlogPublished,
-} from "@/lib/actions/blog.actions";
 import { FiEdit2, FiTrash2, FiEye, FiEyeOff, FiPlus } from "react-icons/fi";
 
 const AdminDashboard = () => {
@@ -125,7 +119,19 @@ const AdminDashboard = () => {
         ...blogForm,
         author: blogForm.author || admin?.name || "Admin",
       };
-      await createBlog(blogData);
+
+      const response = await fetch("/api/admin/blogs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(blogData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create blog");
+      }
+
       await fetchBlogs();
       setShowCreateForm(false);
       setBlogForm({
@@ -147,7 +153,18 @@ const AdminDashboard = () => {
   const handleUpdateBlog = async (e) => {
     e.preventDefault();
     try {
-      await updateBlog(editingBlog.$id, blogForm);
+      const response = await fetch(`/api/admin/blogs?id=${editingBlog.$id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(blogForm),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update blog");
+      }
+
       await fetchBlogs();
       setEditingBlog(null);
       setBlogForm({
@@ -169,7 +186,14 @@ const AdminDashboard = () => {
   const handleDeleteBlog = async (blogId) => {
     if (window.confirm("Are you sure you want to delete this blog?")) {
       try {
-        await deleteBlog(blogId);
+        const response = await fetch(`/api/admin/blogs?id=${blogId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete blog");
+        }
+
         await fetchBlogs();
         alert("Blog deleted successfully!");
       } catch (error) {
@@ -181,7 +205,21 @@ const AdminDashboard = () => {
 
   const handleTogglePublished = async (blogId, currentStatus) => {
     try {
-      await toggleBlogPublished(blogId, !currentStatus);
+      const response = await fetch(
+        `/api/admin/blogs?id=${blogId}&action=toggle`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ published: !currentStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to toggle blog status");
+      }
+
       await fetchBlogs();
     } catch (error) {
       console.error("Error toggling blog status:", error);
