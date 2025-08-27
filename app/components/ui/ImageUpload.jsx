@@ -39,6 +39,7 @@ const ImageUpload = ({ onImageUpload, currentImage, onImageRemove }) => {
       }
 
       const { imageUrl, fileId } = await response.json();
+      console.log("Received image data:", { imageUrl, fileId });
       onImageUpload(imageUrl, fileId);
       toast.success("Image uploaded successfully!");
     } catch (error) {

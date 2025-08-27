@@ -20,7 +20,7 @@ export async function POST(request) {
     // Initialize Appwrite client
     const client = new Client()
       .setEndpoint(process.env.NEXT_PUBLIC_ENDPOINT)
-      .setProject(process.env.PROJECT_ID)
+      .setProject(process.env.NEXT_PUBLIC_PROJECT_ID)
       .setKey(process.env.API_KEY);
 
     const storage = new Storage(client);
@@ -34,6 +34,14 @@ export async function POST(request) {
 
     // Get the file URL
     const imageUrl = `${process.env.NEXT_PUBLIC_ENDPOINT}/storage/buckets/${process.env.STORAGE_BUCKET_ID}/files/${uploadedFile.$id}/view?project=${process.env.NEXT_PUBLIC_PROJECT_ID}`;
+
+    console.log("Generated image URL:", imageUrl);
+    console.log("Environment check:", {
+      endpoint: process.env.NEXT_PUBLIC_ENDPOINT,
+      projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+      bucketId: process.env.STORAGE_BUCKET_ID,
+      fileId: uploadedFile.$id
+    });
 
     return NextResponse.json({
       success: true,

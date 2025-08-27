@@ -200,10 +200,10 @@ const RichTextEditor = ({
       </div>
 
       {/* Editor Content */}
-      <div className="min-h-[200px]">
+      <div className="min-h-[200px] relative">
         <EditorContent editor={editor} />
-        {content === "" && (
-          <div className="absolute top-16 left-4 text-gray-400 pointer-events-none">
+        {(!content || content === "" || content === "<p></p>") && (
+          <div className="absolute top-4 left-4 text-gray-400 pointer-events-none">
             {placeholder}
           </div>
         )}

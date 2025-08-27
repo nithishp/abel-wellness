@@ -49,6 +49,7 @@ const CreateBlog = () => {
   };
 
   const handleImageUpload = (imageUrl, fileId) => {
+    console.log("Image upload callback received:", { imageUrl, fileId });
     setBlogForm({
       ...blogForm,
       imageUrl,
@@ -293,7 +294,10 @@ const CreateBlog = () => {
             </h2>
             <RichTextEditor
               content={blogForm.content}
-              onChange={(content) => setBlogForm({ ...blogForm, content })}
+              onChange={(content) => {
+                console.log("Content changed:", content);
+                setBlogForm({ ...blogForm, content });
+              }}
               placeholder="Write your blog content here..."
             />
           </div>
