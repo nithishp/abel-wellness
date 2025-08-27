@@ -72,17 +72,47 @@ const EditBlog = () => {
     e.preventDefault();
     setSaving(true);
 
+    // Validate form data
+    if (!blog.title.trim()) {
+      toast.error("Title is required");
+      setSaving(false);
+      return;
+    }
+
+    if (blog.description.length > 500) {
+      toast.error("Description must be 500 characters or less");
+      setSaving(false);
+      return;
+    }
+
+    if (!blog.content.trim()) {
+      toast.error("Content is required");
+      setSaving(false);
+      return;
+    }
+
     const loadingToast = toast.loading("Updating blog post...", {
       description: "Please wait while we save your changes.",
     });
 
     try {
+      // Only send the fields that should be updated
+      const updateData = {
+        title: blog.title,
+        description: blog.description,
+        content: blog.content,
+        author: blog.author,
+        imageUrl: blog.imageUrl,
+        published: blog.published,
+        featured: blog.featured,
+      };
+
       const response = await fetch(`/api/admin/blogs?id=${blogId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(blog),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -220,17 +250,45 @@ const EditBlog = () => {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description *
+                <span className="text-sm text-gray-500 ml-1">
+                  ({blog.description.length}/500)
+                </span>
               </label>
               <textarea
                 value={blog.description}
-                onChange={(e) =>
-                  setBlog((prev) => ({ ...prev, description: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) {
+                    setBlog((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }));
+                  }
+                }}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                  blog.description.length > 450
+                    ? "border-yellow-300 focus:ring-yellow-500"
+                    : blog.description.length > 500
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-gray-300 focus:ring-blue-500"
+                }`}
                 rows={3}
-                placeholder="Enter a brief description of your blog post"
+                placeholder="Enter a brief description of your blog post (max 500 characters)"
+                maxLength={500}
                 required
               />
+              {blog.description.length > 450 && (
+                <p
+                  className={`text-sm mt-1 ${
+                    blog.description.length > 500
+                      ? "text-red-600"
+                      : "text-yellow-600"
+                  }`}
+                >
+                  {blog.description.length > 500
+                    ? "Description exceeds 500 characters!"
+                    : "Approaching character limit"}
+                </p>
+              )}
             </div>
           </div>
 

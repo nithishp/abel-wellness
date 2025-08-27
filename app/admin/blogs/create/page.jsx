@@ -65,17 +65,40 @@ const CreateBlog = () => {
     });
   };
 
-  const handleCreateBlog = async (e) => {
+  const handleCreateBlog = async (e, shouldPublish = false) => {
     e.preventDefault();
     setSaving(true);
 
-    const loadingToast = toast.loading("Creating blog post...", {
-      description: "Please wait while we save your blog post.",
-    });
+    // Validate form data
+    if (!blogForm.title.trim()) {
+      toast.error("Title is required");
+      setSaving(false);
+      return;
+    }
+
+    if (blogForm.description.length > 500) {
+      toast.error("Description must be 500 characters or less");
+      setSaving(false);
+      return;
+    }
+
+    if (!blogForm.content.trim()) {
+      toast.error("Content is required");
+      setSaving(false);
+      return;
+    }
+
+    const loadingToast = toast.loading(
+      shouldPublish ? "Publishing blog post..." : "Creating blog post...",
+      {
+        description: "Please wait while we save your blog post.",
+      }
+    );
 
     try {
       const { imageFileId, ...blogData } = {
         ...blogForm,
+        published: shouldPublish,
         author: blogForm.author || admin?.name || "Admin",
       };
 
@@ -92,9 +115,14 @@ const CreateBlog = () => {
       }
 
       toast.dismiss(loadingToast);
-      toast.success("Blog created successfully!", {
-        description: "Your new blog post has been saved.",
-      });
+      toast.success(
+        shouldPublish ? "Blog published successfully!" : "Blog saved as draft!",
+        {
+          description: shouldPublish
+            ? "Your blog post is now live and visible to the public."
+            : "Your blog post has been saved as a draft.",
+        }
+      );
 
       router.push("/admin/blogs");
     } catch (error) {
@@ -110,6 +138,19 @@ const CreateBlog = () => {
 
   const handleSaveDraft = async () => {
     setSaving(true);
+
+    // Validate form data
+    if (!blogForm.title.trim()) {
+      toast.error("Title is required");
+      setSaving(false);
+      return;
+    }
+
+    if (blogForm.description.length > 500) {
+      toast.error("Description must be 500 characters or less");
+      setSaving(false);
+      return;
+    }
 
     const originalPublished = blogForm.published;
     setBlogForm((prev) => ({ ...prev, published: false }));
@@ -191,10 +232,7 @@ const CreateBlog = () => {
                 Save Draft
               </button>
               <button
-                onClick={(e) => {
-                  setBlogForm((prev) => ({ ...prev, published: true }));
-                  handleCreateBlog(e);
-                }}
+                onClick={(e) => handleCreateBlog(e, true)}
                 disabled={
                   saving || !blogForm.title.trim() || !blogForm.content.trim()
                 }
@@ -209,7 +247,10 @@ const CreateBlog = () => {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleCreateBlog} className="space-y-6">
+        <form
+          onSubmit={(e) => handleCreateBlog(e, false)}
+          className="space-y-6"
+        >
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">
               Blog Details
@@ -250,16 +291,41 @@ const CreateBlog = () => {
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
+                  <span className="text-sm text-gray-500 ml-1">
+                    ({blogForm.description.length}/500)
+                  </span>
                 </label>
                 <textarea
                   value={blogForm.description}
-                  onChange={(e) =>
-                    setBlogForm({ ...blogForm, description: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    if (e.target.value.length <= 500) {
+                      setBlogForm({ ...blogForm, description: e.target.value });
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    blogForm.description.length > 450
+                      ? "border-yellow-300 focus:ring-yellow-500"
+                      : blogForm.description.length > 500
+                      ? "border-red-300 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-blue-500"
+                  }`}
                   rows={3}
-                  placeholder="Brief description of the blog post"
+                  placeholder="Brief description of the blog post (max 500 characters)"
+                  maxLength={500}
                 />
+                {blogForm.description.length > 450 && (
+                  <p
+                    className={`text-sm mt-1 ${
+                      blogForm.description.length > 500
+                        ? "text-red-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {blogForm.description.length > 500
+                      ? "Description exceeds 500 characters!"
+                      : "Approaching character limit"}
+                  </p>
+                )}
               </div>
 
               <div className="lg:col-span-2">
