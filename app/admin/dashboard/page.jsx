@@ -352,7 +352,12 @@ const AdminDashboard = () => {
                           {activity.status}
                         </span>
                         <span className="text-xs text-gray-400">
-                          {new Date(activity.timestamp).toLocaleDateString()}
+                          {new Date(activity.timestamp).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     </div>

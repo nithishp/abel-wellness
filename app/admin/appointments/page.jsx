@@ -280,7 +280,10 @@ const AppointmentsManagement = () => {
                             </div>
                             <div className="flex items-center text-sm text-gray-500">
                               <FiClock className="w-3 h-3 mr-1" />
-                              {appointment.time}
+                              {new Date(appointment.date).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                             </div>
                           </div>
                         </div>
@@ -388,7 +391,10 @@ const AppointmentsManagement = () => {
                 </label>
                 <p className="text-gray-900">
                   {new Date(selectedAppointment.date).toLocaleDateString()} at{" "}
-                  {selectedAppointment.time}
+                  {new Date(selectedAppointment.date).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </p>
               </div>
 
