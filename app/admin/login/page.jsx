@@ -40,14 +40,15 @@ const AdminLogin = () => {
     try {
       const result = await adminLogin(loginData.email, loginData.password);
 
-      if (result.success) {
+      // If adminLogin doesn't throw an error, it means login was successful
+      if (result) {
         toast.dismiss(loadingToast);
         toast.success("Login successful!", {
           description: "Welcome to the admin dashboard.",
         });
         router.push("/admin/dashboard");
       } else {
-        throw new Error(result.error || "Login failed");
+        throw new Error("Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
