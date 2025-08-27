@@ -45,17 +45,12 @@ const BlogsManagement = () => {
 
   const fetchBlogs = async () => {
     try {
-      console.log("Fetching blogs...");
       const response = await fetch("/api/admin/blogs?limit=50");
-      console.log("Response status:", response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log("Blogs data:", data);
         setBlogs(data.documents || []);
       } else {
-        console.error("Failed to fetch blogs, status:", response.status);
-        const errorData = await response.json();
-        console.error("Error data:", errorData);
+        toast.error("Failed to fetch blogs");
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);

@@ -1,15 +1,25 @@
-import { 
-  getBlogs, 
-  createBlog, 
-  updateBlog, 
-  deleteBlog, 
-  toggleBlogPublished 
+import {
+  getBlogs,
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  toggleBlogPublished,
+  getBlogById,
 } from "@/lib/actions/blog.actions";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const blogId = searchParams.get("id");
+
+    // If ID is provided, fetch single blog
+    if (blogId) {
+      const blog = await getBlogById(blogId);
+      return NextResponse.json(blog);
+    }
+
+    // Otherwise fetch all blogs
     const limit = parseInt(searchParams.get("limit")) || 50;
     const published = searchParams.get("published");
 

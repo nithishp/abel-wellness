@@ -28,6 +28,7 @@ const AdminDashboard = () => {
     totalAppointments: 0,
     pendingAppointments: 0,
   });
+  const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
     checkAuthentication();
@@ -53,60 +54,89 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       // Fetch blog stats
-      console.log("Fetching blog stats...");
       const blogsResponse = await fetch("/api/admin/blogs?limit=100");
-      console.log("Blogs response status:", blogsResponse.status);
       const blogsData = await blogsResponse.json();
-      console.log("Blogs data:", blogsData);
 
       if (blogsData.documents) {
         const publishedCount = blogsData.documents.filter(
           (blog) => blog.published
         ).length;
-        console.log(
-          "Total blogs:",
-          blogsData.documents.length,
-          "Published:",
-          publishedCount
-        );
         setStats((prev) => ({
           ...prev,
           totalBlogs: blogsData.documents.length,
           publishedBlogs: publishedCount,
         }));
-      } else {
-        console.log("No documents found in blogs response");
       }
 
       // Fetch appointment stats
-      console.log("Fetching appointment stats...");
       const appointmentsResponse = await fetch(
         "/api/admin/appointments?limit=100"
       );
-      console.log("Appointments response status:", appointmentsResponse.status);
       const appointmentsData = await appointmentsResponse.json();
-      console.log("Appointments data:", appointmentsData);
 
       if (appointmentsData.success) {
         const pendingCount = appointmentsData.appointments.filter(
           (apt) => apt.status === "pending"
         ).length;
-        console.log(
-          "Total appointments:",
-          appointmentsData.appointments.length,
-          "Pending:",
-          pendingCount
-        );
         setStats((prev) => ({
           ...prev,
           totalAppointments: appointmentsData.appointments.length,
           pendingAppointments: pendingCount,
         }));
-      } else {
-        console.log("Appointments response not successful");
       }
+
+      // Fetch recent activity
+      await fetchRecentActivity(
+        blogsData.documents || [],
+        appointmentsData.appointments || []
+      );
     } catch (error) {
       console.error("Error fetching stats:", error);
+    }
+  };
+
+  const fetchRecentActivity = async (blogs, appointments) => {
+    try {
+      const activities = [];
+
+      // Add recent blogs (last 5)
+      const recentBlogs = blogs
+        .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
+        .slice(0, 3)
+        .map((blog) => ({
+          id: blog.$id,
+          type: "blog",
+          title: `Blog "${blog.title}" ${
+            blog.published ? "published" : "created"
+          }`,
+          description: blog.description?.substring(0, 100) + "...",
+          timestamp: blog.$createdAt,
+          status: blog.published ? "published" : "draft",
+          href: `/admin/blogs/edit/${blog.$id}`,
+        }));
+
+      // Add recent appointments (last 5)
+      const recentAppointments = appointments
+        .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
+        .slice(0, 3)
+        .map((appointment) => ({
+          id: appointment.$id,
+          type: "appointment",
+          title: `New appointment from ${appointment.name}`,
+          description: `${appointment.service} - ${appointment.preferredDate}`,
+          timestamp: appointment.$createdAt,
+          status: appointment.status || "pending",
+          href: "/admin/appointments",
+        }));
+
+      // Combine and sort by timestamp
+      const allActivities = [...recentBlogs, ...recentAppointments]
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 6);
+
+      setRecentActivity(allActivities);
+    } catch (error) {
+      console.error("Error fetching recent activity:", error);
     }
   };
 
@@ -256,13 +286,66 @@ const AdminDashboard = () => {
             </h2>
           </div>
           <div className="p-6">
-            <div className="text-center py-8">
-              <FiEye className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500">Recent activity will appear here</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Blog posts, appointments, and other admin actions
-              </p>
-            </div>
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-8">
+                <FiEye className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">No recent activity</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Recent blog posts and appointments will appear here
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div
+                    key={`${activity.type}-${activity.id}`}
+                    className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                    onClick={() => router.push(activity.href)}
+                  >
+                    <div
+                      className={`p-2 rounded-full ${
+                        activity.type === "blog"
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-green-100 text-green-600"
+                      }`}
+                    >
+                      {activity.type === "blog" ? (
+                        <FiFileText className="w-4 h-4" />
+                      ) : (
+                        <FiCalendar className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {activity.title}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {activity.description}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            activity.status === "published"
+                              ? "bg-green-100 text-green-800"
+                              : activity.status === "draft"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : activity.status === "pending"
+                              ? "bg-orange-100 text-orange-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {activity.status}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(activity.timestamp).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <FiEye className="w-4 h-4 text-gray-400" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
