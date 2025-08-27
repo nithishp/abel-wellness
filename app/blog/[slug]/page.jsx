@@ -45,7 +45,7 @@ const BlogPost = () => {
             Blog Post Not Found
           </h1>
           <p className="text-gray-600 mb-6">
-            The blog post you're looking for doesn't exist.
+            The blog post you&apos;re looking for doesn&apos;t exist.
           </p>
           <button
             onClick={() => router.push("/")}

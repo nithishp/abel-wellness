@@ -184,7 +184,7 @@ const RichTextEditor = ({
           }`}
           title="Quote"
         >
-          "
+          &quot;
         </button>
 
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
