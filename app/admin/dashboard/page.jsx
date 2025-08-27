@@ -198,14 +198,7 @@ const AdminDashboard = () => {
       icon: FiCalendar,
       href: "/admin/appointments",
       color: "bg-purple-500 hover:bg-purple-600",
-    },
-    {
-      title: "Settings",
-      description: "Configure admin settings",
-      icon: FiSettings,
-      href: "/admin/settings",
-      color: "bg-gray-500 hover:bg-gray-600",
-    },
+    }
   ];
 
   const statCards = [
