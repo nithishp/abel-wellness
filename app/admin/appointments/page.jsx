@@ -132,14 +132,12 @@ const AppointmentsManagement = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "confirmed":
+      case "approved":
         return "bg-green-100 text-green-800";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -206,8 +204,7 @@ const AppointmentsManagement = () => {
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
+              <option value="approved">Approved</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
@@ -316,11 +313,11 @@ const AppointmentsManagement = () => {
                                 onClick={() =>
                                   handleStatusUpdate(
                                     appointment.$id,
-                                    "confirmed"
+                                    "approved"
                                   )
                                 }
                                 className="text-green-600 hover:text-green-900 p-1"
-                                title="Confirm"
+                                title="Approve"
                               >
                                 <FiCheck className="w-4 h-4" />
                               </button>
@@ -433,12 +430,12 @@ const AppointmentsManagement = () => {
                 <>
                   <button
                     onClick={() => {
-                      handleStatusUpdate(selectedAppointment.$id, "confirmed");
+                      handleStatusUpdate(selectedAppointment.$id, "approved");
                       setSelectedAppointment(null);
                     }}
                     className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
                   >
-                    Confirm
+                    Approve
                   </button>
                   <button
                     onClick={() => {

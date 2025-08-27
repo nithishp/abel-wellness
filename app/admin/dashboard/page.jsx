@@ -57,14 +57,20 @@ const AdminDashboard = () => {
       const blogsResponse = await fetch("/api/admin/blogs?limit=100");
       const blogsData = await blogsResponse.json();
 
-      if (blogsData.documents) {
+      if (blogsData.documents && Array.isArray(blogsData.documents)) {
         const publishedCount = blogsData.documents.filter(
           (blog) => blog.published
         ).length;
         setStats((prev) => ({
           ...prev,
-          totalBlogs: blogsData.documents.length,
-          publishedBlogs: publishedCount,
+          totalBlogs: blogsData.documents.length || 0,
+          publishedBlogs: publishedCount || 0,
+        }));
+      } else {
+        setStats((prev) => ({
+          ...prev,
+          totalBlogs: 0,
+          publishedBlogs: 0,
         }));
       }
 
@@ -74,14 +80,23 @@ const AdminDashboard = () => {
       );
       const appointmentsData = await appointmentsResponse.json();
 
-      if (appointmentsData.success) {
+      if (
+        appointmentsData.success &&
+        Array.isArray(appointmentsData.appointments)
+      ) {
         const pendingCount = appointmentsData.appointments.filter(
           (apt) => apt.status === "pending"
         ).length;
         setStats((prev) => ({
           ...prev,
-          totalAppointments: appointmentsData.appointments.length,
-          pendingAppointments: pendingCount,
+          totalAppointments: appointmentsData.appointments.length || 0,
+          pendingAppointments: pendingCount || 0,
+        }));
+      } else {
+        setStats((prev) => ({
+          ...prev,
+          totalAppointments: 0,
+          pendingAppointments: 0,
         }));
       }
 
