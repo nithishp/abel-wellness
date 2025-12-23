@@ -173,8 +173,9 @@ const Testimonials = () => {
             <div className="mt-5">
               <h1 className="font-semibold">Excellent Results </h1>
               <p className="mt-5 text-lg ">
-                My child's recurring cold and cough issues have significantly
-                improved with homoeopathic treatment. Highly recommend AWHCC!
+                My child&#39;s recurring cold and cough issues have
+                significantly improved with homoeopathic treatment. Highly
+                recommend AWHCC!
               </p>
             </div>
           </motion.div>{" "}
@@ -202,7 +203,7 @@ const Testimonials = () => {
             </div>
 
             <div className="mt-5">
-              <h1 className="font-semibold">Women's Wellness </h1>
+              <h1 className="font-semibold">Women&#39;s Wellness </h1>
               <p className="mt-5 text-lg ">
                 After struggling with hormonal issues for years, I finally found
                 relief through homoeopathy at AWHCC. Thank you, Dr. Abel!
