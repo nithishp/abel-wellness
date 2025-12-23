@@ -7,7 +7,7 @@ const About = () => {
     <div className="min-h-screen flex flex-col lg:flex-row items-center justify-evenly bg-transparent w-screen section text-[#ededed]">
       <div className="p-10 lg:max-w-[40vw] gap-10">
         <h1 className="text-neutral-950 text-bold text-5xl my-4 mb-10">
-          Crafting smiles one smile at a time
+          Healing with Care, Naturally
         </h1>
         <motion.p
           initial={{ y: 100, opacity: 0 }}
@@ -16,12 +16,10 @@ const About = () => {
           transition={{ duration: 0.5 }}
           className="text-lg  text-neutral-800 text-justify my-6"
         >
-          At Dental Care, we are committed to providing high quality dental
-          services tailored to meet the unique needs of each patient. With years
-          of experience and a compassionate approach, our dedicated team is here
-          to guide you on your journey to optimal dental health. We believe that
-          everyone deserves a smile they can be proud of, and we’re here to make
-          that a reality
+          At ABEL Wellness & Homoeopathy Care Center (AWHCC), we believe in
+          treating people, not just symptoms. With a blend of classical
+          homoeopathy and compassionate care, we help individuals of all ages
+          restore balance, build immunity, and achieve true wellness.
         </motion.p>
         <motion.button
           initial={{ y: 100, opacity: 0 }}
@@ -43,7 +41,7 @@ const About = () => {
           src="/about-image.png"
           width={700}
           height={700}
-          alt="dentist image"
+          alt="homoeopathy wellness center"
           className="rounded-2xl  h-[70vh] w-full lg:w-[60%] object-cover"
         />
       </motion.div>

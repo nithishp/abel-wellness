@@ -1,30 +1,29 @@
-'use client'
+"use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import React from "react";
 
 const Testimonials = () => {
   const cardAnimation = {
-    hidden:{
-      opacity:0,
-      scale:0
+    hidden: {
+      opacity: 0,
+      scale: 0,
     },
-    visible:{
-      opacity:1,
-      transition: { type: "spring",duration:1 },
-      scale:1
+    visible: {
+      opacity: 1,
+      transition: { type: "spring", duration: 1 },
+      scale: 1,
     },
-    hover:{
-      backgroundColor:'#fef9aa'
-      
-    }
-  }
+    hover: {
+      backgroundColor: "#fef9aa",
+    },
+  };
   return (
     <div className="min-h-screen min-w-screen section text-[#ededed]">
       <div className="bg-[url('/service-bg.png')] bg-cover w-[95vw] h-auto rounded-2xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 p-10 h-full row-auto gap-5">
           <h1 className="text-5xl col-span-2 font-semibold max-w-[40vw]">
-            Elevating oral health with personalized service.
+            What Our Patients Say
           </h1>
           <motion.div
             variants={cardAnimation}
@@ -42,26 +41,25 @@ const Testimonials = () => {
                 className="w-[10%] aspect-square object-cover rounded-full border-[2px] border-neutral-950"
               />
               <div className="flex flex-col justify-start items-start">
-                <h1 className="font-semibold text-xl">John Doe</h1>
+                <h1 className="font-semibold text-xl">R.S.</h1>
                 <p className="font-light text-sm italic text-neutral-600">
-                  Software Engineer
+                  Chennai
                 </p>
               </div>
             </div>
 
             <div className="mt-10">
-              <h1 className="font-semibold">Best dentist </h1>
+              <h1 className="font-semibold">Life-changing treatment! </h1>
               <p className="mt-5 text-lg ">
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Optio
-                fugit porro voluptate facere corporis eum rem ullam temporibus
-                velit libero! Eos, officiis nihil voluptatum assumenda rem
-                provident ad ea voluptas!
+                I was suffering from migraines for years. After 3 months of
+                treatment here, I feel like I have my life back! The
+                personalized approach and natural remedies made all the
+                difference.
                 <br />
                 <br />
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Rerum
-                quasi quod eum! Ad deserunt eos nisi sequi quibusdam
-                necessitatibus laudantium ipsam. Reprehenderit ipsum minus totam
-                aliquid, ipsam aperiam iste nesciunt.
+                Dr. Abel took the time to understand my complete health history
+                and provided a treatment plan that addressed the root cause, not
+                just the symptoms.
               </p>
             </div>
           </motion.div>
@@ -81,18 +79,17 @@ const Testimonials = () => {
                 className="w-[10%] aspect-square object-cover rounded-full border-[2px] border-neutral-950"
               />
               <div className="flex flex-col justify-start items-start">
-                <h1 className="font-semibold text-xl">John Doe</h1>
+                <h1 className="font-semibold text-xl">Priya</h1>
                 <p className="font-light text-sm italic text-neutral-600">
-                  Software Engineer
+                  Bengaluru
                 </p>
               </div>
             </div>
             <div className="mt-5">
-              <h1 className="font-semibold">100% Recommend </h1>
+              <h1 className="font-semibold">Easy & Convenient </h1>
               <p className="mt-5 text-lg ">
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Optio
-                fugit porro voluptate facere corporis eum rem ullam temporibus
-                velit libero!
+                The online consultation was so easy and convenient. Dr. Abel
+                explained everything in detail and I felt truly cared for.
               </p>
             </div>
           </motion.div>{" "}
@@ -112,15 +109,15 @@ const Testimonials = () => {
                 className="w-[10%] aspect-square object-cover rounded-full border-[2px] border-neutral-950"
               />
               <div className="flex flex-col justify-start items-start">
-                <h1 className="font-semibold text-xl">John Doe</h1>
+                <h1 className="font-semibold text-xl">Anitha K.</h1>
                 <p className="font-light text-sm italic text-neutral-600">
-                  Software Engineer
+                  Nagercoil
                 </p>
               </div>
             </div>
 
             <div className="mt-5">
-              <h1 className="font-semibold">Good service </h1>
+              <h1 className="font-semibold">Natural healing works! </h1>
             </div>
           </motion.div>{" "}
           <motion.div
@@ -139,15 +136,15 @@ const Testimonials = () => {
                 className="w-[10%] aspect-square object-cover rounded-full border-[2px] border-neutral-950"
               />
               <div className="flex flex-col justify-start items-start">
-                <h1 className="font-semibold text-xl">John Doe</h1>
+                <h1 className="font-semibold text-xl">Ramesh M.</h1>
                 <p className="font-light text-sm italic text-neutral-600">
-                  Software Engineer
+                  Dubai, UAE
                 </p>
               </div>
             </div>
 
             <div className="mt-5">
-              <h1 className="font-semibold">Polite Doctor </h1>
+              <h1 className="font-semibold">Caring & Professional </h1>
             </div>
           </motion.div>
           <motion.div
@@ -166,18 +163,18 @@ const Testimonials = () => {
                 className="w-[10%] aspect-square object-cover rounded-full border-[2px] border-neutral-950"
               />
               <div className="flex flex-col justify-start items-start">
-                <h1 className="font-semibold text-xl">John Doe</h1>
+                <h1 className="font-semibold text-xl">Lakshmi S.</h1>
                 <p className="font-light text-sm italic text-neutral-600">
-                  Software Engineer
+                  Madurai
                 </p>
               </div>
             </div>
 
             <div className="mt-5">
-              <h1 className="font-semibold">Very good </h1>
+              <h1 className="font-semibold">Excellent Results </h1>
               <p className="mt-5 text-lg ">
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Optio
-                fugit porro voluptate facere corporis eum rem ullam.
+                My child's recurring cold and cough issues have significantly
+                improved with homoeopathic treatment. Highly recommend AWHCC!
               </p>
             </div>
           </motion.div>{" "}
@@ -197,18 +194,18 @@ const Testimonials = () => {
                 className="w-[10%] aspect-square object-cover rounded-full border-[2px] border-neutral-950"
               />
               <div className="flex flex-col justify-start items-start">
-                <h1 className="font-semibold text-xl">John Doe</h1>
+                <h1 className="font-semibold text-xl">Suresh P.</h1>
                 <p className="font-light text-sm italic text-neutral-600">
-                  Software Engineer
+                  Coimbatore
                 </p>
               </div>
             </div>
 
             <div className="mt-5">
-              <h1 className="font-semibold">Fast treatment </h1>
+              <h1 className="font-semibold">Women's Wellness </h1>
               <p className="mt-5 text-lg ">
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Optio
-                fugit porro voluptate facere corporis eum rem ullam.
+                After struggling with hormonal issues for years, I finally found
+                relief through homoeopathy at AWHCC. Thank you, Dr. Abel!
               </p>
             </div>
           </motion.div>

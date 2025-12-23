@@ -214,7 +214,7 @@ const AppointmentSection = () => {
       </div>
       <div>
         <h1 className="text-neutral-950 text-4xl font-medium mb-7">
-          Book an Appointment
+          Book Your Consultation
         </h1>
         <motion.form
           variants={formAnimation}
