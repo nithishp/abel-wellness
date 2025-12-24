@@ -1,6 +1,6 @@
 # Abel Wellness - Dental Website with Blog Integration
 
-A modern Next.js dental website with integrated blog functionality powered by Appwrite.
+A modern Next.js dental website with integrated blog functionality powered by Supabase.
 
 ## Features
 
@@ -9,12 +9,12 @@ A modern Next.js dental website with integrated blog functionality powered by Ap
 - 🔒 Admin authentication and authorization
 - 📱 Responsive design with smooth animations
 - 🎨 Modern UI with Tailwind CSS and Framer Motion
-- ☁️ Cloud-powered backend with Appwrite
+- ☁️ Cloud-powered backend with Supabase
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, Tailwind CSS
-- **Backend**: Appwrite (BaaS)
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
 - **Animations**: Framer Motion
 - **Icons**: React Icons
 - **Styling**: Tailwind CSS
@@ -25,97 +25,17 @@ A modern Next.js dental website with integrated blog functionality powered by Ap
 
 - Node.js 18+
 - npm or yarn
-- Appwrite account
+- Supabase account
 
-### Appwrite Setup
+### Supabase Setup
 
-1. Create a new project in [Appwrite Console](https://cloud.appwrite.io/)
+Please refer to [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed setup instructions.
 
-2. Create a database with the following collections:
+Quick start:
 
-#### Collection 1: `appointments`
-
-```json
-{
-  "name": "appointments",
-  "attributes": [
-    { "key": "name", "type": "string", "size": 255, "required": true },
-    { "key": "email", "type": "string", "size": 255, "required": true },
-    { "key": "phone", "type": "string", "size": 20, "required": true },
-    { "key": "date", "type": "datetime", "required": true },
-    { "key": "service", "type": "string", "size": 100, "required": true },
-    { "key": "message", "type": "string", "size": 1000, "required": false }
-  ]
-}
-```
-
-#### Collection 2: `blogs`
-
-```json
-{
-  "name": "blogs",
-  "attributes": [
-    { "key": "title", "type": "string", "size": 255, "required": true },
-    { "key": "description", "type": "string", "size": 500, "required": true },
-    { "key": "content", "type": "string", "size": 10000, "required": true },
-    { "key": "author", "type": "string", "size": 100, "required": true },
-    { "key": "imageUrl", "type": "string", "size": 500, "required": false },
-    {
-      "key": "slug",
-      "type": "string",
-      "size": 255,
-      "required": true,
-      "array": false
-    },
-    {
-      "key": "published",
-      "type": "boolean",
-      "required": true,
-      "default": false
-    },
-    {
-      "key": "featured",
-      "type": "boolean",
-      "required": true,
-      "default": false
-    },
-    { "key": "createdAt", "type": "datetime", "required": true },
-    { "key": "updatedAt", "type": "datetime", "required": true }
-  ],
-  "indexes": [
-    { "key": "slug", "type": "unique", "attributes": ["slug"] },
-    { "key": "published", "type": "key", "attributes": ["published"] }
-  ]
-}
-```
-
-#### Collection 3: `admins`
-
-```json
-{
-  "name": "admins",
-  "attributes": [
-    { "key": "email", "type": "string", "size": 255, "required": true },
-    { "key": "name", "type": "string", "size": 100, "required": true },
-    {
-      "key": "role",
-      "type": "string",
-      "size": 50,
-      "required": true,
-      "default": "admin"
-    }
-  ],
-  "indexes": [{ "key": "email", "type": "unique", "attributes": ["email"] }]
-}
-```
-
-3. Set up permissions for each collection:
-
-   - **appointments**: Create, Read (for authenticated users only)
-   - **blogs**: Read (for any), Create/Update/Delete (for authenticated users only)
-   - **admins**: Create/Read/Update/Delete (for authenticated users only)
-
-4. Enable Email/Password authentication in your Appwrite project
+1. Create a new project at [supabase.com](https://supabase.com)
+2. The database tables are created automatically via migrations
+3. Copy your project credentials to `.env.local`
 
 ### Installation
 
@@ -130,56 +50,40 @@ cd abel-wellness
 
 ```bash
 npm install
-# or
-yarn install
 ```
 
 3. Set up environment variables:
 
 ```bash
-cp .env.local.example .env.local
+cp .env.example .env.local
 ```
 
-4. Update `.env.local` with your Appwrite credentials:
+4. Update `.env.local` with your Supabase credentials:
 
 ```env
-# Appwrite Configuration
-NEXT_PUBLIC_ENDPOINT=https://cloud.appwrite.io/v1
-NEXT_PUBLIC_PROJECT_ID=your_project_id_here
-NEXT_PUBLIC_DATABASE_ID=your_database_id_here
-NEXT_PUBLIC_BLOGS_ID=your_blogs_collection_id_here
-
-# Server-side configuration
-PROJECT_ID=your_project_id_here
-DATABASE_ID=your_database_id_here
-APPOINTMENTS_ID=your_appointments_collection_id_here
-BLOGS_ID=your_blogs_collection_id_here
-ADMINS_ID=your_admins_collection_id_here
-API_KEY=your_api_key_here
-
-# Admin credentials (for initial setup)
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=your_secure_password_here
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 5. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ### Creating Your First Admin User
 
-1. Go to your Appwrite Console
-2. Navigate to Auth → Users
-3. Create a new user with your admin email and password
-4. Note the User ID
-5. Go to your database → admins collection
-6. Create a new document with:
+1. Go to your Supabase Dashboard
+2. Navigate to Authentication → Users
+3. Click "Add user" → "Create new user"
+4. Enter email and password
+5. The user can now log in at `/admin/login`
+6. Go to your database → admins collection
+7. Create a new document with:
    - Document ID: (use the User ID from step 4)
    - email: your admin email
    - name: your name
@@ -237,8 +141,8 @@ abel-wellness/
 │   │   ├── admin.actions.js   # Admin authentication
 │   │   ├── appointment.actions.js
 │   │   └── blog.actions.js    # Blog CRUD operations
-│   ├── appwrite.config.js     # Server-side config
-│   ├── appwrite.client.js     # Client-side config
+│   ├── supabase.config.js     # Server-side Supabase config
+│   ├── supabase.client.js     # Client-side Supabase config
 │   └── utils.js
 └── .env.local                 # Environment variables
 ```

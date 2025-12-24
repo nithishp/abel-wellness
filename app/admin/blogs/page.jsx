@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { checkExistingSession } from "@/lib/actions/admin.actions";
+import { useAuth } from "@/lib/auth/AuthContext";
 import {
   FiEdit2,
   FiTrash2,
@@ -16,34 +16,25 @@ import { toast } from "sonner";
 
 const BlogsManagement = () => {
   const router = useRouter();
-  const [admin, setAdmin] = useState(null);
+  const { user, loading: authLoading } = useAuth();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // all, published, draft
 
   useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      const currentAdmin = await checkExistingSession();
-      if (currentAdmin) {
-        setAdmin(currentAdmin);
-        await fetchBlogs();
-      } else {
-        router.push("/admin/login");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
+    if (!authLoading && !user) {
       router.push("/admin/login");
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    if (user) {
+      fetchBlogs();
+    }
+  }, [user, authLoading, router]);
 
   const fetchBlogs = async () => {
+    setLoading(true);
     try {
       const response = await fetch("/api/admin/blogs?limit=50");
       if (response.ok) {
@@ -55,6 +46,8 @@ const BlogsManagement = () => {
     } catch (error) {
       console.error("Error fetching blogs:", error);
       toast.error("Failed to fetch blogs");
+    } finally {
+      setLoading(false);
     }
   };
 

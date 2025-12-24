@@ -1,23 +1,45 @@
 import { NextResponse } from "next/server";
-import { ID, Query } from "node-appwrite";
-import { databases, DATABASE_ID } from "@/lib/appwrite.config";
+import { supabaseAdmin, TABLES } from "@/lib/supabase.config";
 
-const APPOINTMENTS_ID = process.env.APPOINTMENTS_ID || "appointments";
+// Transform appointment from DB format to match previous Appwrite format
+function transformAppointment(appointment) {
+  if (!appointment) return null;
+  return {
+    $id: appointment.id,
+    $createdAt: appointment.created_at,
+    $updatedAt: appointment.updated_at,
+    name: appointment.name,
+    email: appointment.email,
+    phone: appointment.phone,
+    date: appointment.date,
+    service: appointment.service,
+    message: appointment.message,
+    status: appointment.status,
+  };
+}
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit")) || 50;
 
-    const appointments = await databases.listDocuments(
-      DATABASE_ID,
-      APPOINTMENTS_ID,
-      [Query.orderDesc("$createdAt"), Query.limit(limit)]
-    );
+    const { data: appointments, error } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("Supabase error fetching appointments:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch appointments" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      appointments: appointments.documents,
+      appointments: appointments.map(transformAppointment),
     });
   } catch (error) {
     console.error("Error fetching appointments:", error);
@@ -41,16 +63,24 @@ export async function PUT(request) {
       );
     }
 
-    const updatedAppointment = await databases.updateDocument(
-      DATABASE_ID,
-      APPOINTMENTS_ID,
-      appointmentId,
-      updateData
-    );
+    const { data: updatedAppointment, error } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .update(updateData)
+      .eq("id", appointmentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase error updating appointment:", error);
+      return NextResponse.json(
+        { error: "Failed to update appointment" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      appointment: updatedAppointment,
+      appointment: transformAppointment(updatedAppointment),
     });
   } catch (error) {
     console.error("Error updating appointment:", error);
@@ -73,7 +103,18 @@ export async function DELETE(request) {
       );
     }
 
-    await databases.deleteDocument(DATABASE_ID, APPOINTMENTS_ID, appointmentId);
+    const { error } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .delete()
+      .eq("id", appointmentId);
+
+    if (error) {
+      console.error("Supabase error deleting appointment:", error);
+      return NextResponse.json(
+        { error: "Failed to delete appointment" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

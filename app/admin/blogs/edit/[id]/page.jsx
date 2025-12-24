@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { checkExistingSession } from "@/lib/actions/admin.actions";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { FiArrowLeft, FiSave, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
@@ -11,8 +11,8 @@ const EditBlog = () => {
   const router = useRouter();
   const params = useParams();
   const blogId = params.id;
+  const { user, loading: authLoading } = useAuth();
 
-  const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [blog, setBlog] = useState({
@@ -26,32 +26,20 @@ const EditBlog = () => {
   });
 
   useEffect(() => {
-    checkAuthentication();
-  }, []);
+    if (!authLoading && !user) {
+      router.push("/admin/login");
+      return;
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (admin && blogId) {
+    if (user && blogId) {
       fetchBlog();
     }
-  }, [admin, blogId]);
-
-  const checkAuthentication = async () => {
-    try {
-      const currentAdmin = await checkExistingSession();
-      if (currentAdmin) {
-        setAdmin(currentAdmin);
-      } else {
-        router.push("/admin/login");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
-      router.push("/admin/login");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, blogId]);
 
   const fetchBlog = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/admin/blogs?id=${blogId}`);
       if (response.ok) {
@@ -65,6 +53,8 @@ const EditBlog = () => {
       console.error("Error fetching blog:", error);
       toast.error("Failed to fetch blog");
       router.push("/admin/blogs");
+    } finally {
+      setLoading(false);
     }
   };
 

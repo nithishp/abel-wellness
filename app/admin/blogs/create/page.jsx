@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { checkExistingSession } from "@/lib/actions/admin.actions";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { FiArrowLeft, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
@@ -9,8 +9,7 @@ import ImageUpload from "@/app/components/ui/ImageUpload";
 
 const CreateBlog = () => {
   const router = useRouter();
-  const [admin, setAdmin] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const [saving, setSaving] = useState(false);
 
   const [blogForm, setBlogForm] = useState({
@@ -25,28 +24,18 @@ const CreateBlog = () => {
   });
 
   useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      const currentAdmin = await checkExistingSession();
-      if (currentAdmin) {
-        setAdmin(currentAdmin);
-        setBlogForm((prev) => ({
-          ...prev,
-          author: currentAdmin.name || currentAdmin.email || "Admin",
-        }));
-      } else {
-        router.push("/admin/login");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
+    if (!authLoading && !user) {
       router.push("/admin/login");
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    if (user) {
+      setBlogForm((prev) => ({
+        ...prev,
+        author: user.user_metadata?.name || user.email || "Admin",
+      }));
+    }
+  }, [user, authLoading, router]);
 
   const handleImageUpload = (imageUrl, fileId) => {
     console.log("Image upload callback received:", { imageUrl, fileId });
@@ -99,7 +88,11 @@ const CreateBlog = () => {
       const { imageFileId, ...blogData } = {
         ...blogForm,
         published: shouldPublish,
-        author: blogForm.author || admin?.name || "Admin",
+        author:
+          blogForm.author ||
+          user?.user_metadata?.name ||
+          user?.email ||
+          "Admin",
       };
 
       const response = await fetch("/api/admin/blogs", {
@@ -161,7 +154,11 @@ const CreateBlog = () => {
       const { imageFileId, ...blogData } = {
         ...blogForm,
         published: false,
-        author: blogForm.author || admin?.name || "Admin",
+        author:
+          blogForm.author ||
+          user?.user_metadata?.name ||
+          user?.email ||
+          "Admin",
       };
 
       const response = await fetch("/api/admin/blogs", {
@@ -190,7 +187,7 @@ const CreateBlog = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

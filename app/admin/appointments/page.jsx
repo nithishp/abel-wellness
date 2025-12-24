@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { checkExistingSession } from "@/lib/actions/admin.actions";
+import { useAuth } from "@/lib/auth/AuthContext";
 import {
   FiArrowLeft,
   FiCalendar,
@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 const AppointmentsManagement = () => {
   const router = useRouter();
-  const [admin, setAdmin] = useState(null);
+  const { user, loading: authLoading } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,27 +27,18 @@ const AppointmentsManagement = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      const currentAdmin = await checkExistingSession();
-      if (currentAdmin) {
-        setAdmin(currentAdmin);
-        await fetchAppointments();
-      } else {
-        router.push("/admin/login");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
+    if (!authLoading && !user) {
       router.push("/admin/login");
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    if (user) {
+      fetchAppointments();
+    }
+  }, [user, authLoading, router]);
 
   const fetchAppointments = async () => {
+    setLoading(true);
     try {
       const response = await fetch("/api/admin/appointments?limit=100");
       if (response.ok) {
@@ -57,6 +48,8 @@ const AppointmentsManagement = () => {
     } catch (error) {
       console.error("Error fetching appointments:", error);
       toast.error("Failed to fetch appointments");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -280,10 +273,13 @@ const AppointmentsManagement = () => {
                             </div>
                             <div className="flex items-center text-sm text-gray-500">
                               <FiClock className="w-3 h-3 mr-1" />
-                              {new Date(appointment.date).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                              {new Date(appointment.date).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
                             </div>
                           </div>
                         </div>
@@ -392,8 +388,8 @@ const AppointmentsManagement = () => {
                 <p className="text-gray-900">
                   {new Date(selectedAppointment.date).toLocaleDateString()} at{" "}
                   {new Date(selectedAppointment.date).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </p>
               </div>

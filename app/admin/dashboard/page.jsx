@@ -1,17 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/AuthContext";
 import {
-  adminLogout,
-  getCurrentAdmin,
-  checkExistingSession,
-} from "@/lib/actions/admin.actions";
-import {
-  FiUser,
   FiFileText,
   FiCalendar,
   FiLogOut,
-  FiSettings,
   FiPlus,
   FiEye,
   FiEdit,
@@ -20,8 +14,7 @@ import { toast } from "sonner";
 
 const AdminDashboard = () => {
   const router = useRouter();
-  const [admin, setAdmin] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading, signOut } = useAuth();
   const [stats, setStats] = useState({
     totalBlogs: 0,
     publishedBlogs: 0,
@@ -29,29 +22,22 @@ const AdminDashboard = () => {
     pendingAppointments: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthentication();
-    fetchStats();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      const currentAdmin = await checkExistingSession();
-      if (currentAdmin) {
-        setAdmin(currentAdmin);
-      } else {
-        router.push("/admin/login");
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
+    // Redirect if not authenticated
+    if (!authLoading && !user) {
       router.push("/admin/login");
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    if (user) {
+      fetchStats();
+    }
+  }, [user, authLoading, router]);
 
   const fetchStats = async () => {
+    setStatsLoading(true);
     try {
       // Fetch blog stats
       const blogsResponse = await fetch("/api/admin/blogs?limit=100");
@@ -107,6 +93,8 @@ const AdminDashboard = () => {
       );
     } catch (error) {
       console.error("Error fetching stats:", error);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -157,7 +145,7 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await adminLogout();
+      await signOut();
       toast.success("Logged out successfully");
       router.push("/admin/login");
     } catch (error) {
@@ -166,7 +154,7 @@ const AdminDashboard = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -175,6 +163,10 @@ const AdminDashboard = () => {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null; // Will redirect in useEffect
   }
 
   const quickActions = [
@@ -198,7 +190,7 @@ const AdminDashboard = () => {
       icon: FiCalendar,
       href: "/admin/appointments",
       color: "bg-purple-500 hover:bg-purple-600",
-    }
+    },
   ];
 
   const statCards = [
@@ -229,7 +221,7 @@ const AdminDashboard = () => {
                 Admin Dashboard
               </h1>
               <p className="text-gray-600">
-                Welcome back, {admin?.name || admin?.email}
+                Welcome back, {user?.user_metadata?.name || user?.email}
               </p>
             </div>
             <button

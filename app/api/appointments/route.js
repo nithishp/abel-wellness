@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { ID } from "node-appwrite";
-import { databases, DATABASE_ID } from "@/lib/appwrite.config";
-
-const APPOINTMENTS_ID = process.env.APPOINTMENTS_ID || "appointments";
+import { supabaseAdmin, TABLES } from "@/lib/supabase.config";
 
 export async function POST(request) {
   try {
@@ -29,22 +26,37 @@ export async function POST(request) {
     const appointmentData = {
       name: `${data.firstName} ${data.lastName}`,
       email: data.email,
-      phone: data.phoneNumber, // Map phoneNumber to phone
-      date: data.schedule, // Map schedule to date
+      phone: data.phoneNumber,
+      date: data.schedule,
       message: data.message || "",
-      status: "pending", // Default status
+      status: "pending",
     };
 
-    const newAppointment = await databases.createDocument(
-      DATABASE_ID,
-      APPOINTMENTS_ID,
-      ID.unique(),
-      appointmentData
-    );
+    const { data: newAppointment, error } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .insert(appointmentData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase error creating appointment:", error);
+      return NextResponse.json(
+        { error: "Failed to create appointment", message: error.message },
+        { status: 500 }
+      );
+    }
+
+    // Transform to match previous format for compatibility
+    const transformedAppointment = {
+      $id: newAppointment.id,
+      $createdAt: newAppointment.created_at,
+      $updatedAt: newAppointment.updated_at,
+      ...newAppointment,
+    };
 
     return NextResponse.json({
       success: true,
-      appointment: newAppointment,
+      appointment: transformedAppointment,
     });
   } catch (error) {
     console.error("Error creating appointment:", error);

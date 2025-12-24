@@ -1,16 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  clientDatabases,
-  CLIENT_DATABASE_ID,
-  CLIENT_BLOGS_ID,
-} from "@/lib/appwrite.client";
-import { databases, DATABASE_ID, BLOGS_ID } from "@/lib/appwrite.config";
+import { supabase, TABLES } from "@/lib/supabase.client";
 
 const DiagnosticPage = () => {
   const [results, setResults] = useState({
-    clientConfig: null,
-    serverConfig: null,
+    config: null,
+    connection: null,
     error: null,
   });
 
@@ -20,47 +15,51 @@ const DiagnosticPage = () => {
 
   const runDiagnostics = async () => {
     try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const hasAnonKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
       console.log("Environment variables:");
-      console.log(
-        "NEXT_PUBLIC_PROJECT_ID:",
-        process.env.NEXT_PUBLIC_PROJECT_ID
-      );
-      console.log(
-        "NEXT_PUBLIC_DATABASE_ID:",
-        process.env.NEXT_PUBLIC_DATABASE_ID
-      );
-      console.log("NEXT_PUBLIC_BLOGS_ID:", process.env.NEXT_PUBLIC_BLOGS_ID);
-      console.log("CLIENT_DATABASE_ID:", CLIENT_DATABASE_ID);
-      console.log("CLIENT_BLOGS_ID:", CLIENT_BLOGS_ID);
-      console.log("DATABASE_ID:", DATABASE_ID);
-      console.log("BLOGS_ID:", BLOGS_ID);
+      console.log("NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl);
+      console.log("Has Anon Key:", hasAnonKey);
 
       setResults({
-        clientConfig: {
-          projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
-          databaseId: CLIENT_DATABASE_ID,
-          blogsId: CLIENT_BLOGS_ID,
+        config: {
+          supabaseUrl: supabaseUrl || "Not set",
+          hasAnonKey,
+          tables: TABLES,
         },
-        serverConfig: {
-          databaseId: DATABASE_ID,
-          blogsId: BLOGS_ID,
-        },
+        connection: null,
         error: null,
       });
 
-      // Test client connection
+      // Test connection by fetching blogs
       try {
-        await clientDatabases.listDocuments(
-          CLIENT_DATABASE_ID,
-          CLIENT_BLOGS_ID,
-          []
-        );
-        console.log("Client connection successful");
-      } catch (clientError) {
-        console.error("Client connection error:", clientError);
+        const { data, error } = await supabase
+          .from(TABLES.BLOGS)
+          .select("id")
+          .limit(1);
+
+        if (error) {
+          throw error;
+        }
+
+        console.log("Supabase connection successful");
         setResults((prev) => ({
           ...prev,
-          error: clientError.message,
+          connection: {
+            status: "success",
+            message: "Successfully connected to Supabase",
+          },
+        }));
+      } catch (connError) {
+        console.error("Connection error:", connError);
+        setResults((prev) => ({
+          ...prev,
+          connection: {
+            status: "error",
+            message: connError.message,
+          },
+          error: connError.message,
         }));
       }
     } catch (error) {
@@ -75,21 +74,18 @@ const DiagnosticPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Appwrite Diagnostic</h1>
+        <h1 className="text-3xl font-bold mb-8">Supabase Diagnostic</h1>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Environment Configuration</h2>
           <div className="space-y-2">
             <div>
-              <strong>Project ID:</strong>{" "}
-              {process.env.NEXT_PUBLIC_PROJECT_ID || "Not set"}
+              <strong>Supabase URL:</strong>{" "}
+              {process.env.NEXT_PUBLIC_SUPABASE_URL || "Not set"}
             </div>
             <div>
-              <strong>Database ID:</strong> {CLIENT_DATABASE_ID || "Not set"}
-            </div>
-            <div>
-              <strong>Blogs Collection ID:</strong>{" "}
-              {CLIENT_BLOGS_ID || "Not set"}
+              <strong>Anon Key:</strong>{" "}
+              {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Set" : "Not set"}
             </div>
           </div>
         </div>
@@ -112,16 +108,15 @@ const DiagnosticPage = () => {
           <h2 className="text-xl font-bold text-blue-800 mb-4">Instructions</h2>
           <div className="text-blue-700 space-y-2">
             <p>
-              1. Make sure you have created the database and collections in your
-              Appwrite console
+              1. Make sure you have created a Supabase project and run the
+              migrations
             </p>
             <p>
-              2. Verify that the collection IDs in your .env.local file match
-              the actual collection IDs from Appwrite
+              2. Verify that the environment variables in .env.local are correct
             </p>
-            <p>3. Check that your project ID is correct</p>
+            <p>3. Check that your Supabase URL and anon key are valid</p>
             <p>
-              4. Ensure you have set the correct permissions for the collections
+              4. Ensure RLS policies are configured correctly for the tables
             </p>
           </div>
         </div>
