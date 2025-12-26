@@ -9,7 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
 import Link from "next/link";
 
-const AppointmentSection = () => {
+const AppointmentSection = ({ id }) => {
   const [appointment, setAppointment] = useState({
     firstName: "",
     lastName: "",
@@ -206,7 +206,7 @@ const AppointmentSection = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen p-10 flex flex-col lg:flex-row justify-evenly items-center gap-10 text-[#ededed]">
+    <div id={id} className="min-h-screen w-screen p-10 flex flex-col lg:flex-row justify-evenly items-center gap-10 text-[#ededed]">
       <div className="hidden lg:flex justify-center items-center">
         <motion.div
           className="overflow-hidden flex items-center w-full justify-center"

@@ -1,6 +1,5 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Nav from "./components/CornerNav";
 import { Toaster } from "@/components/ui/sonner";
 import { RoleAuthProvider } from "@/lib/auth/RoleAuthContext";
 
@@ -10,8 +9,8 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Dental Care",
-  description: "A Modern Dental Website",
+  title: "Abel wellness & Homoeopathic Care Center",
+  description: "Your trusted home for holistic healing and wellness.",
 };
 
 export default function RootLayout({ children }) {
@@ -19,7 +18,6 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${poppins.className} antialiased`}>
         <RoleAuthProvider>
-          <Nav />
           {children}
           <Toaster />
         </RoleAuthProvider>

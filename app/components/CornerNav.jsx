@@ -3,6 +3,7 @@ import { SiInstagram, SiLinkedin, SiTwitter, SiYoutube } from "react-icons/si";
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiArrowRight, FiArrowUpRight } from "react-icons/fi";
+import Image from "next/image";
 
 const Nav = () => {
   const [active, setActive] = useState(false);
@@ -10,28 +11,30 @@ const Nav = () => {
   return (
     <>
       <HamburgerButton active={active} setActive={setActive} />
-      <AnimatePresence>{active && <LinksOverlay />}</AnimatePresence>
+      <AnimatePresence>
+        {active && <LinksOverlay setActive={setActive} />}
+      </AnimatePresence>
     </>
   );
 };
 
 export default Nav;
-const LinksOverlay = () => {
+const LinksOverlay = ({ setActive }) => {
   return (
     <nav className="fixed right-4 top-4 z-40 h-[calc(100vh_-_32px)] w-[calc(100%_-_32px)] overflow-hidden">
       <Logo />
-      <LinksContainer />
-      <FooterCTAs />
+      <LinksContainer setActive={setActive} />
+      <FooterCTAs setActive={setActive} />
     </nav>
   );
 };
 
-const LinksContainer = () => {
+const LinksContainer = ({ setActive }) => {
   return (
     <motion.div className="space-y-4 p-12 pl-4 md:pl-20">
       {LINKS.map((l, idx) => {
         return (
-          <NavLink key={l.title} href={l.href} idx={idx}>
+          <NavLink key={l.title} href={l.href} idx={idx} setActive={setActive}>
             {l.title}
           </NavLink>
         );
@@ -40,7 +43,23 @@ const LinksContainer = () => {
   );
 };
 
-const NavLink = ({ children, href, idx }) => {
+const NavLink = ({ children, href, idx, setActive }) => {
+  const handleClick = (e) => {
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      if (href === "#") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        const elementId = href.substring(1);
+        document
+          .getElementById(elementId)
+          ?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+    // Close menu after a short delay to allow scroll to start
+    setTimeout(() => setActive(false), 1000);
+  };
+
   return (
     <motion.a
       initial={{ opacity: 0, y: -8 }}
@@ -55,6 +74,7 @@ const NavLink = ({ children, href, idx }) => {
       }}
       exit={{ opacity: 0, y: -8 }}
       href={href}
+      onClick={handleClick}
       className="block text-5xl font-semibold text-violet-400 transition-colors hover:text-violet-50 md:text-7xl"
     >
       {children}.
@@ -76,9 +96,12 @@ const Logo = () => {
       href="#"
       className="grid h-20 w-20 place-content-center p-5 rounded-br-xl rounded-tl-xl bg-white transition-colors hover:bg-violet-50"
     >
-      <h1 className="text-neutral-700 font-bold text-xl text-left max-w-[500px] leading-0">
-        Dental Care&reg;
-      </h1>
+      <Image
+        src="/abel-wellness-main.webp"
+        alt="Abel Wellness Logo"
+        width={60}
+        height={60}
+      />
     </motion.a>
   );
 };
@@ -122,9 +145,15 @@ const HamburgerButton = ({ active, setActive }) => {
   );
 };
 
-const FooterCTAs = () => {
+const FooterCTAs = ({ setActive }) => {
   return (
     <motion.button
+      onClick={() => {
+        document
+          .getElementById("contact")
+          ?.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => setActive(false), 300);
+      }}
       initial={{ opacity: 0, y: 8 }}
       animate={{
         opacity: 1,
@@ -154,15 +183,15 @@ const LINKS = [
   },
   {
     title: "About",
-    href: "#",
+    href: "#about",
   },
   {
     title: "Services",
-    href: "#",
+    href: "#services",
   },
   {
     title: "Contact",
-    href: "#",
+    href: "#contact",
   },
   {
     title: "Login",

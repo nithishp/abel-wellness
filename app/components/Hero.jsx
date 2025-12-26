@@ -47,6 +47,9 @@ const Hero = () => {
           Safe, natural, and personalized healing – anytime, anywhere.
         </motion.p>
         <motion.button
+          onClick={() => {
+            document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+          }}
           whileHover={{
             backgroundColor: "transparent",
             color: "#0a0a0a",

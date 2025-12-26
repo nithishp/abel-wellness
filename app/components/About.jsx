@@ -2,9 +2,12 @@
 import Image from "next/image";
 import React from "react";
 import { motion } from "framer-motion";
-const About = () => {
+const About = ({ id }) => {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row items-center justify-evenly bg-transparent w-screen section text-[#ededed]">
+    <div
+      id={id}
+      className="min-h-screen flex flex-col lg:flex-row items-center justify-evenly bg-transparent w-screen section text-[#ededed]"
+    >
       <div className="p-10 lg:max-w-[40vw] gap-10">
         <h1 className="text-neutral-950 text-bold text-5xl my-4 mb-10">
           Healing with Care, Naturally
