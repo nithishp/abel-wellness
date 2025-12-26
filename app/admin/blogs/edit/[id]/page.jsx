@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import { FiArrowLeft, FiSave, FiEye } from "react-icons/fi";
 import { toast } from "sonner";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
@@ -11,7 +11,7 @@ const EditBlog = () => {
   const router = useRouter();
   const params = useParams();
   const blogId = params.id;
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useRoleAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,8 +26,18 @@ const EditBlog = () => {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/admin/login");
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // If no user after loading completes, redirect to login
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    // Check if user has admin role
+    if (user.role !== "admin") {
+      router.push("/");
       return;
     }
   }, [user, authLoading, router]);

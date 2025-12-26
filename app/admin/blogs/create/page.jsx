@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import { FiArrowLeft, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
@@ -9,7 +9,7 @@ import ImageUpload from "@/app/components/ui/ImageUpload";
 
 const CreateBlog = () => {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useRoleAuth();
   const [saving, setSaving] = useState(false);
 
   const [blogForm, setBlogForm] = useState({
@@ -24,17 +24,25 @@ const CreateBlog = () => {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/admin/login");
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // If no user after loading completes, redirect to login
+    if (!user) {
+      router.push("/login");
       return;
     }
 
-    if (user) {
-      setBlogForm((prev) => ({
-        ...prev,
-        author: user.user_metadata?.name || user.email || "Admin",
-      }));
+    // Check if user has admin role
+    if (user.role !== "admin") {
+      router.push("/");
+      return;
     }
+
+    setBlogForm((prev) => ({
+      ...prev,
+      author: user.full_name || user.email || "Admin",
+    }));
   }, [user, authLoading, router]);
 
   const handleImageUpload = (imageUrl, fileId) => {

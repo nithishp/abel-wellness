@@ -1,13 +1,47 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, TABLES } from "@/lib/supabase.config";
+import { cookies } from "next/headers";
+import {
+  supabaseAdmin,
+  TABLES,
+  ROLES,
+  APPOINTMENT_STATUS,
+} from "@/lib/supabase.config";
+import { sendEmail, emailTemplates } from "@/lib/email/service";
 
-// Transform appointment from DB format to match previous Appwrite format
+// Helper function to verify admin session
+async function verifyAdminSession() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token")?.value;
+
+  if (!sessionToken) {
+    return null;
+  }
+
+  const { data: session } = await supabaseAdmin
+    .from(TABLES.USER_SESSIONS)
+    .select("*, user:users(*)")
+    .eq("session_token", sessionToken)
+    .single();
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return null;
+  }
+
+  if (session.user?.role !== ROLES.ADMIN) {
+    return null;
+  }
+
+  return session.user;
+}
+
+// Transform appointment from DB format
 function transformAppointment(appointment) {
   if (!appointment) return null;
   return {
     $id: appointment.id,
     $createdAt: appointment.created_at,
     $updatedAt: appointment.updated_at,
+    id: appointment.id,
     name: appointment.name,
     email: appointment.email,
     phone: appointment.phone,
@@ -15,19 +49,260 @@ function transformAppointment(appointment) {
     service: appointment.service,
     message: appointment.message,
     status: appointment.status,
+    patient_id: appointment.patient_id,
+    doctor_id: appointment.doctor_id,
+    assigned_by: appointment.assigned_by,
+    reason_for_visit: appointment.reason_for_visit,
+    rejection_reason: appointment.rejection_reason,
+    rescheduled_from: appointment.rescheduled_from,
+    consultation_status: appointment.consultation_status,
+    notes: appointment.notes,
+    assigned_at: appointment.assigned_at,
+    completed_at: appointment.completed_at,
+    doctor: appointment.doctor,
+    patient: appointment.patient,
   };
+}
+
+// POST - Create a new appointment (admin)
+export async function POST(request) {
+  try {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const data = await request.json();
+    const {
+      name,
+      email,
+      phone,
+      date,
+      service,
+      message,
+      doctorId,
+      patientId,
+      reason_for_visit,
+    } = data;
+
+    // Validate required fields
+    if (!name || !email || !date) {
+      return NextResponse.json(
+        { error: "Name, email, and date are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if patient exists or create one
+    let patient = null;
+    if (patientId) {
+      const { data: existingPatient } = await supabaseAdmin
+        .from(TABLES.USERS)
+        .select("*")
+        .eq("id", patientId)
+        .single();
+      patient = existingPatient;
+    } else {
+      // Check if user exists by email
+      const { data: existingUser } = await supabaseAdmin
+        .from(TABLES.USERS)
+        .select("*")
+        .eq("email", email.toLowerCase().trim())
+        .single();
+
+      if (existingUser) {
+        patient = existingUser;
+      } else {
+        // Create new patient user
+        const { data: newPatient, error: createError } = await supabaseAdmin
+          .from(TABLES.USERS)
+          .insert({
+            email: email.toLowerCase().trim(),
+            full_name: name,
+            phone: phone,
+            role: ROLES.PATIENT,
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating patient:", createError);
+          return NextResponse.json(
+            { error: "Failed to create patient" },
+            { status: 500 }
+          );
+        }
+        patient = newPatient;
+      }
+    }
+
+    // Create the appointment
+    const appointmentData = {
+      name,
+      email: email.toLowerCase().trim(),
+      phone,
+      date,
+      service: service || "General Consultation",
+      message: message || reason_for_visit,
+      reason_for_visit: reason_for_visit || message,
+      status: doctorId
+        ? APPOINTMENT_STATUS.APPROVED
+        : APPOINTMENT_STATUS.PENDING,
+      patient_id: patient?.id,
+      doctor_id: doctorId || null,
+      assigned_by: doctorId ? admin.id : null,
+      assigned_at: doctorId ? new Date().toISOString() : null,
+    };
+
+    const { data: appointment, error: appointmentError } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .insert(appointmentData)
+      .select()
+      .single();
+
+    if (appointmentError) {
+      console.error("Error creating appointment:", appointmentError);
+      return NextResponse.json(
+        { error: "Failed to create appointment" },
+        { status: 500 }
+      );
+    }
+
+    // Format dates for emails
+    const appointmentDate = new Date(date);
+    const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // If doctor is assigned, send notifications
+    if (doctorId) {
+      const { data: doctor } = await supabaseAdmin
+        .from(TABLES.DOCTORS)
+        .select(`*, user:users(id, full_name, email)`)
+        .eq("id", doctorId)
+        .single();
+
+      if (doctor) {
+        // Notify patient
+        await sendEmail(
+          email,
+          emailTemplates.appointmentApproved(
+            name,
+            { date: formattedDate, time: formattedTime },
+            {
+              name: doctor.user.full_name,
+              specialization: doctor.specialization,
+            }
+          )
+        );
+
+        // Notify doctor
+        if (doctor.user.email) {
+          await sendEmail(
+            doctor.user.email,
+            emailTemplates.doctorAssignment(
+              doctor.user.full_name,
+              { date: formattedDate, time: formattedTime },
+              {
+                name: name,
+                age: patient?.age,
+                reason: reason_for_visit || message,
+              }
+            )
+          );
+        }
+
+        // Create notification for doctor
+        await supabaseAdmin.from(TABLES.NOTIFICATIONS).insert({
+          user_id: doctor.user.id,
+          title: "New Patient Assigned",
+          message: `You have a new appointment with ${name} on ${formattedDate} at ${formattedTime}`,
+          type: "appointment",
+          related_type: "appointment",
+          related_id: appointment.id,
+        });
+      }
+    } else {
+      // Send confirmation email to patient
+      await sendEmail(
+        email,
+        emailTemplates.appointmentConfirmation(name, {
+          date: formattedDate,
+          time: formattedTime,
+          service: service || "General Consultation",
+        })
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      appointment: transformAppointment(appointment),
+    });
+  } catch (error) {
+    console.error("Error creating appointment:", error);
+    return NextResponse.json(
+      { error: "Failed to create appointment" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(request) {
   try {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit")) || 50;
+    const status = searchParams.get("status");
+    const doctorId = searchParams.get("doctorId");
 
-    const { data: appointments, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from(TABLES.APPOINTMENTS)
-      .select("*")
+      .select(
+        `
+        *,
+        patient:users!appointments_patient_id_fkey (
+          id,
+          full_name,
+          email,
+          phone,
+          age,
+          sex
+        ),
+        doctor:doctors!appointments_doctor_id_fkey (
+          id,
+          specialization,
+          user:users (
+            id,
+            full_name,
+            email
+          )
+        )
+      `
+      )
       .order("created_at", { ascending: false })
       .limit(limit);
+
+    if (status && status !== "all") {
+      query = query.eq("status", status);
+    }
+
+    if (doctorId) {
+      query = query.eq("doctor_id", doctorId);
+    }
+
+    const { data: appointments, error } = await query;
 
     if (error) {
       console.error("Supabase error fetching appointments:", error);
@@ -52,8 +327,14 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const appointmentId = searchParams.get("id");
+    const action = searchParams.get("action");
     const updateData = await request.json();
 
     if (!appointmentId) {
@@ -63,25 +344,308 @@ export async function PUT(request) {
       );
     }
 
-    const { data: updatedAppointment, error } = await supabaseAdmin
+    // Get current appointment data
+    const { data: currentAppointment } = await supabaseAdmin
       .from(TABLES.APPOINTMENTS)
-      .update(updateData)
+      .select(
+        `
+        *,
+        patient:users!appointments_patient_id_fkey (
+          id,
+          full_name,
+          email
+        ),
+        doctor:doctors!appointments_doctor_id_fkey (
+          id,
+          user:users (
+            id,
+            full_name,
+            email
+          )
+        )
+      `
+      )
       .eq("id", appointmentId)
-      .select()
       .single();
 
-    if (error) {
-      console.error("Supabase error updating appointment:", error);
+    if (!currentAppointment) {
       return NextResponse.json(
-        { error: "Failed to update appointment" },
-        { status: 500 }
+        { error: "Appointment not found" },
+        { status: 404 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      appointment: transformAppointment(updatedAppointment),
-    });
+    // Handle different actions
+    switch (action) {
+      case "assign": {
+        // Assign doctor and approve
+        const { doctorId } = updateData;
+
+        if (!doctorId) {
+          return NextResponse.json(
+            { error: "Doctor ID is required" },
+            { status: 400 }
+          );
+        }
+
+        // Get doctor info
+        const { data: doctor } = await supabaseAdmin
+          .from(TABLES.DOCTORS)
+          .select(
+            `
+            *,
+            user:users (
+              id,
+              full_name,
+              email
+            )
+          `
+          )
+          .eq("id", doctorId)
+          .single();
+
+        if (!doctor) {
+          return NextResponse.json(
+            { error: "Doctor not found" },
+            { status: 404 }
+          );
+        }
+
+        // Update appointment
+        const { data: updatedAppointment, error } = await supabaseAdmin
+          .from(TABLES.APPOINTMENTS)
+          .update({
+            doctor_id: doctorId,
+            assigned_by: admin.id,
+            assigned_at: new Date().toISOString(),
+            status: APPOINTMENT_STATUS.APPROVED,
+          })
+          .eq("id", appointmentId)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        // Format dates for emails
+        const appointmentDate = new Date(currentAppointment.date);
+        const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        // Notify patient
+        if (currentAppointment.email) {
+          await sendEmail(
+            currentAppointment.email,
+            emailTemplates.appointmentApproved(
+              currentAppointment.name,
+              { date: formattedDate, time: formattedTime },
+              {
+                name: doctor.user.full_name,
+                specialization: doctor.specialization,
+              }
+            )
+          );
+        }
+
+        // Notify doctor
+        if (doctor.user.email) {
+          await sendEmail(
+            doctor.user.email,
+            emailTemplates.doctorAssignment(
+              doctor.user.full_name,
+              { date: formattedDate, time: formattedTime },
+              {
+                name: currentAppointment.name,
+                age: currentAppointment.patient?.age,
+                reason:
+                  currentAppointment.reason_for_visit ||
+                  currentAppointment.message,
+              }
+            )
+          );
+        }
+
+        // Create notification for doctor
+        await supabaseAdmin.from(TABLES.NOTIFICATIONS).insert({
+          user_id: doctor.user.id,
+          title: "New Patient Assigned",
+          message: `You have a new appointment with ${currentAppointment.name} on ${formattedDate} at ${formattedTime}`,
+          type: "appointment",
+          related_type: "appointment",
+          related_id: appointmentId,
+        });
+
+        return NextResponse.json({
+          success: true,
+          appointment: transformAppointment(updatedAppointment),
+        });
+      }
+
+      case "reject": {
+        const { reason } = updateData;
+
+        const { data: updatedAppointment, error } = await supabaseAdmin
+          .from(TABLES.APPOINTMENTS)
+          .update({
+            status: APPOINTMENT_STATUS.REJECTED,
+            rejection_reason:
+              reason || "Your appointment request could not be accommodated.",
+          })
+          .eq("id", appointmentId)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        // Notify patient
+        const appointmentDate = new Date(currentAppointment.date);
+        const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        if (currentAppointment.email) {
+          await sendEmail(
+            currentAppointment.email,
+            emailTemplates.appointmentRejected(
+              currentAppointment.name,
+              { date: formattedDate, time: formattedTime },
+              reason
+            )
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          appointment: transformAppointment(updatedAppointment),
+        });
+      }
+
+      case "reschedule": {
+        const { newDate, doctorId } = updateData;
+
+        if (!newDate) {
+          return NextResponse.json(
+            { error: "New date is required" },
+            { status: 400 }
+          );
+        }
+
+        const updateFields = {
+          rescheduled_from: currentAppointment.date,
+          date: newDate,
+          status: doctorId
+            ? APPOINTMENT_STATUS.APPROVED
+            : APPOINTMENT_STATUS.RESCHEDULED,
+        };
+
+        if (doctorId) {
+          updateFields.doctor_id = doctorId;
+          updateFields.assigned_by = admin.id;
+          updateFields.assigned_at = new Date().toISOString();
+        }
+
+        const { data: updatedAppointment, error } = await supabaseAdmin
+          .from(TABLES.APPOINTMENTS)
+          .update(updateFields)
+          .eq("id", appointmentId)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        // Format dates
+        const oldDate = new Date(currentAppointment.date);
+        const newAppointmentDate = new Date(newDate);
+
+        const oldFormattedDate = oldDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        const oldFormattedTime = oldDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const newFormattedDate = newAppointmentDate.toLocaleDateString(
+          "en-US",
+          {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }
+        );
+        const newFormattedTime = newAppointmentDate.toLocaleTimeString(
+          "en-US",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        );
+
+        // Notify patient
+        if (currentAppointment.email) {
+          await sendEmail(
+            currentAppointment.email,
+            emailTemplates.appointmentRescheduled(
+              currentAppointment.name,
+              { date: oldFormattedDate, time: oldFormattedTime },
+              { date: newFormattedDate, time: newFormattedTime }
+            )
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          appointment: transformAppointment(updatedAppointment),
+        });
+      }
+
+      default: {
+        // Regular status update
+        const { data: updatedAppointment, error } = await supabaseAdmin
+          .from(TABLES.APPOINTMENTS)
+          .update(updateData)
+          .eq("id", appointmentId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Supabase error updating appointment:", error);
+          return NextResponse.json(
+            { error: "Failed to update appointment" },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          appointment: transformAppointment(updatedAppointment),
+        });
+      }
+    }
   } catch (error) {
     console.error("Error updating appointment:", error);
     return NextResponse.json(
@@ -93,6 +657,11 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   try {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const appointmentId = searchParams.get("id");
 

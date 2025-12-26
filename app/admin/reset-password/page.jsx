@@ -1,14 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import { supabase } from "@/lib/supabase.client";
 import { FiLock, FiEye, FiEyeOff, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 
 const ResetPassword = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useRoleAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,11 +33,11 @@ const ResetPassword = () => {
           toast.error("Invalid or expired reset link", {
             description: "Please request a new password reset link.",
           });
-          router.push("/admin/login");
+          router.push("/login");
         }
       } catch (error) {
         console.error("Session check error:", error);
-        router.push("/admin/login");
+        router.push("/login");
       } finally {
         setCheckingSession(false);
       }
@@ -91,7 +91,7 @@ const ResetPassword = () => {
 
       // Sign out and redirect to login
       await supabase.auth.signOut();
-      router.push("/admin/login");
+      router.push("/login");
     } catch (error) {
       console.error("Reset password error:", error);
       toast.dismiss(loadingToast);

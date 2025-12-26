@@ -1,12 +1,13 @@
 "use client";
 
 import { createAppointment } from "@/lib/actions/appointment.actions";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
+import Link from "next/link";
 
 const AppointmentSection = () => {
   const [appointment, setAppointment] = useState({
@@ -16,12 +17,15 @@ const AppointmentSection = () => {
     phoneNumber: "",
     message: "",
     age: "",
+    sex: "",
     schedule: null,
-    clinics: "67221d55002eb88977cd",
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExistingPatientModal, setShowExistingPatientModal] =
+    useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   // Validation functions
   const validateEmail = (email) => {
@@ -113,8 +117,8 @@ const AppointmentSection = () => {
     // Validate all fields
     const newErrors = {};
     Object.keys(appointment).forEach((key) => {
-      if (key !== "message" && key !== "clinics") {
-        // message is optional
+      if (key !== "message" && key !== "sex") {
+        // message and sex are optional
         const error = validateField(key, appointment[key]);
         if (error) newErrors[key] = error;
       }
@@ -136,13 +140,20 @@ const AppointmentSection = () => {
 
     try {
       console.log("Submitting appointment:", appointment);
-      const newAppointment = await createAppointment(appointment);
-      console.log(newAppointment, "scheduled Appointment");
+      const result = await createAppointment(appointment);
+      console.log(result, "scheduled Appointment");
+
+      // Check if this is an existing patient
+      if (result.isExistingPatient) {
+        setShowExistingPatientModal(true);
+      }
+
+      setBookingSuccess(true);
 
       toast.success("Appointment Successfully Scheduled!", {
-        description: newAppointment.date
-          ? formatDate(newAppointment.date)
-          : "No date selected",
+        description: result.date
+          ? formatDate(result.date)
+          : "We will contact you soon",
         action: {
           label: "Close",
           onClick: () => console.log("Closed"),
@@ -156,9 +167,9 @@ const AppointmentSection = () => {
         email: "",
         phoneNumber: "",
         age: "",
+        sex: "",
         message: "",
         schedule: null,
-        clinics: "67221d55002eb88977cd",
       });
       setErrors({});
     } catch (error) {
@@ -360,14 +371,138 @@ const AppointmentSection = () => {
             </div>
             <motion.button
               type="submit"
-              className="col-span-2 mt-6 bg-neutral-900 text-white px-6 py-4 rounded-2xl hover:bg-neutral-800 transition duration-200"
+              disabled={isSubmitting}
+              className="col-span-2 mt-6 bg-neutral-900 text-white px-6 py-4 rounded-2xl hover:bg-neutral-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               variants={inputAnimation}
             >
-              Book Appointment
+              {isSubmitting ? "Booking..." : "Book Appointment"}
             </motion.button>
           </div>
         </motion.form>
       </div>
+
+      {/* Existing Patient Modal */}
+      <AnimatePresence>
+        {showExistingPatientModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowExistingPatientModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-neutral-900 mb-2">
+                  Welcome Back!
+                </h3>
+                <p className="text-neutral-600 mb-6">
+                  Your appointment has been scheduled. Would you like to login
+                  to view your appointment status and history?
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/patient/login"
+                    className="flex-1 bg-neutral-900 text-white px-6 py-3 rounded-xl hover:bg-neutral-800 transition duration-200 text-center"
+                  >
+                    Login to Dashboard
+                  </Link>
+                  <button
+                    onClick={() => setShowExistingPatientModal(false)}
+                    className="flex-1 border border-neutral-300 text-neutral-700 px-6 py-3 rounded-xl hover:bg-neutral-50 transition duration-200"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Modal for New Patients */}
+      <AnimatePresence>
+        {bookingSuccess && !showExistingPatientModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setBookingSuccess(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-neutral-900 mb-2">
+                  Appointment Booked!
+                </h3>
+                <p className="text-neutral-600 mb-4">
+                  An account has been created for you. You can login anytime
+                  using your email to check your appointment status.
+                </p>
+                <p className="text-sm text-neutral-500 mb-6">
+                  A confirmation email has been sent to your email address.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/patient/login"
+                    className="flex-1 bg-neutral-900 text-white px-6 py-3 rounded-xl hover:bg-neutral-800 transition duration-200 text-center"
+                  >
+                    Login Now
+                  </Link>
+                  <button
+                    onClick={() => setBookingSuccess(false)}
+                    className="flex-1 border border-neutral-300 text-neutral-700 px-6 py-3 rounded-xl hover:bg-neutral-50 transition duration-200"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

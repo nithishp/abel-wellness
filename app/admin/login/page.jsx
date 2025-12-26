@@ -1,103 +1,25 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { FiEye, FiEyeOff, FiUser, FiLock, FiMail } from "react-icons/fi";
-import { toast } from "sonner";
 
-const AdminLogin = () => {
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function AdminLoginRedirect() {
   const router = useRouter();
-  const { user, loading, signIn, resetPassword } = useAuth();
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
-    // If user is already logged in, redirect to dashboard
-    if (!loading && user) {
-      const redirectUrl =
-        sessionStorage.getItem("redirectAfterLogin") || "/admin/dashboard";
-      sessionStorage.removeItem("redirectAfterLogin");
-      router.push(redirectUrl);
-    }
-  }, [user, loading, router]);
+    router.replace("/login");
+  }, [router]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginLoading(true);
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirecting to login...</p>
+      </div>
+    </div>
+  );
+}
 
-    const loadingToast = toast.loading("Signing in...", {
-      description: "Please wait while we authenticate you.",
-    });
-
-    try {
-      const { data, error } = await signIn(loginData.email, loginData.password);
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        toast.dismiss(loadingToast);
-        toast.success("Login successful!", {
-          description: "Welcome to the admin dashboard.",
-        });
-
-        const redirectUrl =
-          sessionStorage.getItem("redirectAfterLogin") || "/admin/dashboard";
-        sessionStorage.removeItem("redirectAfterLogin");
-        router.push(redirectUrl);
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.dismiss(loadingToast);
-
-      let errorMessage = "Please check your credentials and try again.";
-      if (error.message?.includes("Invalid login credentials")) {
-        errorMessage = "Invalid email or password.";
-      } else if (error.message?.includes("Email not confirmed")) {
-        errorMessage = "Please verify your email before logging in.";
-      }
-
-      toast.error("Login failed", {
-        description: errorMessage,
-      });
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-
-    if (!resetEmail) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    setResetLoading(true);
-    const loadingToast = toast.loading("Sending reset link...");
-
-    try {
-      const { error } = await resetPassword(resetEmail);
-
-      if (error) {
-        throw error;
-      }
-
-      toast.dismiss(loadingToast);
-      toast.success("Reset link sent!", {
-        description: "Check your email for the password reset link.",
-      });
-      setShowForgotPassword(false);
-      setResetEmail("");
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error("Failed to send reset link", {
-        description: error.message || "Please try again later.",
       });
     } finally {
       setResetLoading(false);

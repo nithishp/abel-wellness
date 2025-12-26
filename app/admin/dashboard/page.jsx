@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import {
   FiFileText,
   FiCalendar,
@@ -9,12 +9,14 @@ import {
   FiPlus,
   FiEye,
   FiEdit,
+  FiUsers,
+  FiHome,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
 const AdminDashboard = () => {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, logout } = useRoleAuth();
   const [stats, setStats] = useState({
     totalBlogs: 0,
     publishedBlogs: 0,
@@ -25,15 +27,23 @@ const AdminDashboard = () => {
   const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (!authLoading && !user) {
-      router.push("/admin/login");
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // If no user after loading completes, redirect to login
+    if (!user) {
+      router.push("/login");
       return;
     }
 
-    if (user) {
-      fetchStats();
+    // Check if user has admin role
+    if (user.role !== "admin") {
+      toast.error("Access denied. Admin account required.");
+      router.push("/");
+      return;
     }
+
+    fetchStats();
   }, [user, authLoading, router]);
 
   const fetchStats = async () => {
@@ -122,15 +132,24 @@ const AdminDashboard = () => {
       const recentAppointments = appointments
         .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
         .slice(0, 3)
-        .map((appointment) => ({
-          id: appointment.$id,
-          type: "appointment",
-          title: `New appointment from ${appointment.name}`,
-          description: `${appointment.service} - ${appointment.preferredDate}`,
-          timestamp: appointment.$createdAt,
-          status: appointment.status || "pending",
-          href: "/admin/appointments",
-        }));
+        .map((appointment) => {
+          const appointmentDate = appointment.date
+            ? new Date(appointment.date).toLocaleDateString()
+            : "No date";
+          const doctorName =
+            appointment.doctor?.user?.full_name || "Not assigned";
+          return {
+            id: appointment.$id,
+            type: "appointment",
+            title: `Appointment from ${appointment.name || "Unknown"}`,
+            description: `${
+              appointment.service || "General Consultation"
+            } - ${appointmentDate} (Dr. ${doctorName})`,
+            timestamp: appointment.$createdAt,
+            status: appointment.status || "pending",
+            href: "/admin/appointments",
+          };
+        });
 
       // Combine and sort by timestamp
       const allActivities = [...recentBlogs, ...recentAppointments]
@@ -145,9 +164,9 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await logout();
       toast.success("Logged out successfully");
-      router.push("/admin/login");
+      router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Error logging out");
@@ -191,6 +210,13 @@ const AdminDashboard = () => {
       href: "/admin/appointments",
       color: "bg-purple-500 hover:bg-purple-600",
     },
+    {
+      title: "Manage Staff",
+      description: "Add and manage doctors & pharmacists",
+      icon: FiUsers,
+      href: "/admin/users",
+      color: "bg-orange-500 hover:bg-orange-600",
+    },
   ];
 
   const statCards = [
@@ -221,16 +247,49 @@ const AdminDashboard = () => {
                 Admin Dashboard
               </h1>
               <p className="text-gray-600">
-                Welcome back, {user?.user_metadata?.name || user?.email}
+                Welcome back, {user?.name || user?.email}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-            >
-              <FiLogOut className="mr-2" />
-              Logout
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Navigation Links */}
+              <nav className="hidden md:flex items-center gap-2">
+                <button
+                  onClick={() => router.push("/admin/dashboard")}
+                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  <FiHome className="mr-1" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => router.push("/admin/blogs")}
+                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  <FiFileText className="mr-1" />
+                  Blogs
+                </button>
+                <button
+                  onClick={() => router.push("/admin/appointments")}
+                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  <FiCalendar className="mr-1" />
+                  Appointments
+                </button>
+                <button
+                  onClick={() => router.push("/admin/users")}
+                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  <FiUsers className="mr-1" />
+                  Staff
+                </button>
+              </nav>
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+              >
+                <FiLogOut className="mr-2" />
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </header>

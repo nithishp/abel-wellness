@@ -11,6 +11,7 @@ const AuthContext = createContext({
   signUp: async () => {},
   signOut: async () => {},
   resetPassword: async () => {},
+  refreshUser: async () => {},
 });
 
 export const useAuth = () => {
@@ -26,50 +27,57 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const {
-          data: { session: initialSession },
-        } = await supabase.auth.getSession();
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-      } catch (error) {
-        console.error("Error getting initial session:", error);
-      } finally {
-        setLoading(false);
+  // Check session via API (for custom session-based auth)
+  const checkSession = async () => {
+    try {
+      const response = await fetch("/api/auth/session");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          setUser(data.user);
+          setSession({ user: data.user });
+          return data.user;
+        }
       }
-    };
+      setUser(null);
+      setSession(null);
+      return null;
+    } catch (error) {
+      console.error("Error checking session:", error);
+      setUser(null);
+      setSession(null);
+      return null;
+    }
+  };
 
-    getInitialSession();
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log("Auth state changed:", event);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+  useEffect(() => {
+    // Check custom session first
+    const initSession = async () => {
+      await checkSession();
       setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => {
-      subscription?.unsubscribe();
     };
+
+    initSession();
   }, []);
 
   const signIn = async (email, password) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
       }
+
+      setUser(data.user);
+      setSession({ user: data.user });
 
       return { data, error: null };
     } catch (error) {
@@ -80,6 +88,9 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, metadata = {}) => {
     try {
+      if (!supabase) {
+        throw new Error("Supabase client not initialized");
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -101,10 +112,14 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
       }
+
       setUser(null);
       setSession(null);
       return { error: null };
@@ -116,6 +131,9 @@ export const AuthProvider = ({ children }) => {
 
   const resetPassword = async (email) => {
     try {
+      if (!supabase) {
+        throw new Error("Supabase client not initialized");
+      }
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/admin/reset-password`,
       });
@@ -131,6 +149,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    return await checkSession();
+  };
+
   const value = {
     user,
     session,
@@ -139,6 +161,8 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signOut,
     resetPassword,
+    refreshUser,
+    checkSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

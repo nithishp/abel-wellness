@@ -165,8 +165,8 @@ const LINKS = [
     href: "#",
   },
   {
-    title: "Admin",
-    href: "/admin",
+    title: "Login",
+    href: "/login",
   },
 ];
 

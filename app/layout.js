@@ -2,7 +2,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import Nav from "./components/CornerNav";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/lib/auth/AuthContext";
+import { RoleAuthProvider } from "@/lib/auth/RoleAuthContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -18,11 +18,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${poppins.className} antialiased`}>
-        <AuthProvider>
+        <RoleAuthProvider>
           <Nav />
           {children}
           <Toaster />
-        </AuthProvider>
+        </RoleAuthProvider>
       </body>
     </html>
   );

@@ -77,17 +77,12 @@ npm run dev
 
 ### Creating Your First Admin User
 
-1. Go to your Supabase Dashboard
-2. Navigate to Authentication → Users
-3. Click "Add user" → "Create new user"
-4. Enter email and password
-5. The user can now log in at `/admin/login`
-6. Go to your database → admins collection
-7. Create a new document with:
-   - Document ID: (use the User ID from step 4)
-   - email: your admin email
-   - name: your name
-   - role: "admin"
+1. Run the admin setup script:
+   ```bash
+   node scripts/setup-admin.mjs
+   ```
+2. The admin user can now log in at `/login`
+3. Use the Staff Login tab with email and password
 
 ## Usage
 

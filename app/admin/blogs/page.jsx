@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import {
   FiEdit2,
   FiTrash2,
@@ -16,21 +16,29 @@ import { toast } from "sonner";
 
 const BlogsManagement = () => {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useRoleAuth();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // all, published, draft
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/admin/login");
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // If no user after loading completes, redirect to login
+    if (!user) {
+      router.push("/login");
       return;
     }
 
-    if (user) {
-      fetchBlogs();
+    // Check if user has admin role
+    if (user.role !== "admin") {
+      router.push("/");
+      return;
     }
+
+    fetchBlogs();
   }, [user, authLoading, router]);
 
   const fetchBlogs = async () => {

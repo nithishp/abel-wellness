@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }) => {
     if (!loading && !user) {
       // Store the intended destination for redirect after login
       sessionStorage.setItem("redirectAfterLogin", pathname);
-      router.push("/admin/login");
+      router.push("/login");
     }
   }, [user, loading, router, pathname]);
 
