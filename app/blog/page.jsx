@@ -47,12 +47,12 @@ const BlogsPage = () => {
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
             Our Blog
             <span className="block text-2xl font-normal text-gray-600 mt-2">
-              Expert Insights & Dental Health Tips
+              Expert Insights & Homoeopathic Health Tips
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Stay updated with the latest dental health tips, treatments, and
-            news from our expert team of dental professionals.
+            Stay updated with the latest Homoeopathic health tips, treatments,
+            and news from our expert team of Homoeopathy professionals.
           </p>
         </div>
 

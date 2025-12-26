@@ -143,7 +143,7 @@ const BlogPostCarousel = () => {
 
 const Post = ({ imageUrl, imgUrl, author, title, description, slug }) => {
   // Handle both API data and fallback data structure
-  // Use a dental-themed default image from Unsplash
+  // Use a Homoeopathic-themed default image from Unsplash
   const defaultImage =
     "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=350&h=200&fit=crop&crop=center";
   const imgSrc = imageUrl || imgUrl || defaultImage;
@@ -195,9 +195,9 @@ const fallbackPosts = [
     imgUrl:
       "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=350&h=200&fit=crop&crop=center",
     author: "Dr. John Anderson",
-    title: "The Importance of Regular Dental Checkups",
+    title: "The Importance of Regular Homoeopathic Checkups",
     description:
-      "Regular dental checkups are essential for maintaining optimal oral health and preventing serious dental issues.",
+      "Regular homoeopathic checkups are essential for maintaining optimal health and preventing serious health issues.",
   },
   {
     id: 2,
@@ -213,18 +213,18 @@ const fallbackPosts = [
     imgUrl:
       "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Michael Chen",
-    title: "Understanding Different Types of Dental Procedures",
+    title: "Understanding Different Types of Homoeopathic Procedures",
     description:
-      "A comprehensive guide to common dental procedures and what to expect during your visit.",
+      "A comprehensive guide to common homoeopathic procedures and what to expect during your visit.",
   },
   {
     id: 4,
     imgUrl:
       "https://images.unsplash.com/photo-1643297654082-7c16ab80a48c?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Emily Davis",
-    title: "The Latest Advances in Dental Technology",
+    title: "The Latest Advances in Homoeopathic Technology",
     description:
-      "Discover how modern dental technology is revolutionizing patient care and treatment outcomes.",
+      "Discover how modern homoeopathic technology is revolutionizing patient care and treatment outcomes.",
   },
   {
     id: 5,
@@ -240,17 +240,17 @@ const fallbackPosts = [
     imgUrl:
       "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=350&h=200&fit=crop&crop=center",
     author: "Dr. Lisa Thompson",
-    title: "Cosmetic Dentistry: Options and Benefits",
+    title: "Cosmetic Homoeopathy: Options and Benefits",
     description:
-      "Explore the various cosmetic dentistry options available to enhance your smile and boost confidence.",
+      "Explore the various cosmetic homoeopathy options available to enhance your smile and boost confidence.",
   },
   {
     id: 7,
     imgUrl:
       "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=350&h=200&fit=crop&crop=center",
     author: "Dr. James Rodriguez",
-    title: "Managing Dental Anxiety: Tips for Nervous Patients",
+    title: "Managing Homoeopathic Anxiety: Tips for Nervous Patients",
     description:
-      "Practical strategies to help nervous patients feel more comfortable during dental visits.",
+      "Practical strategies to help nervous patients feel more comfortable during homoeopathic visits.",
   },
 ];
