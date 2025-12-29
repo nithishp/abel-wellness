@@ -2,15 +2,18 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import AdminSidebar from "../components/AdminSidebar";
 import {
   FiEdit2,
   FiTrash2,
   FiEye,
   FiEyeOff,
   FiPlus,
-  FiArrowLeft,
   FiSearch,
   FiFilter,
+  FiFileText,
+  FiMoreVertical,
+  FiExternalLink,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -133,198 +136,228 @@ const BlogsManagement = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading blogs...</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
+          </div>
+          <p className="text-slate-400 font-medium">Loading blogs...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <AdminSidebar />
+
+      <main className="lg:ml-72 min-h-screen">
+        {/* Header */}
+        <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
+          <div className="px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="ml-12 lg:ml-0">
+                <h1 className="text-2xl font-bold text-white">Manage Blogs</h1>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  {blogs.length} blog posts • {filteredBlogs.length} shown
+                </p>
+              </div>
               <button
-                onClick={() => router.push("/admin/dashboard")}
-                className="mr-4 p-2 hover:bg-gray-100 rounded-md transition-colors"
+                onClick={() => router.push("/admin/blogs/create")}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all hover:-translate-y-0.5"
               >
-                <FiArrowLeft className="w-5 h-5" />
+                <FiPlus className="w-5 h-5" />
+                <span className="hidden sm:inline">Create Blog</span>
               </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Manage Blogs
-                </h1>
-                <p className="text-gray-600">{blogs.length} blog posts</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-6 lg:p-8">
+          {/* Filters and Search */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search blogs by title or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                />
               </div>
             </div>
-            <button
-              onClick={() => router.push("/admin/blogs/create")}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center transition-colors"
-            >
-              <FiPlus className="mr-2" />
-              Create New Blog
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters and Search */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search blogs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                <FiFilter className="text-slate-400 w-5 h-5" />
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
+                >
+                  <option value="all" className="bg-slate-800">
+                    All Blogs
+                  </option>
+                  <option value="published" className="bg-slate-800">
+                    Published
+                  </option>
+                  <option value="draft" className="bg-slate-800">
+                    Drafts
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <FiFilter className="text-gray-400" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Blogs</option>
-              <option value="published">Published</option>
-              <option value="draft">Drafts</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Blogs List */}
-        {filteredBlogs.length === 0 ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              No blog posts found
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {searchTerm || filterStatus !== "all"
-                ? "Try adjusting your search or filter"
-                : "Get started by creating your first blog post"}
-            </p>
-            <button
-              onClick={() => router.push("/admin/blogs/create")}
-              className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create New Blog
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Blog Post
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Author
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBlogs.map((blog) => (
-                    <tr key={blog.$id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          {blog.imageUrl && (
-                            <img
-                              src={blog.imageUrl}
-                              alt={blog.title}
-                              className="h-12 w-12 rounded-lg object-cover mr-4"
-                            />
-                          )}
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {blog.title}
-                            </div>
-                            <div className="text-sm text-gray-500 line-clamp-1">
-                              {blog.description}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {blog.author}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+          {/* Blogs Grid */}
+          {filteredBlogs.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
+                <FiFileText className="w-10 h-10 text-slate-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-3">
+                No blog posts found
+              </h2>
+              <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                {searchTerm || filterStatus !== "all"
+                  ? "Try adjusting your search or filter to find what you're looking for"
+                  : "Get started by creating your first blog post to share with your audience"}
+              </p>
+              <button
+                onClick={() => router.push("/admin/blogs/create")}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
+              >
+                <FiPlus className="w-5 h-5" />
+                Create Your First Blog
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredBlogs.map((blog) => (
+                <div
+                  key={blog.$id}
+                  className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+                >
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    {blog.imageUrl ? (
+                      <img
+                        src={blog.imageUrl}
+                        alt={blog.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
+                        <FiFileText className="w-12 h-12 text-slate-500" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+
+                    {/* Status Badge */}
+                    <div className="absolute top-4 left-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full backdrop-blur-md ${
+                          blog.published
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        }`}
+                      >
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            blog.published
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            blog.published ? "bg-emerald-400" : "bg-amber-400"
                           }`}
-                        >
-                          {blog.published ? "Published" : "Draft"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(blog.$createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() =>
-                              router.push(`/admin/blogs/edit/${blog.$id}`)
-                            }
-                            className="text-blue-600 hover:text-blue-900 p-1"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(blog)}
-                            className={`p-1 ${
-                              blog.published
-                                ? "text-yellow-600 hover:text-yellow-900"
-                                : "text-green-600 hover:text-green-900"
-                            }`}
-                            title={blog.published ? "Unpublish" : "Publish"}
-                          >
-                            {blog.published ? (
-                              <FiEyeOff className="w-4 h-4" />
-                            ) : (
-                              <FiEye className="w-4 h-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(blog.$id)}
-                            className="text-red-600 hover:text-red-900 p-1"
-                            title="Delete"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        ></span>
+                        {blog.published ? "Published" : "Draft"}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() =>
+                          router.push(`/admin/blogs/edit/${blog.$id}`)
+                        }
+                        className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
+                        title="Edit"
+                      >
+                        <FiEdit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(blog)}
+                        className={`p-2 bg-slate-900/80 backdrop-blur-md rounded-lg transition-colors ${
+                          blog.published
+                            ? "text-amber-400 hover:bg-amber-500 hover:text-white"
+                            : "text-emerald-400 hover:bg-emerald-500 hover:text-white"
+                        }`}
+                        title={blog.published ? "Unpublish" : "Publish"}
+                      >
+                        {blog.published ? (
+                          <FiEyeOff className="w-4 h-4" />
+                        ) : (
+                          <FiEye className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(blog.$id)}
+                        className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                        title="Delete"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5">
+                    <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-emerald-400 transition-colors">
+                      {blog.title}
+                    </h3>
+                    <p className="text-slate-400 text-sm line-clamp-2 mb-4">
+                      {blog.description}
+                    </p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500">
+                        By <span className="text-slate-400">{blog.author}</span>
+                      </span>
+                      <span className="text-slate-500">
+                        {new Date(blog.$createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="px-5 py-4 border-t border-slate-700/50 flex items-center justify-between">
+                    <button
+                      onClick={() =>
+                        router.push(`/admin/blogs/edit/${blog.$id}`)
+                      }
+                      className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                    >
+                      Edit Post
+                      <FiExternalLink className="w-4 h-4" />
+                    </button>
+                    {blog.published && (
+                      <button
+                        onClick={() => router.push(`/blog/${blog.slug}`)}
+                        className="text-sm text-slate-400 hover:text-white font-medium flex items-center gap-1 transition-colors"
+                      >
+                        View Live
+                        <FiEye className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 };

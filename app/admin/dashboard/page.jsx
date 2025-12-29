@@ -2,41 +2,49 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import AdminSidebar from "../components/AdminSidebar";
 import {
   FiFileText,
   FiCalendar,
-  FiLogOut,
   FiPlus,
   FiEye,
   FiEdit,
   FiUsers,
-  FiHome,
+  FiTrendingUp,
+  FiClock,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiArrowUpRight,
+  FiArrowRight,
+  FiActivity,
+  FiBell,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
 const AdminDashboard = () => {
   const router = useRouter();
-  const { user, loading: authLoading, logout } = useRoleAuth();
+  const { user, loading: authLoading } = useRoleAuth();
   const [stats, setStats] = useState({
     totalBlogs: 0,
     publishedBlogs: 0,
     totalAppointments: 0,
     pendingAppointments: 0,
+    confirmedAppointments: 0,
+    completedAppointments: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    // Wait for auth to finish loading
     if (authLoading) return;
 
-    // If no user after loading completes, redirect to login
     if (!user) {
       router.push("/login");
       return;
     }
 
-    // Check if user has admin role
     if (user.role !== "admin") {
       toast.error("Access denied. Admin account required.");
       router.push("/");
@@ -49,7 +57,6 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     setStatsLoading(true);
     try {
-      // Fetch blog stats
       const blogsResponse = await fetch("/api/admin/blogs?limit=100");
       const blogsData = await blogsResponse.json();
 
@@ -62,15 +69,8 @@ const AdminDashboard = () => {
           totalBlogs: blogsData.documents.length || 0,
           publishedBlogs: publishedCount || 0,
         }));
-      } else {
-        setStats((prev) => ({
-          ...prev,
-          totalBlogs: 0,
-          publishedBlogs: 0,
-        }));
       }
 
-      // Fetch appointment stats
       const appointmentsResponse = await fetch(
         "/api/admin/appointments?limit=100"
       );
@@ -80,23 +80,22 @@ const AdminDashboard = () => {
         appointmentsData.success &&
         Array.isArray(appointmentsData.appointments)
       ) {
-        const pendingCount = appointmentsData.appointments.filter(
-          (apt) => apt.status === "pending"
-        ).length;
+        const appointments = appointmentsData.appointments;
         setStats((prev) => ({
           ...prev,
-          totalAppointments: appointmentsData.appointments.length || 0,
-          pendingAppointments: pendingCount || 0,
-        }));
-      } else {
-        setStats((prev) => ({
-          ...prev,
-          totalAppointments: 0,
-          pendingAppointments: 0,
+          totalAppointments: appointments.length || 0,
+          pendingAppointments: appointments.filter(
+            (a) => a.status === "pending"
+          ).length,
+          confirmedAppointments: appointments.filter(
+            (a) => a.status === "confirmed"
+          ).length,
+          completedAppointments: appointments.filter(
+            (a) => a.status === "completed"
+          ).length,
         }));
       }
 
-      // Fetch recent activity
       await fetchRecentActivity(
         blogsData.documents || [],
         appointmentsData.appointments || []
@@ -108,11 +107,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchStats();
+    setRefreshing(false);
+    toast.success("Dashboard refreshed!");
+  };
+
   const fetchRecentActivity = async (blogs, appointments) => {
     try {
-      const activities = [];
-
-      // Add recent blogs (last 5)
       const recentBlogs = blogs
         .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
         .slice(0, 3)
@@ -128,7 +131,6 @@ const AdminDashboard = () => {
           href: `/admin/blogs/edit/${blog.$id}`,
         }));
 
-      // Add recent appointments (last 5)
       const recentAppointments = appointments
         .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
         .slice(0, 3)
@@ -151,7 +153,6 @@ const AdminDashboard = () => {
           };
         });
 
-      // Combine and sort by timestamp
       const allActivities = [...recentBlogs, ...recentAppointments]
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         .slice(0, 6);
@@ -162,62 +163,23 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success("Logged out successfully");
-      router.push("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Error logging out");
-    }
-  };
-
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
+          </div>
+          <p className="text-slate-400 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
-
-  const quickActions = [
-    {
-      title: "Create New Blog",
-      description: "Write and publish a new blog post",
-      icon: FiPlus,
-      href: "/admin/blogs/create",
-      color: "bg-blue-500 hover:bg-blue-600",
-    },
-    {
-      title: "Manage Blogs",
-      description: "Edit, delete, and manage blog posts",
-      icon: FiEdit,
-      href: "/admin/blogs",
-      color: "bg-green-500 hover:bg-green-600",
-    },
-    {
-      title: "View Appointments",
-      description: "Manage patient appointments",
-      icon: FiCalendar,
-      href: "/admin/appointments",
-      color: "bg-purple-500 hover:bg-purple-600",
-    },
-    {
-      title: "Manage Staff",
-      description: "Add and manage doctors & pharmacists",
-      icon: FiUsers,
-      href: "/admin/users",
-      color: "bg-orange-500 hover:bg-orange-600",
-    },
-  ];
 
   const statCards = [
     {
@@ -225,194 +187,343 @@ const AdminDashboard = () => {
       value: stats.totalBlogs,
       subtitle: `${stats.publishedBlogs} published`,
       icon: FiFileText,
-      color: "text-blue-600 bg-blue-100",
+      gradient: "from-blue-500 to-indigo-600",
+      bgGlow: "bg-blue-500/10",
+      iconBg: "bg-blue-500/20",
+      trend: stats.publishedBlogs > 0 ? "+12%" : null,
+      trendUp: true,
     },
     {
       title: "Total Appointments",
       value: stats.totalAppointments,
       subtitle: `${stats.pendingAppointments} pending`,
       icon: FiCalendar,
-      color: "text-green-600 bg-green-100",
+      gradient: "from-emerald-500 to-teal-600",
+      bgGlow: "bg-emerald-500/10",
+      iconBg: "bg-emerald-500/20",
+      trend: "+8%",
+      trendUp: true,
+    },
+    {
+      title: "Confirmed",
+      value: stats.confirmedAppointments,
+      subtitle: "Ready for consultation",
+      icon: FiCheckCircle,
+      gradient: "from-violet-500 to-purple-600",
+      bgGlow: "bg-violet-500/10",
+      iconBg: "bg-violet-500/20",
+      trend: null,
+    },
+    {
+      title: "Pending Review",
+      value: stats.pendingAppointments,
+      subtitle: "Awaiting action",
+      icon: FiClock,
+      gradient: "from-amber-500 to-orange-600",
+      bgGlow: "bg-amber-500/10",
+      iconBg: "bg-amber-500/20",
+      alert: stats.pendingAppointments > 5,
     },
   ];
 
+  const quickActions = [
+    {
+      title: "Create Blog Post",
+      description: "Write and publish new content",
+      icon: FiPlus,
+      href: "/admin/blogs/create",
+      gradient: "from-blue-500 to-indigo-600",
+      hoverGlow: "hover:shadow-blue-500/25",
+    },
+    {
+      title: "Manage Blogs",
+      description: "Edit or delete blog posts",
+      icon: FiEdit,
+      href: "/admin/blogs",
+      gradient: "from-emerald-500 to-teal-600",
+      hoverGlow: "hover:shadow-emerald-500/25",
+    },
+    {
+      title: "View Appointments",
+      description: "Review patient bookings",
+      icon: FiCalendar,
+      href: "/admin/appointments",
+      gradient: "from-violet-500 to-purple-600",
+      hoverGlow: "hover:shadow-violet-500/25",
+    },
+    {
+      title: "Manage Staff",
+      description: "Add doctors & pharmacists",
+      icon: FiUsers,
+      href: "/admin/users",
+      gradient: "from-amber-500 to-orange-600",
+      hoverGlow: "hover:shadow-amber-500/25",
+    },
+  ];
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      published: {
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-400",
+        dot: "bg-emerald-400",
+      },
+      draft: {
+        bg: "bg-amber-500/10",
+        text: "text-amber-400",
+        dot: "bg-amber-400",
+      },
+      pending: {
+        bg: "bg-orange-500/10",
+        text: "text-orange-400",
+        dot: "bg-orange-400",
+      },
+      confirmed: {
+        bg: "bg-blue-500/10",
+        text: "text-blue-400",
+        dot: "bg-blue-400",
+      },
+      completed: {
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-400",
+        dot: "bg-emerald-400",
+      },
+    };
+    return configs[status] || configs.pending;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600">
-                Welcome back, {user?.name || user?.email}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Navigation Links */}
-              <nav className="hidden md:flex items-center gap-2">
-                <button
-                  onClick={() => router.push("/admin/dashboard")}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                >
-                  <FiHome className="mr-1" />
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => router.push("/admin/blogs")}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                >
-                  <FiFileText className="mr-1" />
-                  Blogs
-                </button>
-                <button
-                  onClick={() => router.push("/admin/appointments")}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                >
-                  <FiCalendar className="mr-1" />
-                  Appointments
-                </button>
-                <button
-                  onClick={() => router.push("/admin/users")}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                >
-                  <FiUsers className="mr-1" />
-                  Staff
-                </button>
-              </nav>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-              >
-                <FiLogOut className="mr-2" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <AdminSidebar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statCards.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className={`p-3 rounded-full ${stat.color}`}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <p className="text-sm text-gray-500">{stat.subtitle}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={() => router.push(action.href)}
-                className={`${action.color} text-white rounded-lg p-6 text-left transition-colors hover:shadow-lg`}
-              >
-                <action.icon className="w-8 h-8 mb-3" />
-                <h3 className="text-lg font-semibold mb-2">{action.title}</h3>
-                <p className="text-sm opacity-90">{action.description}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Recent Activity
-            </h2>
-          </div>
-          <div className="p-6">
-            {recentActivity.length === 0 ? (
-              <div className="text-center py-8">
-                <FiEye className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500">No recent activity</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Recent blog posts and appointments will appear here
+      {/* Main Content */}
+      <main className="lg:ml-72 min-h-screen">
+        {/* Top Bar */}
+        <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
+          <div className="px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="ml-12 lg:ml-0">
+                <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  Welcome back, {user?.name || user?.email?.split("@")[0]}
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {recentActivity.map((activity) => (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all disabled:opacity-50"
+                >
+                  <FiRefreshCw
+                    className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
+                  />
+                </button>
+                <button className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all relative">
+                  <FiBell className="w-5 h-5" />
+                  {stats.pendingAppointments > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
+                      {stats.pendingAppointments}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-6 lg:p-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {statCards.map((stat, index) => (
+              <div
+                key={index}
+                className={`relative group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 overflow-hidden transition-all duration-300 hover:border-slate-600/50 hover:shadow-xl ${stat.bgGlow}`}
+              >
+                {/* Background Glow Effect */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                />
+
+                {/* Alert Indicator */}
+                {stat.alert && (
+                  <div className="absolute top-4 right-4">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                  </div>
+                )}
+
+                <div className="relative">
                   <div
-                    key={`${activity.type}-${activity.id}`}
-                    className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-                    onClick={() => router.push(activity.href)}
+                    className={`w-12 h-12 rounded-xl ${stat.iconBg} flex items-center justify-center mb-4`}
                   >
-                    <div
-                      className={`p-2 rounded-full ${
-                        activity.type === "blog"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-green-100 text-green-600"
-                      }`}
-                    >
-                      {activity.type === "blog" ? (
-                        <FiFileText className="w-4 h-4" />
+                    <stat.icon
+                      className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
+                      style={{ color: `var(--tw-gradient-from)` }}
+                    />
+                  </div>
+                  <p className="text-slate-400 text-sm font-medium mb-1">
+                    {stat.title}
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-white">
+                      {statsLoading ? (
+                        <span className="inline-block w-12 h-8 bg-slate-700 rounded animate-pulse"></span>
                       ) : (
-                        <FiCalendar className="w-4 h-4" />
+                        stat.value
                       )}
+                    </span>
+                    {stat.trend && (
+                      <span
+                        className={`text-sm font-medium flex items-center ${
+                          stat.trendUp ? "text-emerald-400" : "text-red-400"
+                        }`}
+                      >
+                        <FiTrendingUp
+                          className={`w-3 h-3 mr-0.5 ${
+                            !stat.trendUp && "rotate-180"
+                          }`}
+                        />
+                        {stat.trend}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-500 text-sm mt-1">{stat.subtitle}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Quick Actions</h2>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  Frequently used tasks
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={() => router.push(action.href)}
+                  className={`group relative rounded-2xl bg-gradient-to-br ${action.gradient} p-6 text-left transition-all duration-300 hover:shadow-2xl ${action.hoverGlow} hover:-translate-y-1`}
+                >
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <action.icon className="w-6 h-6 text-white" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {activity.title}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {activity.description}
-                      </p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            activity.status === "published"
-                              ? "bg-green-100 text-green-800"
-                              : activity.status === "draft"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : activity.status === "pending"
-                              ? "bg-orange-100 text-orange-800"
-                              : "bg-gray-100 text-gray-800"
+                    <h3 className="text-lg font-semibold text-white mb-1">
+                      {action.title}
+                    </h3>
+                    <p className="text-white/70 text-sm">
+                      {action.description}
+                    </p>
+                    <div className="mt-4 flex items-center text-white/80 text-sm font-medium group-hover:text-white transition-colors">
+                      <span>Get started</span>
+                      <FiArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
+            <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  Recent Activity
+                </h2>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  Latest updates from your platform
+                </p>
+              </div>
+              <button
+                onClick={() => router.push("/admin/appointments")}
+                className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+              >
+                View all
+                <FiArrowUpRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6">
+              {recentActivity.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
+                    <FiActivity className="w-8 h-8 text-slate-500" />
+                  </div>
+                  <p className="text-slate-400 font-medium">
+                    No recent activity
+                  </p>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Recent blog posts and appointments will appear here
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentActivity.map((activity) => {
+                    const statusConfig = getStatusConfig(activity.status);
+                    return (
+                      <div
+                        key={`${activity.type}-${activity.id}`}
+                        onClick={() => router.push(activity.href)}
+                        className="group flex items-start gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
+                      >
+                        <div
+                          className={`p-3 rounded-xl flex-shrink-0 ${
+                            activity.type === "blog"
+                              ? "bg-blue-500/20 text-blue-400"
+                              : "bg-emerald-500/20 text-emerald-400"
                           }`}
                         >
-                          {activity.status}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(activity.timestamp).toLocaleString([], {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                          {activity.type === "blog" ? (
+                            <FiFileText className="w-5 h-5" />
+                          ) : (
+                            <FiCalendar className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium truncate group-hover:text-emerald-400 transition-colors">
+                            {activity.title}
+                          </p>
+                          <p className="text-slate-400 text-sm truncate mt-0.5">
+                            {activity.description}
+                          </p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                              ></span>
+                              {activity.status}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              {new Date(activity.timestamp).toLocaleString([], {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <FiArrowUpRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all" />
                       </div>
-                    </div>
-                    <FiEye className="w-4 h-4 text-gray-400" />
-                  </div>
-                ))}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

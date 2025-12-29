@@ -58,13 +58,26 @@ npm install
 cp .env.example .env.local
 ```
 
-4. Update `.env.local` with your Supabase credentials:
+4. Update `.env.local` with your Supabase credentials and other configuration:
 
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# SMTP Configuration (for sending emails)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=your-email@gmail.com
+
+# Application URL (REQUIRED for email links)
+# Development: http://localhost:3000
+# Production: https://yourdomain.com
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 5. Start the development server:

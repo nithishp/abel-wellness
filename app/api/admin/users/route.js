@@ -351,44 +351,96 @@ export async function PUT(request) {
     }
 
     const data = await request.json();
-    const { password, roleData, name, ...userData } = data;
+    const {
+      password,
+      name,
+      email,
+      phone,
+      role,
+      // Doctor-specific fields
+      specialization,
+      qualification,
+      experienceYears,
+      consultationFee,
+      bio,
+      // Pharmacist-specific fields
+      licenseNumber,
+      ...otherData
+    } = data;
 
-    // Update user - map name to full_name for database
-    const updateData = { ...userData };
+    // Build user update data (only fields that belong to users table)
+    const updateData = {};
     if (name !== undefined) {
       updateData.full_name = name;
     }
-
+    if (email !== undefined) {
+      updateData.email = email;
+    }
+    if (phone !== undefined) {
+      updateData.phone = phone;
+    }
     if (password) {
       updateData.password_hash = await bcrypt.hash(password, 12);
     }
 
-    const { data: updatedUser, error: userError } = await supabaseAdmin
-      .from(TABLES.USERS)
-      .update(updateData)
-      .eq("id", userId)
-      .select()
-      .single();
+    // Only update user if there's data to update
+    let updatedUser;
+    if (Object.keys(updateData).length > 0) {
+      const { data: userData, error: userError } = await supabaseAdmin
+        .from(TABLES.USERS)
+        .update(updateData)
+        .eq("id", userId)
+        .select()
+        .single();
 
-    if (userError) {
-      console.error("Error updating user:", userError);
-      return NextResponse.json(
-        { error: "Failed to update user" },
-        { status: 500 }
-      );
+      if (userError) {
+        console.error("Error updating user:", userError);
+        return NextResponse.json(
+          { error: "Failed to update user" },
+          { status: 500 }
+        );
+      }
+      updatedUser = userData;
+    } else {
+      // Fetch current user data if no updates
+      const { data: userData } = await supabaseAdmin
+        .from(TABLES.USERS)
+        .select()
+        .eq("id", userId)
+        .single();
+      updatedUser = userData;
     }
 
-    // Update role-specific data if provided
-    if (roleData) {
-      if (updatedUser.role === ROLES.DOCTOR) {
+    // Update role-specific data
+    if (updatedUser.role === ROLES.DOCTOR) {
+      const doctorData = {};
+      if (specialization !== undefined)
+        doctorData.specialization = specialization || null;
+      if (qualification !== undefined)
+        doctorData.qualification = qualification || null;
+      if (experienceYears !== undefined)
+        doctorData.experience_years = experienceYears
+          ? parseInt(experienceYears)
+          : null;
+      if (consultationFee !== undefined)
+        doctorData.consultation_fee = consultationFee || null;
+      if (bio !== undefined) doctorData.bio = bio || null;
+
+      if (Object.keys(doctorData).length > 0) {
         await supabaseAdmin
           .from(TABLES.DOCTORS)
-          .update(roleData)
+          .update(doctorData)
           .eq("user_id", userId);
-      } else if (updatedUser.role === ROLES.PHARMACIST) {
+      }
+    } else if (updatedUser.role === ROLES.PHARMACIST) {
+      const pharmacistData = {};
+      if (licenseNumber !== undefined)
+        pharmacistData.license_number = licenseNumber || null;
+
+      if (Object.keys(pharmacistData).length > 0) {
         await supabaseAdmin
           .from(TABLES.PHARMACISTS)
-          .update(roleData)
+          .update(pharmacistData)
           .eq("user_id", userId);
       }
     }
