@@ -132,11 +132,122 @@ export async function POST(request) {
     // Check if email already exists
     const { data: existingUser } = await supabaseAdmin
       .from(TABLES.USERS)
-      .select("id")
+      .select("id, is_active, role")
       .eq("email", email.toLowerCase())
       .single();
 
     if (existingUser) {
+      // If user is inactive, we can reactivate them
+      if (!existingUser.is_active) {
+        // Hash password
+        const passwordHash = await bcrypt.hash(password, 12);
+
+        // Reactivate and update user
+        const { data: updatedUser, error: updateError } = await supabaseAdmin
+          .from(TABLES.USERS)
+          .update({
+            password_hash: passwordHash,
+            full_name: name,
+            phone,
+            role,
+            is_active: true,
+          })
+          .eq("id", existingUser.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error("Error reactivating user:", updateError);
+          return NextResponse.json(
+            { error: "Failed to reactivate user" },
+            { status: 500 }
+          );
+        }
+
+        // Update or create role-specific record
+        if (role === ROLES.DOCTOR) {
+          // Check if doctor record exists
+          const { data: existingDoctor } = await supabaseAdmin
+            .from(TABLES.DOCTORS)
+            .select("id")
+            .eq("user_id", existingUser.id)
+            .single();
+
+          if (existingDoctor) {
+            // Update existing doctor record
+            await supabaseAdmin
+              .from(TABLES.DOCTORS)
+              .update({
+                specialization: roleSpecificData.specialization || null,
+                qualification: roleSpecificData.qualification || null,
+                experience_years: roleSpecificData.experienceYears || null,
+                consultation_fee: roleSpecificData.consultationFee || null,
+                bio: roleSpecificData.bio || null,
+                is_available: true,
+                working_hours: roleSpecificData.workingHours || {
+                  monday: { start: "09:00", end: "17:00" },
+                  tuesday: { start: "09:00", end: "17:00" },
+                  wednesday: { start: "09:00", end: "17:00" },
+                  thursday: { start: "09:00", end: "17:00" },
+                  friday: { start: "09:00", end: "17:00" },
+                },
+              })
+              .eq("user_id", existingUser.id);
+          } else {
+            // Create new doctor record
+            await supabaseAdmin.from(TABLES.DOCTORS).insert({
+              user_id: existingUser.id,
+              specialization: roleSpecificData.specialization || null,
+              qualification: roleSpecificData.qualification || null,
+              experience_years: roleSpecificData.experienceYears || null,
+              consultation_fee: roleSpecificData.consultationFee || null,
+              bio: roleSpecificData.bio || null,
+              is_available: true,
+              working_hours: roleSpecificData.workingHours || {
+                monday: { start: "09:00", end: "17:00" },
+                tuesday: { start: "09:00", end: "17:00" },
+                wednesday: { start: "09:00", end: "17:00" },
+                thursday: { start: "09:00", end: "17:00" },
+                friday: { start: "09:00", end: "17:00" },
+              },
+            });
+          }
+        } else if (role === ROLES.PHARMACIST) {
+          // Check if pharmacist record exists
+          const { data: existingPharmacist } = await supabaseAdmin
+            .from(TABLES.PHARMACISTS)
+            .select("id")
+            .eq("user_id", existingUser.id)
+            .single();
+
+          if (existingPharmacist) {
+            // Update existing pharmacist record
+            await supabaseAdmin
+              .from(TABLES.PHARMACISTS)
+              .update({
+                license_number: roleSpecificData.licenseNumber || null,
+              })
+              .eq("user_id", existingUser.id);
+          } else {
+            // Create new pharmacist record
+            await supabaseAdmin.from(TABLES.PHARMACISTS).insert({
+              user_id: existingUser.id,
+              license_number: roleSpecificData.licenseNumber || null,
+            });
+          }
+        }
+
+        // Remove password hash from response
+        const { password_hash, ...safeUser } = updatedUser;
+
+        return NextResponse.json({
+          success: true,
+          user: safeUser,
+          reactivated: true,
+        });
+      }
+
+      // If user is active, return error
       return NextResponse.json(
         { error: "A user with this email already exists" },
         { status: 400 }
@@ -297,7 +408,7 @@ export async function PUT(request) {
   }
 }
 
-// DELETE - Deactivate user (soft delete)
+// DELETE - Hard delete user
 export async function DELETE(request) {
   try {
     const admin = await verifyAdminSession();
@@ -315,25 +426,102 @@ export async function DELETE(request) {
       );
     }
 
-    // Soft delete - just deactivate
-    const { error } = await supabaseAdmin
+    // Get user to check their role
+    const { data: user, error: userFetchError } = await supabaseAdmin
       .from(TABLES.USERS)
-      .update({ is_active: false })
-      .eq("id", userId);
+      .select("role")
+      .eq("id", userId)
+      .single();
 
-    if (error) {
-      console.error("Error deactivating user:", error);
-      return NextResponse.json(
-        { error: "Failed to deactivate user" },
-        { status: 500 }
-      );
+    if (userFetchError || !user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    // Check for active appointments (prevent deletion if doctor has pending appointments)
+    if (user.role === ROLES.DOCTOR) {
+      const { data: activeAppointments } = await supabaseAdmin
+        .from(TABLES.APPOINTMENTS)
+        .select("id")
+        .eq("doctor_id", userId)
+        .in("status", ["pending", "confirmed", "in_progress"]);
+
+      if (activeAppointments && activeAppointments.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Cannot delete doctor with ${activeAppointments.length} active appointment(s). Please complete or reassign them first.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Handle appointments as patient - set patient_id to null to preserve appointment history
+    await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .update({ patient_id: null })
+      .eq("patient_id", userId);
+
+    // Handle appointments assigned_by this user
+    await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .update({ assigned_by: null })
+      .eq("assigned_by", userId);
+
+    // Handle prescriptions as patient
+    await supabaseAdmin
+      .from(TABLES.PRESCRIPTIONS)
+      .update({ patient_id: null })
+      .eq("patient_id", userId);
+
+    // Handle medical records as patient
+    await supabaseAdmin
+      .from(TABLES.MEDICAL_RECORDS)
+      .update({ patient_id: null })
+      .eq("patient_id", userId);
+
+    // Disconnect user_id from role-specific records but keep historical data
+    if (user.role === ROLES.DOCTOR) {
+      // Set user_id to null in doctors table to break the link
+      // This keeps the doctor record with all specialization details intact
+      // All appointments, prescriptions, and medical records remain linked to the doctor record
+      await supabaseAdmin
+        .from(TABLES.DOCTORS)
+        .update({ user_id: null })
+        .eq("user_id", userId);
+    } else if (user.role === ROLES.PHARMACIST) {
+      // Set user_id to null in pharmacists table to break the link
+      // This keeps the pharmacist record intact with all prescriptions they dispensed
+      await supabaseAdmin
+        .from(TABLES.PHARMACISTS)
+        .update({ user_id: null })
+        .eq("user_id", userId);
+    }
+
+    // Delete user notifications
+    await supabaseAdmin
+      .from(TABLES.NOTIFICATIONS)
+      .delete()
+      .eq("user_id", userId);
 
     // Delete all sessions for this user
     await supabaseAdmin
       .from(TABLES.USER_SESSIONS)
       .delete()
       .eq("user_id", userId);
+
+    // Finally, delete the user
+    const { error: deleteError } = await supabaseAdmin
+      .from(TABLES.USERS)
+      .delete()
+      .eq("id", userId);
+
+    if (deleteError) {
+      console.error("Error deleting user:", deleteError);
+      return NextResponse.json(
+        { error: "Failed to delete user" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
