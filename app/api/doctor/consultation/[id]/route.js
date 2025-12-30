@@ -41,7 +41,8 @@ export async function POST(request, { params }) {
     }
 
     const { id } = await params;
-    const { medicalRecord, prescription, complete } = await request.json();
+    const { medicalRecord, prescription, patientDemographics, complete } =
+      await request.json();
 
     // Get doctor profile
     const { data: doctorProfile } = await supabaseAdmin
@@ -75,6 +76,24 @@ export async function POST(request, { params }) {
         { error: "Appointment not found" },
         { status: 404 }
       );
+    }
+
+    // Update patient demographics if provided
+    if (patientDemographics && appointment.patient_id) {
+      const demographicUpdates = {};
+      if (patientDemographics.sex)
+        demographicUpdates.sex = patientDemographics.sex;
+      if (patientDemographics.occupation)
+        demographicUpdates.occupation = patientDemographics.occupation;
+      if (patientDemographics.address)
+        demographicUpdates.address = patientDemographics.address;
+
+      if (Object.keys(demographicUpdates).length > 0) {
+        await supabaseAdmin
+          .from(TABLES.USERS)
+          .update(demographicUpdates)
+          .eq("id", appointment.patient_id);
+      }
     }
 
     // Check if medical record exists

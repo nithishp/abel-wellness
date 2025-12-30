@@ -4,19 +4,16 @@ import Link from "next/link";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import {
   FiHome,
-  FiFileText,
-  FiCalendar,
-  FiUsers,
-  FiUserCheck,
+  FiPackage,
   FiLogOut,
-  FiSettings,
   FiMenu,
   FiX,
   FiChevronRight,
+  FiActivity,
 } from "react-icons/fi";
 import { useState } from "react";
 
-const AdminSidebar = () => {
+const PharmacistSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useRoleAuth();
@@ -27,32 +24,14 @@ const AdminSidebar = () => {
     {
       name: "Dashboard",
       icon: FiHome,
-      href: "/admin/dashboard",
-      description: "Overview & analytics",
+      href: "/pharmacist/dashboard",
+      description: "Overview & stats",
     },
     {
-      name: "Blogs",
-      icon: FiFileText,
-      href: "/admin/blogs",
-      description: "Manage blog posts",
-    },
-    {
-      name: "Appointments",
-      icon: FiCalendar,
-      href: "/admin/appointments",
-      description: "View & manage appointments",
-    },
-    {
-      name: "Patients",
-      icon: FiUserCheck,
-      href: "/admin/patients",
-      description: "Manage patient accounts",
-    },
-    {
-      name: "Staff",
-      icon: FiUsers,
-      href: "/admin/users",
-      description: "Manage doctors & staff",
+      name: "Prescriptions",
+      icon: FiPackage,
+      href: "/pharmacist/prescriptions",
+      description: "Manage prescriptions",
     },
   ];
 
@@ -65,22 +44,23 @@ const AdminSidebar = () => {
     }
   };
 
-  const isActive = (href) => pathname === href;
+  const isActive = (href) =>
+    pathname === href || pathname.startsWith(href + "/");
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo Section */}
       <div className="p-6 border-b border-slate-700/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <span className="text-white font-bold text-lg">A</span>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+            <FiActivity className="w-5 h-5 text-white" />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-white font-bold text-lg tracking-tight">
                 Abel Wellness
               </h1>
-              <p className="text-slate-400 text-xs">Admin Portal</p>
+              <p className="text-slate-400 text-xs">Pharmacy Portal</p>
             </div>
           )}
         </div>
@@ -107,17 +87,17 @@ const AdminSidebar = () => {
                 w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative
                 ${
                   active
-                    ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 shadow-lg shadow-emerald-500/10"
+                    ? "bg-gradient-to-r from-purple-500/20 to-violet-500/20 text-purple-400 shadow-lg shadow-purple-500/10"
                     : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                 }
               `}
             >
               {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-emerald-400 to-teal-500 rounded-r-full" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-purple-400 to-violet-500 rounded-r-full" />
               )}
               <Icon
                 className={`w-5 h-5 flex-shrink-0 ${
-                  active ? "text-emerald-400" : "group-hover:text-emerald-400"
+                  active ? "text-purple-400" : "group-hover:text-purple-400"
                 } transition-colors`}
               />
               {!collapsed && (
@@ -130,7 +110,7 @@ const AdminSidebar = () => {
                   </div>
                   <FiChevronRight
                     className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition-all ${
-                      active ? "opacity-100 text-emerald-400" : ""
+                      active ? "opacity-100 text-purple-400" : ""
                     }`}
                   />
                 </>
@@ -147,17 +127,22 @@ const AdminSidebar = () => {
             collapsed ? "justify-center" : ""
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
-              {user?.name?.charAt(0) || user?.email?.charAt(0) || "A"}
+              {user?.name?.charAt(0) ||
+                user?.full_name?.charAt(0) ||
+                user?.email?.charAt(0) ||
+                "P"}
             </span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-white font-medium text-sm truncate">
-                {user?.name || "Admin"}
+                {user?.name || user?.full_name || "Pharmacist"}
               </p>
-              <p className="text-slate-400 text-xs truncate">{user?.email}</p>
+              <p className="text-slate-400 text-xs truncate">
+                {user?.email || "Pharmacy Staff"}
+              </p>
             </div>
           )}
         </div>
@@ -235,4 +220,4 @@ const AdminSidebar = () => {
   );
 };
 
-export default AdminSidebar;
+export default PharmacistSidebar;

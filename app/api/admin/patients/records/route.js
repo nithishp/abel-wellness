@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { supabaseAdmin } from "@/lib/supabase.config";
-import { TABLES } from "@/lib/supabase.config";
+import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
 
-// Helper to verify patient session
-async function verifyPatientSession() {
+// Helper function to verify admin session
+async function verifyAdminSession() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get("session_token")?.value;
 
@@ -12,29 +11,54 @@ async function verifyPatientSession() {
     return null;
   }
 
-  const { data: session, error } = await supabaseAdmin
+  const { data: session } = await supabaseAdmin
     .from(TABLES.USER_SESSIONS)
     .select("*, user:users(*)")
     .eq("session_token", sessionToken)
-    .eq("is_active", true)
-    .gt("expires_at", new Date().toISOString())
     .single();
 
-  if (error || !session || session.user?.role !== "patient") {
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return null;
+  }
+
+  if (session.user?.role !== ROLES.ADMIN) {
     return null;
   }
 
   return session.user;
 }
 
-// GET - Fetch all patient medical records
-export async function GET() {
+// GET - Fetch medical records for a specific patient (admin view)
+export async function GET(request) {
   try {
-    const patient = await verifyPatientSession();
-    if (!patient) {
+    const admin = await verifyAdminSession();
+    if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const patientId = searchParams.get("patientId");
+
+    if (!patientId) {
+      return NextResponse.json(
+        { error: "Patient ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify patient exists
+    const { data: patient, error: patientError } = await supabaseAdmin
+      .from(TABLES.USERS)
+      .select("id, full_name, email")
+      .eq("id", patientId)
+      .eq("role", ROLES.PATIENT)
+      .single();
+
+    if (patientError || !patient) {
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    }
+
+    // Fetch medical records
     const { data: records, error } = await supabaseAdmin
       .from(TABLES.MEDICAL_RECORDS)
       .select(
@@ -81,20 +105,25 @@ export async function GET() {
         )
       `
       )
-      .eq("patient_id", patient.id)
+      .eq("patient_id", patientId)
       .order("created_at", { ascending: false });
 
     if (error) {
-      throw error;
+      console.error("Error fetching medical records:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch medical records" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
+      patient,
       records: records || [],
     });
   } catch (error) {
-    console.error("Error fetching medical records:", error);
+    console.error("Error in GET patient records:", error);
     return NextResponse.json(
-      { error: "Failed to fetch medical records" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

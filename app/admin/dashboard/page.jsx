@@ -17,7 +17,6 @@ import {
   FiArrowUpRight,
   FiArrowRight,
   FiActivity,
-  FiBell,
   FiRefreshCw,
 } from "react-icons/fi";
 import { toast } from "sonner";
@@ -171,7 +170,7 @@ const AdminDashboard = () => {
             <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
           </div>
-          <p className="text-slate-400 font-medium">Loading dashboard...</p>
+          <p className="text-slate-400 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -180,6 +179,23 @@ const AdminDashboard = () => {
   if (!user) {
     return null;
   }
+
+  // Content loading skeleton
+  const ContentSkeleton = () => (
+    <div className="p-6 lg:p-8 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-32 bg-slate-800/50 rounded-2xl"></div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-24 bg-slate-800/50 rounded-xl"></div>
+        ))}
+      </div>
+      <div className="h-64 bg-slate-800/50 rounded-2xl"></div>
+    </div>
+  );
 
   const statCards = [
     {
@@ -318,210 +334,215 @@ const AdminDashboard = () => {
                     className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
                   />
                 </button>
-                <button className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all relative">
-                  <FiBell className="w-5 h-5" />
-                  {stats.pendingAppointments > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
-                      {stats.pendingAppointments}
-                    </span>
-                  )}
-                </button>
               </div>
             </div>
           </div>
         </header>
 
         <div className="p-6 lg:p-8">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {statCards.map((stat, index) => (
-              <div
-                key={index}
-                className={`relative group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 overflow-hidden transition-all duration-300 hover:border-slate-600/50 hover:shadow-xl ${stat.bgGlow}`}
-              >
-                {/* Background Glow Effect */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
-                />
-
-                {/* Alert Indicator */}
-                {stat.alert && (
-                  <div className="absolute top-4 right-4">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-                    </span>
-                  </div>
-                )}
-
-                <div className="relative">
+          {statsLoading ? (
+            <ContentSkeleton />
+          ) : (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {statCards.map((stat, index) => (
                   <div
-                    className={`w-12 h-12 rounded-xl ${stat.iconBg} flex items-center justify-center mb-4`}
+                    key={index}
+                    className={`relative group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 overflow-hidden transition-all duration-300 hover:border-slate-600/50 hover:shadow-xl ${stat.bgGlow}`}
                   >
-                    <stat.icon
-                      className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
-                      style={{ color: `var(--tw-gradient-from)` }}
+                    {/* Background Glow Effect */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
                     />
-                  </div>
-                  <p className="text-slate-400 text-sm font-medium mb-1">
-                    {stat.title}
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white">
-                      {statsLoading ? (
-                        <span className="inline-block w-12 h-8 bg-slate-700 rounded animate-pulse"></span>
-                      ) : (
-                        stat.value
-                      )}
-                    </span>
-                    {stat.trend && (
-                      <span
-                        className={`text-sm font-medium flex items-center ${
-                          stat.trendUp ? "text-emerald-400" : "text-red-400"
-                        }`}
-                      >
-                        <FiTrendingUp
-                          className={`w-3 h-3 mr-0.5 ${
-                            !stat.trendUp && "rotate-180"
-                          }`}
-                        />
-                        {stat.trend}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-500 text-sm mt-1">{stat.subtitle}</p>
-                </div>
-              </div>
-            ))}
-          </div>
 
-          {/* Quick Actions */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-white">Quick Actions</h2>
-                <p className="text-slate-400 text-sm mt-0.5">
-                  Frequently used tasks
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => router.push(action.href)}
-                  className={`group relative rounded-2xl bg-gradient-to-br ${action.gradient} p-6 text-left transition-all duration-300 hover:shadow-2xl ${action.hoverGlow} hover:-translate-y-1`}
-                >
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <action.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-1">
-                      {action.title}
-                    </h3>
-                    <p className="text-white/70 text-sm">
-                      {action.description}
-                    </p>
-                    <div className="mt-4 flex items-center text-white/80 text-sm font-medium group-hover:text-white transition-colors">
-                      <span>Get started</span>
-                      <FiArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
-            <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-white">
-                  Recent Activity
-                </h2>
-                <p className="text-slate-400 text-sm mt-0.5">
-                  Latest updates from your platform
-                </p>
-              </div>
-              <button
-                onClick={() => router.push("/admin/appointments")}
-                className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
-              >
-                View all
-                <FiArrowUpRight className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-6">
-              {recentActivity.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
-                    <FiActivity className="w-8 h-8 text-slate-500" />
-                  </div>
-                  <p className="text-slate-400 font-medium">
-                    No recent activity
-                  </p>
-                  <p className="text-slate-500 text-sm mt-1">
-                    Recent blog posts and appointments will appear here
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentActivity.map((activity) => {
-                    const statusConfig = getStatusConfig(activity.status);
-                    return (
-                      <div
-                        key={`${activity.type}-${activity.id}`}
-                        onClick={() => router.push(activity.href)}
-                        className="group flex items-start gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
-                      >
-                        <div
-                          className={`p-3 rounded-xl flex-shrink-0 ${
-                            activity.type === "blog"
-                              ? "bg-blue-500/20 text-blue-400"
-                              : "bg-emerald-500/20 text-emerald-400"
-                          }`}
-                        >
-                          {activity.type === "blog" ? (
-                            <FiFileText className="w-5 h-5" />
-                          ) : (
-                            <FiCalendar className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate group-hover:text-emerald-400 transition-colors">
-                            {activity.title}
-                          </p>
-                          <p className="text-slate-400 text-sm truncate mt-0.5">
-                            {activity.description}
-                          </p>
-                          <div className="flex items-center gap-3 mt-2">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
-                              ></span>
-                              {activity.status}
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              {new Date(activity.timestamp).toLocaleString([], {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                        <FiArrowUpRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all" />
+                    {/* Alert Indicator */}
+                    {stat.alert && (
+                      <div className="absolute top-4 right-4">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                        </span>
                       </div>
-                    );
-                  })}
+                    )}
+
+                    <div className="relative">
+                      <div
+                        className={`w-12 h-12 rounded-xl ${stat.iconBg} flex items-center justify-center mb-4`}
+                      >
+                        <stat.icon
+                          className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
+                          style={{ color: `var(--tw-gradient-from)` }}
+                        />
+                      </div>
+                      <p className="text-slate-400 text-sm font-medium mb-1">
+                        {stat.title}
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-white">
+                          {statsLoading ? (
+                            <span className="inline-block w-12 h-8 bg-slate-700 rounded animate-pulse"></span>
+                          ) : (
+                            stat.value
+                          )}
+                        </span>
+                        {stat.trend && (
+                          <span
+                            className={`text-sm font-medium flex items-center ${
+                              stat.trendUp ? "text-emerald-400" : "text-red-400"
+                            }`}
+                          >
+                            <FiTrendingUp
+                              className={`w-3 h-3 mr-0.5 ${
+                                !stat.trendUp && "rotate-180"
+                              }`}
+                            />
+                            {stat.trend}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-slate-500 text-sm mt-1">
+                        {stat.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      Quick Actions
+                    </h2>
+                    <p className="text-slate-400 text-sm mt-0.5">
+                      Frequently used tasks
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={() => router.push(action.href)}
+                      className={`group relative rounded-2xl bg-gradient-to-br ${action.gradient} p-6 text-left transition-all duration-300 hover:shadow-2xl ${action.hoverGlow} hover:-translate-y-1`}
+                    >
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <action.icon className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-1">
+                          {action.title}
+                        </h3>
+                        <p className="text-white/70 text-sm">
+                          {action.description}
+                        </p>
+                        <div className="mt-4 flex items-center text-white/80 text-sm font-medium group-hover:text-white transition-colors">
+                          <span>Get started</span>
+                          <FiArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
+                <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      Recent Activity
+                    </h2>
+                    <p className="text-slate-400 text-sm mt-0.5">
+                      Latest updates from your platform
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push("/admin/appointments")}
+                    className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                  >
+                    View all
+                    <FiArrowUpRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="p-6">
+                  {recentActivity.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
+                        <FiActivity className="w-8 h-8 text-slate-500" />
+                      </div>
+                      <p className="text-slate-400 font-medium">
+                        No recent activity
+                      </p>
+                      <p className="text-slate-500 text-sm mt-1">
+                        Recent blog posts and appointments will appear here
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentActivity.map((activity) => {
+                        const statusConfig = getStatusConfig(activity.status);
+                        return (
+                          <div
+                            key={`${activity.type}-${activity.id}`}
+                            onClick={() => router.push(activity.href)}
+                            className="group flex items-start gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
+                          >
+                            <div
+                              className={`p-3 rounded-xl flex-shrink-0 ${
+                                activity.type === "blog"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : "bg-emerald-500/20 text-emerald-400"
+                              }`}
+                            >
+                              {activity.type === "blog" ? (
+                                <FiFileText className="w-5 h-5" />
+                              ) : (
+                                <FiCalendar className="w-5 h-5" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-medium truncate group-hover:text-emerald-400 transition-colors">
+                                {activity.title}
+                              </p>
+                              <p className="text-slate-400 text-sm truncate mt-0.5">
+                                {activity.description}
+                              </p>
+                              <div className="flex items-center gap-3 mt-2">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                                  ></span>
+                                  {activity.status}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  {new Date(activity.timestamp).toLocaleString(
+                                    [],
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                            <FiArrowUpRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

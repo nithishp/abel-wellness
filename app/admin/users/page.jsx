@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import {
   FiUserPlus,
   FiEdit2,
@@ -32,6 +33,12 @@ const UserManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    userId: null,
+    userName: "",
+  });
+  const [deleting, setDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -128,16 +135,13 @@ const UserManagement = () => {
     }
   };
 
-  const handleDelete = async (userId, userName) => {
-    if (
-      !confirm(
-        `Are you sure you want to deactivate ${userName}? They will no longer be able to log in.`
-      )
-    ) {
-      return;
-    }
+  const handleDelete = (userId, userName) => {
+    setConfirmModal({ open: true, userId, userName });
+  };
 
-    const loadingToast = toast.loading("Deactivating user...");
+  const confirmDelete = async () => {
+    const { userId } = confirmModal;
+    setDeleting(true);
 
     try {
       const response = await fetch(`/api/admin/users?id=${userId}`, {
@@ -148,13 +152,14 @@ const UserManagement = () => {
         throw new Error("Failed to deactivate user");
       }
 
-      toast.dismiss(loadingToast);
       toast.success("User deactivated successfully!");
       fetchUsers();
+      setConfirmModal({ open: false, userId: null, userName: "" });
     } catch (error) {
       console.error("Error deactivating user:", error);
-      toast.dismiss(loadingToast);
       toast.error("Failed to deactivate user");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -202,7 +207,23 @@ const UserManagement = () => {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  // Content loading skeleton
+  const ContentSkeleton = () => (
+    <div className="p-6 lg:p-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 h-12 bg-slate-800/50 rounded-xl"></div>
+        <div className="h-12 w-40 bg-slate-800/50 rounded-xl"></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-48 bg-slate-800/50 rounded-2xl"></div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Only show full-page loading for initial auth check
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
@@ -210,10 +231,14 @@ const UserManagement = () => {
             <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
           </div>
-          <p className="text-slate-400 font-medium">Loading users...</p>
+          <p className="text-slate-400 font-medium">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -246,210 +271,219 @@ const UserManagement = () => {
         </header>
 
         <div className="p-6 lg:p-8">
-          {/* Filters */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-              />
-            </div>
-            <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
-              <FiBriefcase className="text-slate-400 w-5 h-5" />
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
-              >
-                <option value="all" className="bg-slate-800">
-                  All Roles
-                </option>
-                <option value="doctor" className="bg-slate-800">
-                  Doctors
-                </option>
-                <option value="pharmacist" className="bg-slate-800">
-                  Pharmacists
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {/* Users Grid */}
-          {filteredUsers.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
-                <FiUser className="w-10 h-10 text-slate-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-3">
-                No staff found
-              </h2>
-              <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                {searchTerm || filterRole !== "all"
-                  ? "Try adjusting your search or filter to find what you're looking for"
-                  : "Add your first staff member to get started"}
-              </p>
-              <button
-                onClick={() => {
-                  resetForm();
-                  setShowModal(true);
-                }}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
-              >
-                <FiUserPlus className="w-5 h-5" />
-                Add Your First Staff
-              </button>
-            </div>
+          {loading ? (
+            <ContentSkeleton />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredUsers.map((staffUser) => (
-                <div
-                  key={staffUser.id}
-                  className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
-                >
-                  {/* Header with gradient */}
-                  <div
-                    className={`relative h-20 ${
-                      staffUser.role === "doctor"
-                        ? "bg-gradient-to-r from-blue-500/20 to-indigo-500/20"
-                        : "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
-                    }`}
+            <>
+              {/* Filters */}
+              <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                  />
+                </div>
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <FiBriefcase className="text-slate-400 w-5 h-5" />
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
                   >
-                    <div className="absolute -bottom-10 left-6">
-                      <div
-                        className={`w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 ${
-                          staffUser.role === "doctor"
-                            ? "bg-gradient-to-br from-blue-500 to-indigo-600"
-                            : "bg-gradient-to-br from-emerald-500 to-teal-600"
-                        }`}
-                      >
-                        <span className="text-2xl font-bold text-white">
-                          {staffUser.full_name?.charAt(0) ||
-                            staffUser.email?.charAt(0) ||
-                            "S"}
-                        </span>
-                      </div>
-                    </div>
+                    <option value="all" className="bg-slate-800">
+                      All Roles
+                    </option>
+                    <option value="doctor" className="bg-slate-800">
+                      Doctors
+                    </option>
+                    <option value="pharmacist" className="bg-slate-800">
+                      Pharmacists
+                    </option>
+                  </select>
+                </div>
+              </div>
 
-                    {/* Action buttons */}
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openEditModal(staffUser)}
-                        className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
-                        title="Edit"
-                      >
-                        <FiEdit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDelete(staffUser.id, staffUser.full_name)
-                        }
-                        className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
-                        title="Delete"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {/* Users Grid */}
+              {filteredUsers.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
+                    <FiUser className="w-10 h-10 text-slate-500" />
                   </div>
-
-                  {/* Content */}
-                  <div className="pt-14 px-6 pb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">
-                          {staffUser.full_name || "No name"}
-                        </h3>
-                        <span
-                          className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
-                            staffUser.role === "doctor"
-                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                              : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              staffUser.role === "doctor"
-                                ? "bg-blue-400"
-                                : "bg-emerald-400"
-                            }`}
-                          ></span>
-                          {staffUser.role === "doctor"
-                            ? "Doctor"
-                            : "Pharmacist"}
-                        </span>
-                      </div>
-                      <span
-                        className={`text-xs px-2.5 py-1 rounded-full ${
-                          staffUser.is_active
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                            : "bg-red-500/10 text-red-400 border border-red-500/30"
+                  <h2 className="text-2xl font-bold text-white mb-3">
+                    No staff found
+                  </h2>
+                  <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                    {searchTerm || filterRole !== "all"
+                      ? "Try adjusting your search or filter to find what you're looking for"
+                      : "Add your first staff member to get started"}
+                  </p>
+                  <button
+                    onClick={() => {
+                      resetForm();
+                      setShowModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
+                  >
+                    <FiUserPlus className="w-5 h-5" />
+                    Add Your First Staff
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredUsers.map((staffUser) => (
+                    <div
+                      key={staffUser.id}
+                      className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+                    >
+                      {/* Header with gradient */}
+                      <div
+                        className={`relative h-20 ${
+                          staffUser.role === "doctor"
+                            ? "bg-gradient-to-r from-blue-500/20 to-indigo-500/20"
+                            : "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
                         }`}
                       >
-                        {staffUser.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-3 text-slate-400">
-                        <FiMail className="w-4 h-4 text-slate-500" />
-                        <span className="truncate">{staffUser.email}</span>
-                      </div>
-                      {staffUser.phone && (
-                        <div className="flex items-center gap-3 text-slate-400">
-                          <FiPhone className="w-4 h-4 text-slate-500" />
-                          <span>{staffUser.phone}</span>
-                        </div>
-                      )}
-                      {staffUser.role === "doctor" && staffUser.roleData && (
-                        <>
-                          {staffUser.roleData.specialization && (
-                            <div className="flex items-center gap-3 text-slate-400">
-                              <FiBriefcase className="w-4 h-4 text-slate-500" />
-                              <span>{staffUser.roleData.specialization}</span>
-                            </div>
-                          )}
-                          {staffUser.roleData.experience_years && (
-                            <div className="flex items-center gap-3 text-slate-400">
-                              <FiClock className="w-4 h-4 text-slate-500" />
-                              <span>
-                                {staffUser.roleData.experience_years} years
-                                experience
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {staffUser.role === "pharmacist" &&
-                        staffUser.roleData?.license_number && (
-                          <div className="flex items-center gap-3 text-slate-400">
-                            <FiAward className="w-4 h-4 text-slate-500" />
-                            <span>
-                              License: {staffUser.roleData.license_number}
+                        <div className="absolute -bottom-10 left-6">
+                          <div
+                            className={`w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 ${
+                              staffUser.role === "doctor"
+                                ? "bg-gradient-to-br from-blue-500 to-indigo-600"
+                                : "bg-gradient-to-br from-emerald-500 to-teal-600"
+                            }`}
+                          >
+                            <span className="text-2xl font-bold text-white">
+                              {staffUser.full_name?.charAt(0) ||
+                                staffUser.email?.charAt(0) ||
+                                "S"}
                             </span>
                           </div>
-                        )}
-                    </div>
+                        </div>
 
-                    <div className="mt-4 pt-4 border-t border-slate-700/50">
-                      <span className="text-xs text-slate-500">
-                        Added{" "}
-                        {new Date(staffUser.created_at).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          }
-                        )}
-                      </span>
+                        {/* Action buttons */}
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openEditModal(staffUser)}
+                            className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
+                            title="Edit"
+                          >
+                            <FiEdit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDelete(staffUser.id, staffUser.full_name)
+                            }
+                            className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                            title="Delete"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="pt-14 px-6 pb-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">
+                              {staffUser.full_name || "No name"}
+                            </h3>
+                            <span
+                              className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
+                                staffUser.role === "doctor"
+                                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                  : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  staffUser.role === "doctor"
+                                    ? "bg-blue-400"
+                                    : "bg-emerald-400"
+                                }`}
+                              ></span>
+                              {staffUser.role === "doctor"
+                                ? "Doctor"
+                                : "Pharmacist"}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-xs px-2.5 py-1 rounded-full ${
+                              staffUser.is_active
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                : "bg-red-500/10 text-red-400 border border-red-500/30"
+                            }`}
+                          >
+                            {staffUser.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center gap-3 text-slate-400">
+                            <FiMail className="w-4 h-4 text-slate-500" />
+                            <span className="truncate">{staffUser.email}</span>
+                          </div>
+                          {staffUser.phone && (
+                            <div className="flex items-center gap-3 text-slate-400">
+                              <FiPhone className="w-4 h-4 text-slate-500" />
+                              <span>{staffUser.phone}</span>
+                            </div>
+                          )}
+                          {staffUser.role === "doctor" &&
+                            staffUser.roleData && (
+                              <>
+                                {staffUser.roleData.specialization && (
+                                  <div className="flex items-center gap-3 text-slate-400">
+                                    <FiBriefcase className="w-4 h-4 text-slate-500" />
+                                    <span>
+                                      {staffUser.roleData.specialization}
+                                    </span>
+                                  </div>
+                                )}
+                                {staffUser.roleData.experience_years && (
+                                  <div className="flex items-center gap-3 text-slate-400">
+                                    <FiClock className="w-4 h-4 text-slate-500" />
+                                    <span>
+                                      {staffUser.roleData.experience_years}{" "}
+                                      years experience
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          {staffUser.role === "pharmacist" &&
+                            staffUser.roleData?.license_number && (
+                              <div className="flex items-center gap-3 text-slate-400">
+                                <FiAward className="w-4 h-4 text-slate-500" />
+                                <span>
+                                  License: {staffUser.roleData.license_number}
+                                </span>
+                              </div>
+                            )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-slate-700/50">
+                          <span className="text-xs text-slate-500">
+                            Added{" "}
+                            {new Date(staffUser.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -683,6 +717,21 @@ const UserManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.open}
+        onClose={() =>
+          setConfirmModal({ open: false, userId: null, userName: "" })
+        }
+        onConfirm={confirmDelete}
+        title="Deactivate Staff Member"
+        message={`Are you sure you want to deactivate ${confirmModal.userName}? They will no longer be able to log in.`}
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 };

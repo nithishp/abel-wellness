@@ -624,10 +624,20 @@ export async function PUT(request) {
       }
 
       default: {
-        // Regular status update
+        // Regular status update - handle cancellation with reason
+        const { status, cancellation_reason, ...otherData } = updateData;
+        
+        const updateFields = { ...otherData };
+        if (status) {
+          updateFields.status = status;
+        }
+        if (cancellation_reason) {
+          updateFields.cancellation_reason = cancellation_reason;
+        }
+
         const { data: updatedAppointment, error } = await supabaseAdmin
           .from(TABLES.APPOINTMENTS)
-          .update(updateData)
+          .update(updateFields)
           .eq("id", appointmentId)
           .select()
           .single();
@@ -637,6 +647,30 @@ export async function PUT(request) {
           return NextResponse.json(
             { error: "Failed to update appointment" },
             { status: 500 }
+          );
+        }
+
+        // Send cancellation email if status is cancelled and reason provided
+        if (status === "cancelled" && currentAppointment.email) {
+          const appointmentDate = new Date(currentAppointment.date);
+          const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+          const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          await sendEmail(
+            currentAppointment.email,
+            emailTemplates.appointmentCancelled(
+              currentAppointment.name,
+              { date: formattedDate, time: formattedTime },
+              cancellation_reason || "No specific reason provided."
+            )
           );
         }
 

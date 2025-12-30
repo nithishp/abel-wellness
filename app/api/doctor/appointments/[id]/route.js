@@ -157,3 +157,113 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+// GET patient history - previous records and prescriptions
+export async function POST(request, { params }) {
+  try {
+    const doctor = await verifyDoctorSession();
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { action } = await request.json();
+
+    if (action !== "get_patient_history") {
+      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+
+    // Get doctor profile
+    const { data: doctorProfile } = await supabaseAdmin
+      .from(TABLES.DOCTORS)
+      .select("id")
+      .eq("user_id", doctor.id)
+      .single();
+
+    if (!doctorProfile) {
+      return NextResponse.json(
+        { error: "Doctor profile not found" },
+        { status: 404 }
+      );
+    }
+
+    // Get the appointment to find patient_id
+    const { data: appointment } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .select("patient_id")
+      .eq("id", id)
+      .eq("doctor_id", doctorProfile.id)
+      .single();
+
+    if (!appointment || !appointment.patient_id) {
+      return NextResponse.json(
+        { error: "Appointment not found or no patient linked" },
+        { status: 404 }
+      );
+    }
+
+    // Fetch patient's previous medical records
+    const { data: medicalRecords } = await supabaseAdmin
+      .from(TABLES.MEDICAL_RECORDS)
+      .select(`
+        id,
+        chief_complaints,
+        final_diagnosis,
+        treatment_plan,
+        created_at,
+        appointment:appointment_id(
+          id,
+          date,
+          status
+        ),
+        doctor:doctor_id(
+          id,
+          user:user_id(full_name)
+        )
+      `)
+      .eq("patient_id", appointment.patient_id)
+      .neq("appointment_id", id) // Exclude current appointment
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    // Fetch patient's previous prescriptions
+    const { data: prescriptions } = await supabaseAdmin
+      .from(TABLES.PRESCRIPTIONS)
+      .select(`
+        id,
+        notes,
+        status,
+        created_at,
+        items:prescription_items(
+          medication_name,
+          dosage,
+          frequency,
+          duration,
+          instructions
+        ),
+        appointment:appointment_id(
+          id,
+          date
+        ),
+        doctor:doctor_id(
+          id,
+          user:user_id(full_name)
+        )
+      `)
+      .eq("patient_id", appointment.patient_id)
+      .neq("appointment_id", id) // Exclude current appointment
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    return NextResponse.json({
+      medicalRecords: medicalRecords || [],
+      prescriptions: prescriptions || [],
+    });
+  } catch (error) {
+    console.error("Error fetching patient history:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch patient history" },
+      { status: 500 }
+    );
+  }
+}

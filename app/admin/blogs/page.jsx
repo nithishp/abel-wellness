@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import {
   FiEdit2,
   FiTrash2,
@@ -24,6 +25,11 @@ const BlogsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // all, published, draft
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    blogId: null,
+  });
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     // Wait for auth to finish loading
@@ -62,12 +68,13 @@ const BlogsManagement = () => {
     }
   };
 
-  const handleDelete = async (blogId) => {
-    if (!confirm("Are you sure you want to delete this blog post?")) {
-      return;
-    }
+  const handleDelete = (blogId) => {
+    setConfirmModal({ open: true, blogId });
+  };
 
-    const loadingToast = toast.loading("Deleting blog post...");
+  const confirmDelete = async () => {
+    const { blogId } = confirmModal;
+    setDeleting(true);
 
     try {
       const response = await fetch(`/api/admin/blogs?id=${blogId}`, {
@@ -79,12 +86,13 @@ const BlogsManagement = () => {
       }
 
       await fetchBlogs();
-      toast.dismiss(loadingToast);
       toast.success("Blog deleted successfully!");
+      setConfirmModal({ open: false, blogId: null });
     } catch (error) {
       console.error("Error deleting blog:", error);
-      toast.dismiss(loadingToast);
       toast.error("Failed to delete blog");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -134,7 +142,23 @@ const BlogsManagement = () => {
     return matchesSearch && matchesFilter;
   });
 
-  if (loading) {
+  // Content loading skeleton
+  const ContentSkeleton = () => (
+    <div className="p-6 lg:p-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 h-12 bg-slate-800/50 rounded-xl"></div>
+        <div className="h-12 w-40 bg-slate-800/50 rounded-xl"></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-64 bg-slate-800/50 rounded-2xl"></div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Only show full-page loading for initial auth check
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
@@ -142,10 +166,14 @@ const BlogsManagement = () => {
             <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
           </div>
-          <p className="text-slate-400 font-medium">Loading blogs...</p>
+          <p className="text-slate-400 font-medium">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -175,6 +203,7 @@ const BlogsManagement = () => {
         </header>
 
         <div className="p-6 lg:p-8">
+          {loading ? <ContentSkeleton /> : (<>
           {/* Filters and Search */}
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
@@ -356,8 +385,22 @@ const BlogsManagement = () => {
               ))}
             </div>
           )}
+          </>)}
         </div>
       </main>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.open}
+        onClose={() => setConfirmModal({ open: false, blogId: null })}
+        onConfirm={confirmDelete}
+        title="Delete Blog Post"
+        message="Are you sure you want to delete this blog post? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import {
   FiCalendar,
   FiClock,
@@ -17,8 +18,12 @@ import {
   FiPlus,
   FiUserCheck,
   FiMessageSquare,
+  FiFileText,
+  FiMapPin,
+  FiBriefcase,
 } from "react-icons/fi";
 import { toast } from "sonner";
+import { formatAppointmentDateTime } from "@/lib/utils";
 
 const AppointmentsManagement = () => {
   const router = useRouter();
@@ -34,6 +39,17 @@ const AppointmentsManagement = () => {
   const [assigningAppointment, setAssigningAppointment] = useState(null);
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [showCaseSheetModal, setShowCaseSheetModal] = useState(false);
+  const [selectedCaseSheet, setSelectedCaseSheet] = useState(null);
+  const [loadingCaseSheet, setLoadingCaseSheet] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellingAppointment, setCancellingAppointment] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    appointmentId: null,
+  });
+  const [deleting, setDeleting] = useState(false);
 
   // Create appointment form state
   const [createForm, setCreateForm] = useState({
@@ -136,16 +152,25 @@ const AppointmentsManagement = () => {
     }
   };
 
-  const handleStatusUpdate = async (appointmentId, newStatus) => {
+  const handleStatusUpdate = async (
+    appointmentId,
+    newStatus,
+    reason = null
+  ) => {
     const loadingToast = toast.loading(`Updating appointment status...`);
 
     try {
+      const body = { status: newStatus };
+      if (reason) {
+        body.cancellation_reason = reason;
+      }
+
       const response = await fetch(
         `/api/admin/appointments?id=${appointmentId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify(body),
         }
       );
 
@@ -163,12 +188,58 @@ const AppointmentsManagement = () => {
     }
   };
 
-  const handleDelete = async (appointmentId) => {
-    if (!confirm("Are you sure you want to delete this appointment?")) {
+  const handleCancelWithReason = (appointment) => {
+    setCancellingAppointment(appointment);
+    setCancellationReason("");
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancellationReason.trim()) {
+      toast.error("Please provide a cancellation reason");
       return;
     }
 
-    const loadingToast = toast.loading("Deleting appointment...");
+    setProcessing(true);
+    await handleStatusUpdate(
+      cancellingAppointment.$id,
+      "cancelled",
+      cancellationReason
+    );
+    setProcessing(false);
+    setShowCancelModal(false);
+    setCancellingAppointment(null);
+    setCancellationReason("");
+  };
+
+  const fetchCaseSheet = async (appointmentId) => {
+    setLoadingCaseSheet(true);
+    try {
+      const response = await fetch(
+        `/api/admin/appointments/${appointmentId}/casesheet`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedCaseSheet(data);
+        setShowCaseSheetModal(true);
+      } else {
+        toast.error("Failed to load case sheet");
+      }
+    } catch (error) {
+      console.error("Error fetching case sheet:", error);
+      toast.error("Failed to load case sheet");
+    } finally {
+      setLoadingCaseSheet(false);
+    }
+  };
+
+  const handleDelete = (appointmentId) => {
+    setDeleteModal({ open: true, appointmentId });
+  };
+
+  const confirmDelete = async () => {
+    const { appointmentId } = deleteModal;
+    setDeleting(true);
 
     try {
       const response = await fetch(
@@ -181,12 +252,13 @@ const AppointmentsManagement = () => {
       }
 
       await fetchAppointments();
-      toast.dismiss(loadingToast);
       toast.success("Appointment deleted successfully!");
+      setDeleteModal({ open: false, appointmentId: null });
     } catch (error) {
       console.error("Error deleting appointment:", error);
-      toast.dismiss(loadingToast);
       toast.error("Failed to delete appointment");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -312,7 +384,23 @@ const AppointmentsManagement = () => {
     return "Not assigned";
   };
 
-  if (loading) {
+  // Content loading skeleton
+  const ContentSkeleton = () => (
+    <div className="p-6 lg:p-8 animate-pulse">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 h-12 bg-slate-800/50 rounded-xl"></div>
+        <div className="h-12 w-40 bg-slate-800/50 rounded-xl"></div>
+      </div>
+      <div className="space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-32 bg-slate-800/50 rounded-2xl"></div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Only show full-page loading for initial auth check
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
@@ -320,10 +408,14 @@ const AppointmentsManagement = () => {
             <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
           </div>
-          <p className="text-slate-400 font-medium">Loading appointments...</p>
+          <p className="text-slate-400 font-medium">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -354,183 +446,210 @@ const AppointmentsManagement = () => {
         </header>
 
         <div className="p-6 lg:p-8">
-          {/* Filters and Search */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
-              <FiFilter className="text-slate-400 w-5 h-5" />
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
-              >
-                <option value="all" className="bg-slate-800">
-                  All Status
-                </option>
-                <option value="pending" className="bg-slate-800">
-                  Pending
-                </option>
-                <option value="approved" className="bg-slate-800">
-                  Approved
-                </option>
-                <option value="completed" className="bg-slate-800">
-                  Completed
-                </option>
-                <option value="cancelled" className="bg-slate-800">
-                  Cancelled
-                </option>
-                <option value="rejected" className="bg-slate-800">
-                  Rejected
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {/* Appointments Grid */}
-          {filteredAppointments.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
-                <FiCalendar className="w-10 h-10 text-slate-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-3">
-                No appointments found
-              </h2>
-              <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                {searchTerm || filterStatus !== "all"
-                  ? "Try adjusting your search or filter to find what you're looking for"
-                  : "No appointments have been scheduled yet"}
-              </p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
-              >
-                <FiPlus className="w-5 h-5" />
-                Create First Appointment
-              </button>
-            </div>
+          {loading ? (
+            <ContentSkeleton />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredAppointments.map((appointment) => {
-                const statusConfig = getStatusColor(appointment.status);
-                return (
-                  <div
-                    key={appointment.$id}
-                    className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+            <>
+              {/* Filters and Search */}
+              <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Search by name, email, or phone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <FiFilter className="text-slate-400 w-5 h-5" />
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
                   >
-                    {/* Header */}
-                    <div className="p-5 border-b border-slate-700/50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">
-                              {appointment.name?.charAt(0) || "?"}
+                    <option value="all" className="bg-slate-800">
+                      All Status
+                    </option>
+                    <option value="pending" className="bg-slate-800">
+                      Pending
+                    </option>
+                    <option value="approved" className="bg-slate-800">
+                      Approved
+                    </option>
+                    <option value="completed" className="bg-slate-800">
+                      Completed
+                    </option>
+                    <option value="cancelled" className="bg-slate-800">
+                      Cancelled
+                    </option>
+                    <option value="rejected" className="bg-slate-800">
+                      Rejected
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Appointments Grid */}
+              {filteredAppointments.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
+                    <FiCalendar className="w-10 h-10 text-slate-500" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-3">
+                    No appointments found
+                  </h2>
+                  <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                    {searchTerm || filterStatus !== "all"
+                      ? "Try adjusting your search or filter to find what you're looking for"
+                      : "No appointments have been scheduled yet"}
+                  </p>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all"
+                  >
+                    <FiPlus className="w-5 h-5" />
+                    Create First Appointment
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredAppointments.map((appointment) => {
+                    const statusConfig = getStatusColor(appointment.status);
+                    return (
+                      <div
+                        key={appointment.$id}
+                        className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+                      >
+                        {/* Header */}
+                        <div className="p-5 border-b border-slate-700/50">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">
+                                  {appointment.name?.charAt(0) || "?"}
+                                </span>
+                              </div>
+                              <div>
+                                <h3 className="text-white font-semibold">
+                                  {appointment.name}
+                                </h3>
+                                <p className="text-slate-400 text-sm">
+                                  {appointment.service ||
+                                    "General Consultation"}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                              ></span>
+                              {appointment.status?.charAt(0).toUpperCase() +
+                                appointment.status?.slice(1)}
                             </span>
                           </div>
-                          <div>
-                            <h3 className="text-white font-semibold">
-                              {appointment.name}
-                            </h3>
-                            <p className="text-slate-400 text-sm">
-                              {appointment.service || "General Consultation"}
-                            </p>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-5 space-y-3">
+                          <div className="flex items-center gap-3 text-slate-400 text-sm">
+                            <FiCalendar className="w-4 h-4 text-slate-500" />
+                            <span>
+                              {
+                                formatAppointmentDateTime(
+                                  appointment.date,
+                                  appointment.time
+                                ).date
+                              }
+                            </span>
+                            <span className="text-slate-600">•</span>
+                            <FiClock className="w-4 h-4 text-slate-500" />
+                            <span>
+                              {
+                                formatAppointmentDateTime(
+                                  appointment.date,
+                                  appointment.time
+                                ).time
+                              }
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 text-slate-400 text-sm">
+                            <FiMail className="w-4 h-4 text-slate-500" />
+                            <span className="truncate">
+                              {appointment.email}
+                            </span>
+                          </div>
+
+                          {appointment.phone && (
+                            <div className="flex items-center gap-3 text-slate-400 text-sm">
+                              <FiPhone className="w-4 h-4 text-slate-500" />
+                              <span>{appointment.phone}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-3 text-slate-400 text-sm">
+                            <FiUserCheck className="w-4 h-4 text-slate-500" />
+                            <span>Dr. {getDoctorName(appointment)}</span>
                           </div>
                         </div>
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border}`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
-                          ></span>
-                          {appointment.status?.charAt(0).toUpperCase() +
-                            appointment.status?.slice(1)}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Content */}
-                    <div className="p-5 space-y-3">
-                      <div className="flex items-center gap-3 text-slate-400 text-sm">
-                        <FiCalendar className="w-4 h-4 text-slate-500" />
-                        <span>
-                          {new Date(appointment.date).toLocaleDateString(
-                            "en-US",
-                            { weekday: "short", month: "short", day: "numeric" }
+                        {/* Actions */}
+                        <div className="px-5 py-4 border-t border-slate-700/50 flex items-center justify-between">
+                          <button
+                            onClick={() => setSelectedAppointment(appointment)}
+                            className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                          >
+                            <FiEye className="w-4 h-4" />
+                            View Details
+                          </button>
+
+                          {appointment.status === "pending" && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() =>
+                                  handleApproveWithDoctor(appointment)
+                                }
+                                className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
+                                title="Approve & Assign"
+                              >
+                                <FiCheck className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleCancelWithReason(appointment)
+                                }
+                                className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                                title="Cancel"
+                              >
+                                <FiX className="w-4 h-4" />
+                              </button>
+                            </div>
                           )}
-                        </span>
-                        <span className="text-slate-600">•</span>
-                        <FiClock className="w-4 h-4 text-slate-500" />
-                        <span>
-                          {new Date(appointment.date).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center gap-3 text-slate-400 text-sm">
-                        <FiMail className="w-4 h-4 text-slate-500" />
-                        <span className="truncate">{appointment.email}</span>
-                      </div>
-
-                      {appointment.phone && (
-                        <div className="flex items-center gap-3 text-slate-400 text-sm">
-                          <FiPhone className="w-4 h-4 text-slate-500" />
-                          <span>{appointment.phone}</span>
+                          {appointment.status === "completed" && (
+                            <button
+                              onClick={() => fetchCaseSheet(appointment.$id)}
+                              disabled={loadingCaseSheet}
+                              className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+                              title="View Case Sheet"
+                            >
+                              <FiFileText className="w-4 h-4" />
+                              Case Sheet
+                            </button>
+                          )}
                         </div>
-                      )}
-
-                      <div className="flex items-center gap-3 text-slate-400 text-sm">
-                        <FiUserCheck className="w-4 h-4 text-slate-500" />
-                        <span>Dr. {getDoctorName(appointment)}</span>
                       </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="px-5 py-4 border-t border-slate-700/50 flex items-center justify-between">
-                      <button
-                        onClick={() => setSelectedAppointment(appointment)}
-                        className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
-                      >
-                        <FiEye className="w-4 h-4" />
-                        View Details
-                      </button>
-
-                      {appointment.status === "pending" && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleApproveWithDoctor(appointment)}
-                            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
-                            title="Approve & Assign"
-                          >
-                            <FiCheck className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(appointment.$id, "cancelled")
-                            }
-                            className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
-                            title="Cancel"
-                          >
-                            <FiX className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -585,20 +704,12 @@ const AppointmentsManagement = () => {
                   Date & Time
                 </label>
                 <p className="text-white mt-1">
-                  {new Date(selectedAppointment.date).toLocaleDateString(
-                    "en-US",
-                    {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    }
-                  )}{" "}
-                  at{" "}
-                  {new Date(selectedAppointment.date).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {
+                    formatAppointmentDateTime(
+                      selectedAppointment.date,
+                      selectedAppointment.time
+                    ).datetime
+                  }
                 </p>
               </div>
 
@@ -671,12 +782,28 @@ const AppointmentsManagement = () => {
                 </button>
                 <button
                   onClick={() => {
-                    handleStatusUpdate(selectedAppointment.$id, "cancelled");
+                    const apt = selectedAppointment;
                     setSelectedAppointment(null);
+                    handleCancelWithReason(apt);
                   }}
                   className="flex-1 py-3 px-4 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-medium hover:bg-red-500 hover:text-white transition-all"
                 >
                   Cancel
+                </button>
+              </div>
+            )}
+
+            {selectedAppointment.status === "completed" && (
+              <div className="mt-6">
+                <button
+                  onClick={() => {
+                    fetchCaseSheet(selectedAppointment.$id);
+                  }}
+                  disabled={loadingCaseSheet}
+                  className="w-full py-3 px-4 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl font-medium hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <FiFileText className="w-4 h-4" />
+                  {loadingCaseSheet ? "Loading..." : "View Case Sheet"}
                 </button>
               </div>
             )}
@@ -712,11 +839,12 @@ const AppointmentsManagement = () => {
               </p>
               <p className="text-sm text-slate-300">
                 <span className="text-slate-500">Date:</span>{" "}
-                {new Date(assigningAppointment.date).toLocaleDateString()} at{" "}
-                {new Date(assigningAppointment.date).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {
+                  formatAppointmentDateTime(
+                    assigningAppointment.date,
+                    assigningAppointment.time
+                  ).datetime
+                }
               </p>
               <p className="text-sm text-slate-300">
                 <span className="text-slate-500">Service:</span>{" "}
@@ -941,6 +1069,504 @@ const AppointmentsManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Cancellation Reason Modal */}
+      {showCancelModal && cancellingAppointment && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">
+                Cancel Appointment
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancellingAppointment(null);
+                }}
+                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-6 p-4 bg-slate-700/30 rounded-xl space-y-2">
+              <p className="text-sm text-slate-300">
+                <span className="text-slate-500">Patient:</span>{" "}
+                <span className="text-white font-medium">
+                  {cancellingAppointment.name}
+                </span>
+              </p>
+              <p className="text-sm text-slate-300">
+                <span className="text-slate-500">Date:</span>{" "}
+                {
+                  formatAppointmentDateTime(
+                    cancellingAppointment.date,
+                    cancellingAppointment.time
+                  ).datetime
+                }
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Cancellation Reason <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all resize-none"
+                placeholder="Please provide a reason for cancelling this appointment..."
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                This reason will be sent to the patient via email.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancellingAppointment(null);
+                }}
+                className="flex-1 py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
+                disabled={processing}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={!cancellationReason.trim() || processing}
+                className="flex-1 py-3 px-4 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {processing ? "Cancelling..." : "Confirm Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Case Sheet Modal */}
+      {showCaseSheetModal && selectedCaseSheet && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">
+                Case Sheet - {selectedCaseSheet.appointment?.name}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCaseSheetModal(false);
+                  setSelectedCaseSheet(null);
+                }}
+                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Patient Info */}
+            <div className="mb-6 p-4 bg-slate-700/30 rounded-xl">
+              <h4 className="text-sm font-semibold text-emerald-400 mb-3">
+                Patient Information
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-500">Name:</span>
+                  <p className="text-white font-medium">
+                    {selectedCaseSheet.appointment?.name}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Age / Sex:</span>
+                  <p className="text-white font-medium">
+                    {selectedCaseSheet.patient?.age || "N/A"} /{" "}
+                    {selectedCaseSheet.patient?.sex || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Phone:</span>
+                  <p className="text-white font-medium">
+                    {selectedCaseSheet.appointment?.phone || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Email:</span>
+                  <p className="text-white font-medium truncate">
+                    {selectedCaseSheet.appointment?.email || "N/A"}
+                  </p>
+                </div>
+                {selectedCaseSheet.patient?.occupation && (
+                  <div>
+                    <span className="text-slate-500">Occupation:</span>
+                    <p className="text-white font-medium">
+                      {selectedCaseSheet.patient.occupation}
+                    </p>
+                  </div>
+                )}
+                {selectedCaseSheet.patient?.address && (
+                  <div className="md:col-span-2">
+                    <span className="text-slate-500">Address:</span>
+                    <p className="text-white font-medium">
+                      {selectedCaseSheet.patient.address}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {selectedCaseSheet.medicalRecord ? (
+              <div className="space-y-6">
+                {/* Chief Complaints */}
+                {selectedCaseSheet.medicalRecord.chief_complaints && (
+                  <div className="p-4 bg-slate-700/30 rounded-xl">
+                    <h4 className="text-sm font-semibold text-emerald-400 mb-2">
+                      Chief Complaints
+                    </h4>
+                    <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                      {selectedCaseSheet.medicalRecord.chief_complaints}
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-xs">
+                      {selectedCaseSheet.medicalRecord.onset && (
+                        <div>
+                          <span className="text-slate-500">Onset:</span>{" "}
+                          <span className="text-slate-300">
+                            {selectedCaseSheet.medicalRecord.onset}
+                          </span>
+                        </div>
+                      )}
+                      {selectedCaseSheet.medicalRecord.duration && (
+                        <div>
+                          <span className="text-slate-500">Duration:</span>{" "}
+                          <span className="text-slate-300">
+                            {selectedCaseSheet.medicalRecord.duration}
+                          </span>
+                        </div>
+                      )}
+                      {selectedCaseSheet.medicalRecord.location && (
+                        <div>
+                          <span className="text-slate-500">Location:</span>{" "}
+                          <span className="text-slate-300">
+                            {selectedCaseSheet.medicalRecord.location}
+                          </span>
+                        </div>
+                      )}
+                      {selectedCaseSheet.medicalRecord.sensation && (
+                        <div>
+                          <span className="text-slate-500">Sensation:</span>{" "}
+                          <span className="text-slate-300">
+                            {selectedCaseSheet.medicalRecord.sensation}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* History */}
+                {(selectedCaseSheet.medicalRecord.history_present_illness ||
+                  selectedCaseSheet.medicalRecord.past_history ||
+                  selectedCaseSheet.medicalRecord.family_history) && (
+                  <div className="p-4 bg-slate-700/30 rounded-xl">
+                    <h4 className="text-sm font-semibold text-emerald-400 mb-2">
+                      History
+                    </h4>
+                    {selectedCaseSheet.medicalRecord
+                      .history_present_illness && (
+                      <div className="mb-3">
+                        <span className="text-slate-500 text-xs">
+                          History of Present Illness:
+                        </span>
+                        <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                          {
+                            selectedCaseSheet.medicalRecord
+                              .history_present_illness
+                          }
+                        </p>
+                      </div>
+                    )}
+                    {selectedCaseSheet.medicalRecord.past_history && (
+                      <div className="mb-3">
+                        <span className="text-slate-500 text-xs">
+                          Past Medical History:
+                        </span>
+                        <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                          {selectedCaseSheet.medicalRecord.past_history}
+                        </p>
+                      </div>
+                    )}
+                    {selectedCaseSheet.medicalRecord.family_history && (
+                      <div>
+                        <span className="text-slate-500 text-xs">
+                          Family History:
+                        </span>
+                        <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                          {selectedCaseSheet.medicalRecord.family_history}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Vital Signs */}
+                {selectedCaseSheet.medicalRecord.vital_signs &&
+                  Object.values(
+                    selectedCaseSheet.medicalRecord.vital_signs
+                  ).some((v) => v) && (
+                    <div className="p-4 bg-slate-700/30 rounded-xl">
+                      <h4 className="text-sm font-semibold text-emerald-400 mb-2">
+                        Vital Signs
+                      </h4>
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 text-xs">
+                        {selectedCaseSheet.medicalRecord.vital_signs
+                          .temperature && (
+                          <div>
+                            <span className="text-slate-500">Temp:</span>{" "}
+                            <span className="text-slate-300">
+                              {
+                                selectedCaseSheet.medicalRecord.vital_signs
+                                  .temperature
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {selectedCaseSheet.medicalRecord.vital_signs
+                          .blood_pressure && (
+                          <div>
+                            <span className="text-slate-500">BP:</span>{" "}
+                            <span className="text-slate-300">
+                              {
+                                selectedCaseSheet.medicalRecord.vital_signs
+                                  .blood_pressure
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {selectedCaseSheet.medicalRecord.vital_signs.pulse && (
+                          <div>
+                            <span className="text-slate-500">Pulse:</span>{" "}
+                            <span className="text-slate-300">
+                              {
+                                selectedCaseSheet.medicalRecord.vital_signs
+                                  .pulse
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {selectedCaseSheet.medicalRecord.vital_signs
+                          .respiratory_rate && (
+                          <div>
+                            <span className="text-slate-500">RR:</span>{" "}
+                            <span className="text-slate-300">
+                              {
+                                selectedCaseSheet.medicalRecord.vital_signs
+                                  .respiratory_rate
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {selectedCaseSheet.medicalRecord.vital_signs.weight && (
+                          <div>
+                            <span className="text-slate-500">Weight:</span>{" "}
+                            <span className="text-slate-300">
+                              {
+                                selectedCaseSheet.medicalRecord.vital_signs
+                                  .weight
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {selectedCaseSheet.medicalRecord.vital_signs.height && (
+                          <div>
+                            <span className="text-slate-500">Height:</span>{" "}
+                            <span className="text-slate-300">
+                              {
+                                selectedCaseSheet.medicalRecord.vital_signs
+                                  .height
+                              }
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Diagnosis */}
+                {(selectedCaseSheet.medicalRecord.provisional_diagnosis ||
+                  selectedCaseSheet.medicalRecord.final_diagnosis) && (
+                  <div className="p-4 bg-slate-700/30 rounded-xl">
+                    <h4 className="text-sm font-semibold text-emerald-400 mb-2">
+                      Diagnosis
+                    </h4>
+                    {selectedCaseSheet.medicalRecord.provisional_diagnosis && (
+                      <div className="mb-3">
+                        <span className="text-slate-500 text-xs">
+                          Provisional Diagnosis:
+                        </span>
+                        <p className="text-slate-300 text-sm">
+                          {
+                            selectedCaseSheet.medicalRecord
+                              .provisional_diagnosis
+                          }
+                        </p>
+                      </div>
+                    )}
+                    {selectedCaseSheet.medicalRecord.final_diagnosis && (
+                      <div>
+                        <span className="text-slate-500 text-xs">
+                          Final Diagnosis:
+                        </span>
+                        <p className="text-white font-medium text-sm">
+                          {selectedCaseSheet.medicalRecord.final_diagnosis}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Treatment & Follow-up */}
+                {(selectedCaseSheet.medicalRecord.treatment_plan ||
+                  selectedCaseSheet.medicalRecord.follow_up_instructions) && (
+                  <div className="p-4 bg-slate-700/30 rounded-xl">
+                    <h4 className="text-sm font-semibold text-emerald-400 mb-2">
+                      Treatment & Follow-up
+                    </h4>
+                    {selectedCaseSheet.medicalRecord.treatment_plan && (
+                      <div className="mb-3">
+                        <span className="text-slate-500 text-xs">
+                          Treatment Plan:
+                        </span>
+                        <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                          {selectedCaseSheet.medicalRecord.treatment_plan}
+                        </p>
+                      </div>
+                    )}
+                    {selectedCaseSheet.medicalRecord.follow_up_instructions && (
+                      <div>
+                        <span className="text-slate-500 text-xs">
+                          Follow-up Instructions:
+                        </span>
+                        <p className="text-slate-300 text-sm whitespace-pre-wrap">
+                          {
+                            selectedCaseSheet.medicalRecord
+                              .follow_up_instructions
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Prescription */}
+                {selectedCaseSheet.prescription?.items?.length > 0 && (
+                  <div className="p-4 bg-slate-700/30 rounded-xl">
+                    <h4 className="text-sm font-semibold text-emerald-400 mb-3">
+                      Prescription
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedCaseSheet.prescription.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 bg-slate-800/50 rounded-lg border border-slate-600/50"
+                        >
+                          <p className="text-white font-medium">
+                            {item.medication_name}
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs">
+                            {item.dosage && (
+                              <div>
+                                <span className="text-slate-500">Dosage:</span>{" "}
+                                <span className="text-slate-300">
+                                  {item.dosage}
+                                </span>
+                              </div>
+                            )}
+                            {item.frequency && (
+                              <div>
+                                <span className="text-slate-500">
+                                  Frequency:
+                                </span>{" "}
+                                <span className="text-slate-300">
+                                  {item.frequency}
+                                </span>
+                              </div>
+                            )}
+                            {item.duration && (
+                              <div>
+                                <span className="text-slate-500">
+                                  Duration:
+                                </span>{" "}
+                                <span className="text-slate-300">
+                                  {item.duration}
+                                </span>
+                              </div>
+                            )}
+                            {item.quantity && (
+                              <div>
+                                <span className="text-slate-500">
+                                  Quantity:
+                                </span>{" "}
+                                <span className="text-slate-300">
+                                  {item.quantity}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          {item.instructions && (
+                            <p className="text-slate-400 text-xs mt-2 italic">
+                              {item.instructions}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {selectedCaseSheet.prescription.notes && (
+                      <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                        <span className="text-blue-400 text-xs">Notes:</span>
+                        <p className="text-slate-300 text-sm">
+                          {selectedCaseSheet.prescription.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FiFileText className="w-12 h-12 text-slate-500 mx-auto mb-4" />
+                <p className="text-slate-400">
+                  No case sheet data available for this appointment.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-6">
+              <button
+                onClick={() => {
+                  setShowCaseSheetModal(false);
+                  setSelectedCaseSheet(null);
+                }}
+                className="w-full py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, appointmentId: null })}
+        onConfirm={confirmDelete}
+        title="Delete Appointment"
+        message="Are you sure you want to delete this appointment? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 };

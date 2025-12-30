@@ -4,19 +4,19 @@ import Link from "next/link";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import {
   FiHome,
-  FiFileText,
   FiCalendar,
-  FiUsers,
-  FiUserCheck,
+  FiPackage,
+  FiFileText,
   FiLogOut,
-  FiSettings,
   FiMenu,
   FiX,
   FiChevronRight,
+  FiHeart,
+  FiUser,
 } from "react-icons/fi";
 import { useState } from "react";
 
-const AdminSidebar = () => {
+const PatientSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useRoleAuth();
@@ -27,32 +27,26 @@ const AdminSidebar = () => {
     {
       name: "Dashboard",
       icon: FiHome,
-      href: "/admin/dashboard",
-      description: "Overview & analytics",
-    },
-    {
-      name: "Blogs",
-      icon: FiFileText,
-      href: "/admin/blogs",
-      description: "Manage blog posts",
+      href: "/patient/dashboard",
+      description: "Overview & stats",
     },
     {
       name: "Appointments",
       icon: FiCalendar,
-      href: "/admin/appointments",
-      description: "View & manage appointments",
+      href: "/patient/appointments",
+      description: "View appointments",
     },
     {
-      name: "Patients",
-      icon: FiUserCheck,
-      href: "/admin/patients",
-      description: "Manage patient accounts",
+      name: "Prescriptions",
+      icon: FiPackage,
+      href: "/patient/prescriptions",
+      description: "Your medications",
     },
     {
-      name: "Staff",
-      icon: FiUsers,
-      href: "/admin/users",
-      description: "Manage doctors & staff",
+      name: "Medical Records",
+      icon: FiFileText,
+      href: "/patient/records",
+      description: "Consultation history",
     },
   ];
 
@@ -65,7 +59,8 @@ const AdminSidebar = () => {
     }
   };
 
-  const isActive = (href) => pathname === href;
+  const isActive = (href) =>
+    pathname === href || pathname.startsWith(href + "/");
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -73,14 +68,14 @@ const AdminSidebar = () => {
       <div className="p-6 border-b border-slate-700/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <span className="text-white font-bold text-lg">A</span>
+            <FiHeart className="w-5 h-5 text-white" />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-white font-bold text-lg tracking-tight">
                 Abel Wellness
               </h1>
-              <p className="text-slate-400 text-xs">Admin Portal</p>
+              <p className="text-slate-400 text-xs">Patient Portal</p>
             </div>
           )}
         </div>
@@ -147,15 +142,15 @@ const AdminSidebar = () => {
             collapsed ? "justify-center" : ""
           }`}
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
-              {user?.name?.charAt(0) || user?.email?.charAt(0) || "A"}
+              {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "P"}
             </span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-white font-medium text-sm truncate">
-                {user?.name || "Admin"}
+                {user?.full_name || "Patient"}
               </p>
               <p className="text-slate-400 text-xs truncate">{user?.email}</p>
             </div>
@@ -235,4 +230,4 @@ const AdminSidebar = () => {
   );
 };
 
-export default AdminSidebar;
+export default PatientSidebar;
