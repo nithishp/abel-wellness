@@ -44,7 +44,7 @@ export async function GET() {
         status,
         created_at,
         dispensed_at,
-        patient:patient_id(id, full_name, email, phone),
+        patient:patient_id(id, full_name, email, phone, address),
         doctor:doctor_id(id, user:user_id(full_name)),
         items:prescription_items(
           id,
@@ -73,6 +73,7 @@ export async function GET() {
         patient_name: p.patient?.full_name || "Unknown Patient",
         patient_email: p.patient?.email,
         patient_phone: p.patient?.phone,
+        patient_address: p.patient?.address,
         doctor_name: p.doctor?.user?.full_name || "Unknown Doctor",
         items: p.items || [],
       })) || [];

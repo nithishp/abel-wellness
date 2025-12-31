@@ -46,7 +46,7 @@ export async function GET(request, { params }) {
         status,
         created_at,
         dispensed_at,
-        patient:patient_id(id, full_name, email, phone),
+        patient:patient_id(id, full_name, email, phone, address),
         doctor:doctor_id(id, user:user_id(full_name)),
         dispensed_by_pharmacist:dispensed_by(id, user:user_id(full_name)),
         items:prescription_items(
@@ -82,6 +82,7 @@ export async function GET(request, { params }) {
       patient_name: prescription.patient?.full_name || "Unknown Patient",
       patient_email: prescription.patient?.email,
       patient_phone: prescription.patient?.phone,
+      patient_address: prescription.patient?.address,
       doctor_name: prescription.doctor?.user?.full_name || "Unknown Doctor",
       dispensed_by: prescription.dispensed_by_pharmacist?.user?.full_name,
       items: prescription.items || [],

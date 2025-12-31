@@ -14,6 +14,7 @@ import {
   FiPhone,
   FiMail,
   FiFileText,
+  FiMapPin,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -250,6 +251,12 @@ const PrescriptionDetailsPage = ({ params }) => {
                       <FiPhone className="w-4 h-4 text-slate-500" />
                       {prescription.patient_phone}
                     </p>
+                  )}
+                  {prescription.patient_address && (
+                    <div className="text-slate-400 flex items-start gap-3">
+                      <FiMapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                      <span className="break-words">{prescription.patient_address}</span>
+                    </div>
                   )}
                 </div>
               </div>
