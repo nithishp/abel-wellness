@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import {
   FiEdit2,
   FiTrash2,
@@ -24,6 +26,8 @@ import {
   FiClipboard,
   FiActivity,
   FiHeart,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { formatAppointmentDateTime } from "@/lib/utils";
@@ -31,10 +35,11 @@ import { formatAppointmentDateTime } from "@/lib/utils";
 const PatientManagement = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
-  const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("active");
+  const [sortBy, setSortBy] = useState("created");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [showModal, setShowModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -58,6 +63,58 @@ const PatientManagement = () => {
     is_active: true,
   });
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch function for infinite scroll
+  const fetchPatients = useCallback(
+    async (page, limit) => {
+      const includeInactive =
+        filterStatus === "all" || filterStatus === "inactive";
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        includeInactive: includeInactive.toString(),
+      });
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch);
+      }
+
+      const response = await fetch(`/api/admin/patients?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch patients");
+      }
+      const data = await response.json();
+      return {
+        items: data.patients || [],
+        total: data.pagination?.total || 0,
+        hasMore: data.pagination?.hasMore || false,
+      };
+    },
+    [filterStatus, debouncedSearch]
+  );
+
+  // Use infinite scroll hook
+  const {
+    items: patients,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchPatients, {
+    limit: 12,
+    enabled: !!user && user.role === "admin" && !authLoading,
+    dependencies: [filterStatus, debouncedSearch],
+  });
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -70,37 +127,39 @@ const PatientManagement = () => {
       router.push("/");
       return;
     }
-
-    if (user) {
-      fetchPatients();
-    }
   }, [user, authLoading, router]);
 
-  const fetchPatients = async () => {
-    setLoading(true);
-    try {
-      const includeInactive =
-        filterStatus === "all" || filterStatus === "inactive";
-      const response = await fetch(
-        `/api/admin/patients?includeInactive=${includeInactive}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setPatients(data.patients || []);
-      }
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-      toast.error("Failed to fetch patients");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && user.role === "admin") {
-      fetchPatients();
-    }
-  }, [filterStatus]);
+  // Client-side sorting of loaded items
+  const sortedPatients = useMemo(() => {
+    return [...patients]
+      .filter((p) => {
+        const matchesFilter =
+          filterStatus === "all" ||
+          (filterStatus === "active" && p.is_active) ||
+          (filterStatus === "inactive" && !p.is_active);
+        return matchesFilter;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case "name":
+            comparison = (a.full_name || "").localeCompare(b.full_name || "");
+            break;
+          case "email":
+            comparison = (a.email || "").localeCompare(b.email || "");
+            break;
+          case "appointments":
+            comparison = (a.appointmentCount || 0) - (b.appointmentCount || 0);
+            break;
+          case "created":
+            comparison = new Date(a.created_at) - new Date(b.created_at);
+            break;
+          default:
+            comparison = 0;
+        }
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+  }, [patients, sortBy, sortOrder, filterStatus]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -130,7 +189,7 @@ const PatientManagement = () => {
 
       setShowModal(false);
       resetForm();
-      fetchPatients();
+      reset();
     } catch (error) {
       console.error("Error updating patient:", error);
       toast.dismiss(loadingToast);
@@ -187,7 +246,7 @@ const PatientManagement = () => {
         toast.success("Patient reactivated successfully!");
       }
 
-      fetchPatients();
+      reset();
       setConfirmModal({
         open: false,
         patientId: null,
@@ -255,20 +314,6 @@ const PatientManagement = () => {
     setEditingPatient(null);
   };
 
-  const filteredPatients = patients.filter((p) => {
-    const matchesSearch =
-      p.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.phone?.includes(searchTerm);
-
-    const matchesFilter =
-      filterStatus === "all" ||
-      (filterStatus === "active" && p.is_active) ||
-      (filterStatus === "inactive" && !p.is_active);
-
-    return matchesSearch && matchesFilter;
-  });
-
   // Content loading skeleton
   const ContentSkeleton = () => (
     <div className="p-6 lg:p-8 animate-pulse">
@@ -276,9 +321,9 @@ const PatientManagement = () => {
         <div className="flex-1 h-12 bg-slate-800/50 rounded-xl"></div>
         <div className="h-12 w-40 bg-slate-800/50 rounded-xl"></div>
       </div>
-      <div className="space-y-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-slate-800/50 rounded-2xl"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-64 bg-slate-800/50 rounded-2xl"></div>
         ))}
       </div>
     </div>
@@ -317,12 +362,11 @@ const PatientManagement = () => {
                   Manage Patients
                 </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
-                  {patients.length} total patients • {filteredPatients.length}{" "}
-                  shown
+                  {totalCount} total patients • {sortedPatients.length} loaded
                 </p>
               </div>
               <button
-                onClick={fetchPatients}
+                onClick={reset}
                 className="flex items-center gap-2 px-4 py-2.5 bg-slate-700/50 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-all"
               >
                 <FiRefreshCw
@@ -369,10 +413,43 @@ const PatientManagement = () => {
                     </option>
                   </select>
                 </div>
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
+                  >
+                    <option value="created" className="bg-slate-800">
+                      Sort by Joined
+                    </option>
+                    <option value="name" className="bg-slate-800">
+                      Sort by Name
+                    </option>
+                    <option value="email" className="bg-slate-800">
+                      Sort by Email
+                    </option>
+                    <option value="appointments" className="bg-slate-800">
+                      Sort by Appointments
+                    </option>
+                  </select>
+                  <button
+                    onClick={() =>
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    }
+                    className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+                    title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                  >
+                    {sortOrder === "asc" ? (
+                      <FiArrowUp className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <FiArrowDown className="w-4 h-4 text-emerald-400" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Patients Grid */}
-              {filteredPatients.length === 0 ? (
+              {sortedPatients.length === 0 && !loading ? (
                 <div className="text-center py-16">
                   <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
                     <FiUser className="w-10 h-10 text-slate-500" />
@@ -387,131 +464,158 @@ const PatientManagement = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredPatients.map((patient) => (
-                    <div
-                      key={patient.id}
-                      className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
-                    >
-                      {/* Header with gradient */}
-                      <div className="relative h-20 bg-gradient-to-r from-purple-500/20 to-pink-500/20">
-                        <div className="absolute -bottom-10 left-6">
-                          <div className="w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 bg-gradient-to-br from-purple-500 to-pink-600">
-                            <span className="text-2xl font-bold text-white">
-                              {patient.full_name?.charAt(0) ||
-                                patient.email?.charAt(0) ||
-                                "P"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => openEditModal(patient)}
-                            className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          {patient.is_active ? (
-                            <button
-                              onClick={() =>
-                                handleDeactivate(patient.id, patient.full_name)
-                              }
-                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
-                              title="Deactivate"
-                            >
-                              <FiXCircle className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() =>
-                                handleReactivate(patient.id, patient.full_name)
-                              }
-                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors"
-                              title="Reactivate"
-                            >
-                              <FiCheckCircle className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="pt-14 px-6 pb-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">
-                              {patient.full_name || "No name"}
-                            </h3>
-                            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                              Patient
-                            </span>
-                          </div>
-                          <span
-                            className={`text-xs px-2.5 py-1 rounded-full ${
-                              patient.is_active
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                                : "bg-red-500/10 text-red-400 border border-red-500/30"
-                            }`}
-                          >
-                            {patient.is_active ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-
-                        <div className="space-y-3 text-sm">
-                          <div className="flex items-center gap-3 text-slate-400">
-                            <FiMail className="w-4 h-4 text-slate-500" />
-                            <span className="truncate">{patient.email}</span>
-                          </div>
-                          {patient.phone && (
-                            <div className="flex items-center gap-3 text-slate-400">
-                              <FiPhone className="w-4 h-4 text-slate-500" />
-                              <span>{patient.phone}</span>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {sortedPatients.map((patient) => (
+                      <div
+                        key={patient.id}
+                        className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+                      >
+                        {/* Header with gradient */}
+                        <div className="relative h-20 bg-gradient-to-r from-purple-500/20 to-pink-500/20">
+                          <div className="absolute -bottom-10 left-6">
+                            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 bg-gradient-to-br from-purple-500 to-pink-600">
+                              <span className="text-2xl font-bold text-white">
+                                {patient.full_name?.charAt(0) ||
+                                  patient.email?.charAt(0) ||
+                                  "P"}
+                              </span>
                             </div>
-                          )}
-                          <div className="flex items-center gap-3 text-slate-400">
-                            <FiCalendar className="w-4 h-4 text-slate-500" />
-                            <span>{patient.appointmentCount} appointments</span>
                           </div>
-                          <button
-                            onClick={() => fetchPatientRecords(patient)}
-                            className="flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-colors group/records"
-                          >
-                            <FiFileText className="w-4 h-4 text-slate-500 group-hover/records:text-emerald-400" />
-                            <span>{patient.recordsCount} medical records</span>
-                            <FiEye className="w-4 h-4 ml-auto opacity-0 group-hover/records:opacity-100 transition-opacity" />
-                          </button>
+
+                          {/* Action buttons */}
+                          <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => openEditModal(patient)}
+                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
+                              title="Edit"
+                            >
+                              <FiEdit2 className="w-4 h-4" />
+                            </button>
+                            {patient.is_active ? (
+                              <button
+                                onClick={() =>
+                                  handleDeactivate(
+                                    patient.id,
+                                    patient.full_name
+                                  )
+                                }
+                                className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                                title="Deactivate"
+                              >
+                                <FiXCircle className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  handleReactivate(
+                                    patient.id,
+                                    patient.full_name
+                                  )
+                                }
+                                className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors"
+                                title="Reactivate"
+                              >
+                                <FiCheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between">
-                          <span className="text-xs text-slate-500">
-                            Registered{" "}
-                            {new Date(patient.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
+                        {/* Content */}
+                        <div className="pt-14 px-6 pb-6">
+                          <div className="flex items-center justify-between gap-3 mb-4">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-lg font-semibold text-white truncate">
+                                {patient.full_name || "No name"}
+                              </h3>
+                              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                                Patient
+                              </span>
+                            </div>
+                            <span
+                              className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full whitespace-nowrap ${
+                                patient.is_active
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-red-500/10 text-red-400 border border-red-500/30"
+                              }`}
+                            >
+                              {patient.is_active ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+
+                          <div className="space-y-3 text-sm">
+                            <div className="flex items-center gap-3 text-slate-400">
+                              <FiMail className="w-4 h-4 text-slate-500" />
+                              <span className="truncate">{patient.email}</span>
+                            </div>
+                            {patient.phone && (
+                              <div className="flex items-center gap-3 text-slate-400">
+                                <FiPhone className="w-4 h-4 text-slate-500" />
+                                <span>{patient.phone}</span>
+                              </div>
                             )}
-                          </span>
-                          {patient.recordsCount > 0 && (
+                            <div className="flex items-center gap-3 text-slate-400">
+                              <FiCalendar className="w-4 h-4 text-slate-500" />
+                              <span>
+                                {patient.appointmentCount} appointments
+                              </span>
+                            </div>
                             <button
                               onClick={() => fetchPatientRecords(patient)}
-                              className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors"
+                              className="flex items-center gap-3 text-slate-400 hover:text-emerald-400 transition-colors group/records"
                             >
-                              <FiEye className="w-3.5 h-3.5" />
-                              View Records
+                              <FiFileText className="w-4 h-4 text-slate-500 group-hover/records:text-emerald-400" />
+                              <span>
+                                {patient.recordsCount} medical records
+                              </span>
+                              <FiEye className="w-4 h-4 ml-auto opacity-0 group-hover/records:opacity-100 transition-opacity" />
                             </button>
-                          )}
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between">
+                            <span className="text-xs text-slate-500">
+                              Registered{" "}
+                              {new Date(patient.created_at).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )}
+                            </span>
+                            {patient.recordsCount > 0 && (
+                              <button
+                                onClick={() => fetchPatientRecords(patient)}
+                                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors"
+                              >
+                                <FiEye className="w-3.5 h-3.5" />
+                                View Records
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+
+                  {/* Infinite Scroll Loader */}
+                  <InfiniteScrollLoader
+                    ref={sentinelRef}
+                    loading={loading}
+                    loadingMore={loadingMore}
+                    hasMore={hasMore}
+                    error={error}
+                    itemCount={sortedPatients.length}
+                    totalCount={totalCount}
+                    emptyMessage="No patients found"
+                    endMessage="You've seen all patients"
+                    onRetry={reset}
+                    loaderColor="emerald"
+                  />
+                </>
               )}
             </>
           )}

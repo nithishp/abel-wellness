@@ -19,14 +19,16 @@ export async function GET(request) {
       return NextResponse.json(blog);
     }
 
-    // Otherwise fetch all blogs
-    const limit = parseInt(searchParams.get("limit")) || 50;
+    // Otherwise fetch all blogs with pagination
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
     const published = searchParams.get("published");
+    const search = searchParams.get("search") || "";
 
     const publishedFilter =
       published === "true" ? true : published === "false" ? false : null;
 
-    const blogs = await getBlogs(limit, publishedFilter);
+    const blogs = await getBlogs(limit, publishedFilter, page, search);
     return NextResponse.json(blogs);
   } catch (error) {
     console.error("API Error fetching blogs:", error);

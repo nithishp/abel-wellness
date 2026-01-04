@@ -29,7 +29,7 @@ async function verifyAdminSession() {
   return session.user;
 }
 
-// GET - List users (doctors and pharmacists)
+// GET - List users (doctors and pharmacists) with pagination
 export async function GET(request) {
   try {
     const admin = await verifyAdminSession();
@@ -40,7 +40,35 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
     const includeInactive = searchParams.get("includeInactive") === "true";
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+    const offset = (page - 1) * limit;
 
+    // First get total count for pagination
+    let countQuery = supabaseAdmin
+      .from(TABLES.USERS)
+      .select("*", { count: "exact", head: true });
+
+    if (role) {
+      countQuery = countQuery.eq("role", role);
+    } else {
+      countQuery = countQuery.in("role", [ROLES.DOCTOR, ROLES.PHARMACIST]);
+    }
+
+    if (!includeInactive) {
+      countQuery = countQuery.eq("is_active", true);
+    }
+
+    if (search) {
+      countQuery = countQuery.or(
+        `full_name.ilike.%${search}%,email.ilike.%${search}%`
+      );
+    }
+
+    const { count: totalCount } = await countQuery;
+
+    // Then get paginated data
     let query = supabaseAdmin.from(TABLES.USERS).select("*");
 
     if (role) {
@@ -53,9 +81,13 @@ export async function GET(request) {
       query = query.eq("is_active", true);
     }
 
-    const { data: users, error } = await query.order("created_at", {
-      ascending: false,
-    });
+    if (search) {
+      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    const { data: users, error } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error("Error fetching users:", error);
@@ -92,7 +124,18 @@ export async function GET(request) {
       })
     );
 
-    return NextResponse.json({ users: usersWithRoleData });
+    const hasMore = offset + users.length < totalCount;
+
+    return NextResponse.json({
+      users: usersWithRoleData,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    });
   } catch (error) {
     console.error("Error in GET users:", error);
     return NextResponse.json(

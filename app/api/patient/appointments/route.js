@@ -27,13 +27,24 @@ async function verifyPatientSession() {
   return session.user;
 }
 
-// GET - Fetch all patient appointments
-export async function GET() {
+// GET - Fetch all patient appointments with pagination
+export async function GET(request) {
   try {
     const patient = await verifyPatientSession();
     if (!patient) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const offset = (page - 1) * limit;
+
+    // First get total count
+    const { count: totalCount } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .select("*", { count: "exact", head: true })
+      .eq("patient_id", patient.id);
 
     const { data: appointments, error } = await supabaseAdmin
       .from(TABLES.APPOINTMENTS)
@@ -52,7 +63,8 @@ export async function GET() {
       )
       .eq("patient_id", patient.id)
       .order("date", { ascending: false })
-      .order("time", { ascending: false });
+      .order("time", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw error;
@@ -71,8 +83,17 @@ export async function GET() {
         doctor_name: apt.doctor?.user?.full_name,
       })) || [];
 
+    const hasMore = offset + appointments.length < totalCount;
+
     return NextResponse.json({
       appointments: formattedAppointments,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching patient appointments:", error);

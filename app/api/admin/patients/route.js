@@ -28,7 +28,7 @@ async function verifyAdminSession() {
   return session.user;
 }
 
-// GET - List all patients
+// GET - List all patients with pagination
 export async function GET(request) {
   try {
     const admin = await verifyAdminSession();
@@ -38,7 +38,30 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get("includeInactive") === "true";
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+    const offset = (page - 1) * limit;
 
+    // First get total count for pagination
+    let countQuery = supabaseAdmin
+      .from(TABLES.USERS)
+      .select("*", { count: "exact", head: true })
+      .eq("role", ROLES.PATIENT);
+
+    if (!includeInactive) {
+      countQuery = countQuery.eq("is_active", true);
+    }
+
+    if (search) {
+      countQuery = countQuery.or(
+        `full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+
+    const { count: totalCount } = await countQuery;
+
+    // Then get paginated data
     let query = supabaseAdmin
       .from(TABLES.USERS)
       .select("*")
@@ -48,9 +71,15 @@ export async function GET(request) {
       query = query.eq("is_active", true);
     }
 
-    const { data: patients, error } = await query.order("created_at", {
-      ascending: false,
-    });
+    if (search) {
+      query = query.or(
+        `full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+
+    const { data: patients, error } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error("Error fetching patients:", error);
@@ -85,7 +114,18 @@ export async function GET(request) {
       })
     );
 
-    return NextResponse.json({ patients: patientsWithStats });
+    const hasMore = offset + patients.length < totalCount;
+
+    return NextResponse.json({
+      patients: patientsWithStats,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    });
   } catch (error) {
     console.error("Error in GET patients:", error);
     return NextResponse.json(

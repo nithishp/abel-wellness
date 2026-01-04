@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import PharmacistSidebar from "../components/PharmacistSidebar";
 import {
   FiPackage,
@@ -21,12 +23,55 @@ const PharmacistPrescriptionsPage = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
 
-  const [prescriptions, setPrescriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
   const [statusFilter, setStatusFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch prescriptions callback for infinite scroll
+  const fetchPrescriptions = useCallback(
+    async (page, limit) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (debouncedSearch) params.append("search", debouncedSearch);
+
+      const response = await fetch(`/api/pharmacist/prescriptions?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch prescriptions");
+      const data = await response.json();
+      return {
+        items: data.prescriptions || [],
+        total: data.pagination?.total || 0,
+        hasMore: data.pagination?.hasMore || false,
+      };
+    },
+    [debouncedSearch]
+  );
+
+  // Use infinite scroll hook
+  const {
+    items: prescriptions,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchPrescriptions, {
+    limit: 10,
+    enabled: !!user && user.role === "pharmacist" && !authLoading,
+    dependencies: [debouncedSearch],
+  });
+
+  // Handle authentication and authorization redirects
   useEffect(() => {
     if (authLoading) return;
 
@@ -40,30 +85,11 @@ const PharmacistPrescriptionsPage = () => {
       router.push("/");
       return;
     }
-
-    fetchPrescriptions();
   }, [user, authLoading, router]);
-
-  const fetchPrescriptions = async () => {
-    try {
-      const response = await fetch("/api/pharmacist/prescriptions");
-      if (response.ok) {
-        const data = await response.json();
-        setPrescriptions(data.prescriptions || []);
-      } else {
-        toast.error("Failed to load prescriptions");
-      }
-    } catch (error) {
-      console.error("Error fetching prescriptions:", error);
-      toast.error("Failed to load prescriptions");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchPrescriptions();
+    await reset();
     setRefreshing(false);
     toast.success("Prescriptions refreshed!");
   };
@@ -80,7 +106,7 @@ const PharmacistPrescriptionsPage = () => {
 
       if (response.ok) {
         toast.success("Prescription marked as dispensed");
-        fetchPrescriptions();
+        reset();
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to dispense prescription");
@@ -117,20 +143,14 @@ const PharmacistPrescriptionsPage = () => {
     return configs[status] || configs.pending;
   };
 
-  const filteredPrescriptions = prescriptions.filter((prescription) => {
-    const matchesSearch =
-      prescription.patient_name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      prescription.doctor_name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "all" || prescription.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+  // Client-side filtering for status (search is handled server-side)
+  const filteredPrescriptions = useMemo(() => {
+    return prescriptions.filter((prescription) => {
+      const matchesStatus =
+        statusFilter === "all" || prescription.status === statusFilter;
+      return matchesStatus;
+    });
+  }, [prescriptions, statusFilter]);
 
   // Only show full-page loading for initial auth check
   if (authLoading) {
@@ -203,8 +223,8 @@ const PharmacistPrescriptionsPage = () => {
                   <input
                     type="text"
                     placeholder="Search by patient or doctor name..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
@@ -233,7 +253,7 @@ const PharmacistPrescriptionsPage = () => {
                       No Prescriptions Found
                     </p>
                     <p className="text-slate-500 text-sm mt-1">
-                      {searchQuery || statusFilter !== "all"
+                      {searchTerm || statusFilter !== "all"
                         ? "Try adjusting your search or filters"
                         : "No prescriptions available"}
                     </p>
@@ -375,6 +395,15 @@ const PharmacistPrescriptionsPage = () => {
                       );
                     })}
                   </div>
+
+                  {/* Infinite Scroll Loader */}
+                  <InfiniteScrollLoader
+                    sentinelRef={sentinelRef}
+                    loading={loadingMore}
+                    hasMore={hasMore}
+                    error={error}
+                    onRetry={reset}
+                  />
                 </div>
               )}
             </>

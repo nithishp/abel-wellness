@@ -350,27 +350,29 @@ const ConsultationPage = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="ml-12 lg:ml-0">
-                <h1 className="text-2xl font-bold text-white">Consultation</h1>
-                <p className="text-slate-400 text-sm mt-0.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                  Consultation
+                </h1>
+                <p className="text-slate-400 text-xs sm:text-sm mt-0.5 truncate max-w-[200px] sm:max-w-none">
                   Patient: {appointment.name}
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3 ml-12 lg:ml-0">
                 <button
                   onClick={() => handleSave(false)}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 text-white rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-700/50 border border-slate-600/50 text-white rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-50 text-sm sm:text-base flex-1 sm:flex-none"
                 >
                   <FiSave className="w-4 h-4" />
-                  Save Draft
+                  <span className="hidden xs:inline">Save</span> Draft
                 </button>
                 <button
                   onClick={() => handleSave(true)}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 text-sm sm:text-base flex-1 sm:flex-none"
                 >
                   <FiCheck className="w-4 h-4" />
                   Complete
@@ -380,59 +382,63 @@ const ConsultationPage = () => {
           </div>
         </header>
 
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {/* Patient Info Card */}
-          <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">
+          <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h2 className="text-base sm:text-lg font-semibold text-white">
                 Patient Information
               </h2>
               <button
                 onClick={() => setShowHistoryModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-500/20 text-violet-400 rounded-xl hover:bg-violet-500/30 transition-colors border border-violet-500/30"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-violet-500/20 text-violet-400 rounded-xl hover:bg-violet-500/30 transition-colors border border-violet-500/30 text-sm sm:text-base w-full sm:w-auto"
               >
                 <FiFolder className="w-4 h-4" />
                 View Past Records
               </button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/20">
-                  <FiUser className="w-5 h-5 text-blue-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 p-2 sm:p-0 bg-slate-700/30 sm:bg-transparent rounded-lg">
+                <div className="p-2 rounded-lg bg-blue-500/20 shrink-0">
+                  <FiUser className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">Name</p>
-                  <p className="font-medium text-white">{appointment.name}</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-slate-400">Name</p>
+                  <p className="font-medium text-white text-sm sm:text-base truncate">
+                    {appointment.name}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-violet-500/20">
-                  <FiCalendar className="w-5 h-5 text-violet-400" />
+              <div className="flex items-center gap-3 p-2 sm:p-0 bg-slate-700/30 sm:bg-transparent rounded-lg">
+                <div className="p-2 rounded-lg bg-violet-500/20 shrink-0">
+                  <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">Age / Sex</p>
-                  <p className="font-medium text-white">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-slate-400">Age / Sex</p>
+                  <p className="font-medium text-white text-sm sm:text-base">
                     {appointment.patient?.age || "N/A"} /{" "}
                     {appointment.patient?.sex || "N/A"}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-500/20">
-                  <FiPhone className="w-5 h-5 text-emerald-400" />
+              <div className="flex items-center gap-3 p-2 sm:p-0 bg-slate-700/30 sm:bg-transparent rounded-lg">
+                <div className="p-2 rounded-lg bg-emerald-500/20 shrink-0">
+                  <FiPhone className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">Phone</p>
-                  <p className="font-medium text-white">{appointment.phone}</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-slate-400">Phone</p>
+                  <p className="font-medium text-white text-sm sm:text-base truncate">
+                    {appointment.phone}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/20">
-                  <FiMail className="w-5 h-5 text-amber-400" />
+              <div className="flex items-center gap-3 p-2 sm:p-0 bg-slate-700/30 sm:bg-transparent rounded-lg">
+                <div className="p-2 rounded-lg bg-amber-500/20 shrink-0">
+                  <FiMail className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">Email</p>
-                  <p className="font-medium text-white truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-slate-400">Email</p>
+                  <p className="font-medium text-white text-sm sm:text-base truncate">
                     {appointment.email}
                   </p>
                 </div>
@@ -451,12 +457,12 @@ const ConsultationPage = () => {
           {/* Tabs */}
           <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
             <div className="border-b border-slate-700/50">
-              <div className="flex flex-wrap">
+              <div className="flex overflow-x-auto scrollbar-hide -mb-px">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-6 py-4 text-sm font-medium transition-colors ${
+                    className={`px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                       activeTab === tab.id
                         ? "text-blue-400 border-b-2 border-blue-400 bg-blue-500/10"
                         : "text-slate-400 hover:text-white hover:bg-slate-700/30"
@@ -468,7 +474,7 @@ const ConsultationPage = () => {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Patient Info Tab - Doctor can update demographics */}
               {activeTab === "patient_info" && (
                 <div className="space-y-6">
@@ -840,10 +846,10 @@ const ConsultationPage = () => {
               {activeTab === "examination" && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-medium text-white mb-4">
+                    <h3 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">
                       Vital Signs
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
                           Temperature
@@ -1123,28 +1129,28 @@ const ConsultationPage = () => {
 
               {/* Prescription Tab */}
               {activeTab === "prescription" && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-white">
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h3 className="text-base sm:text-lg font-medium text-white">
                       Prescription Items
                     </h3>
                     <button
                       onClick={addPrescriptionItem}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-colors text-sm sm:text-base w-full sm:w-auto"
                     >
                       <FiPlus className="w-4 h-4" />
                       Add Medication
                     </button>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {prescriptionItems.map((item, index) => (
                       <div
                         key={index}
-                        className="p-4 border border-slate-600/30 rounded-xl bg-slate-700/30"
+                        className="p-3 sm:p-4 border border-slate-600/30 rounded-xl bg-slate-700/30"
                       >
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="font-medium text-slate-300">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                          <span className="font-medium text-slate-300 text-sm sm:text-base">
                             Medication {index + 1}
                           </span>
                           {prescriptionItems.length > 1 && (
@@ -1156,8 +1162,8 @@ const ConsultationPage = () => {
                             </button>
                           )}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="md:col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                          <div className="sm:col-span-2">
                             <label className="block text-sm text-slate-400 mb-1">
                               Medication Name *
                             </label>
@@ -1247,7 +1253,7 @@ const ConsultationPage = () => {
                               placeholder="e.g., 1 bottle"
                             />
                           </div>
-                          <div className="md:col-span-3">
+                          <div className="sm:col-span-2 md:col-span-3">
                             <label className="block text-sm text-slate-400 mb-1">
                               Special Instructions
                             </label>
@@ -1291,84 +1297,87 @@ const ConsultationPage = () => {
         {/* Past Records Modal */}
         {showHistoryModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => setShowHistoryModal(false)}
           >
             <div
-              className="bg-slate-800 border border-slate-700/50 rounded-2xl w-full max-w-7xl max-h-[92vh] overflow-hidden shadow-2xl m-4"
+              className="bg-slate-800 border border-slate-700/50 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-4xl lg:max-w-6xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden shadow-2xl sm:m-4"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-gradient-to-r from-blue-600/20 to-indigo-600/20">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-blue-500/20">
-                    <FiFolder className="w-6 h-6 text-blue-400" />
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-700/50 bg-gradient-to-r from-blue-600/20 to-indigo-600/20">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-blue-500/20 shrink-0">
+                    <FiFolder className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-semibold text-white">
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-semibold text-white">
                       Past Records
                     </h2>
-                    <p className="text-base text-slate-400">
-                      {appointment?.patient?.full_name || "Patient"}'s medical
-                      history
+                    <p className="text-sm sm:text-base text-slate-400 truncate">
+                      {appointment?.patient?.full_name || "Patient"}'s history
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="p-2 rounded-xl hover:bg-slate-700/50 transition-colors text-slate-400 hover:text-white"
+                  className="p-2 rounded-xl hover:bg-slate-700/50 transition-colors text-slate-400 hover:text-white shrink-0"
                 >
-                  <FiX className="w-6 h-6" />
+                  <FiX className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
 
               {/* Modal Content */}
-              <div className="p-8 overflow-y-auto max-h-[calc(92vh-100px)]">
+              <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto max-h-[calc(90vh-80px)] sm:max-h-[calc(85vh-100px)]">
                 {loadingHistory ? (
-                  <div className="text-center py-8">
-                    <div className="relative w-12 h-12 mx-auto mb-4">
+                  <div className="text-center py-6 sm:py-8">
+                    <div className="relative w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4">
                       <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
                       <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 animate-spin"></div>
                     </div>
-                    <p className="text-slate-400">Loading patient history...</p>
+                    <p className="text-slate-400 text-sm sm:text-base">
+                      Loading patient history...
+                    </p>
                   </div>
                 ) : patientHistory.medicalRecords.length === 0 &&
                   patientHistory.prescriptions.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-20 h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
-                      <FiFileText className="w-10 h-10 text-slate-500" />
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <FiFileText className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500" />
                     </div>
-                    <h3 className="text-lg font-medium text-white mb-2">
+                    <h3 className="text-base sm:text-lg font-medium text-white mb-2">
                       No Previous Records
                     </h3>
-                    <p className="text-slate-400">
+                    <p className="text-slate-400 text-sm sm:text-base px-4">
                       This patient has no previous medical records or
                       prescriptions.
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {/* Previous Medical Records */}
                     <div>
-                      <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                        <FiFileText className="w-5 h-5 text-blue-400" />
-                        Previous Medical Records (
-                        {patientHistory.medicalRecords.length})
+                      <h3 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4 flex items-center gap-2">
+                        <FiFileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                        <span className="truncate">
+                          Medical Records (
+                          {patientHistory.medicalRecords.length})
+                        </span>
                       </h3>
-                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="space-y-3 sm:space-y-4 max-h-[300px] sm:max-h-[400px] lg:max-h-[500px] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                         {patientHistory.medicalRecords.map((record) => (
                           <div
                             key={record.id}
-                            className="p-4 bg-slate-700/30 rounded-xl border border-slate-600/30 hover:border-blue-500/30 transition-colors"
+                            className="p-3 sm:p-4 bg-slate-700/30 rounded-xl border border-slate-600/30 hover:border-blue-500/30 transition-colors"
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-slate-400 flex items-center gap-1">
-                                <FiCalendar className="w-4 h-4" />
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                              <span className="text-xs sm:text-sm text-slate-400 flex items-center gap-1">
+                                <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 {new Date(
                                   record.appointment?.date || record.created_at
                                 ).toLocaleDateString()}
                               </span>
-                              <span className="text-xs text-blue-400">
+                              <span className="text-xs text-blue-400 truncate max-w-[120px]">
                                 Dr.{" "}
                                 {record.doctor?.user?.full_name || "Unknown"}
                               </span>
@@ -1378,7 +1387,7 @@ const ConsultationPage = () => {
                                 <p className="text-xs text-slate-500">
                                   Chief Complaints:
                                 </p>
-                                <p className="text-sm text-slate-300">
+                                <p className="text-xs sm:text-sm text-slate-300 line-clamp-2">
                                   {record.chief_complaints}
                                 </p>
                               </div>
@@ -1388,7 +1397,7 @@ const ConsultationPage = () => {
                                 <p className="text-xs text-slate-500">
                                   Diagnosis:
                                 </p>
-                                <p className="text-sm font-medium text-white">
+                                <p className="text-xs sm:text-sm font-medium text-white line-clamp-2">
                                   {record.final_diagnosis}
                                 </p>
                               </div>
@@ -1398,7 +1407,7 @@ const ConsultationPage = () => {
                                 <p className="text-xs text-slate-500">
                                   Treatment:
                                 </p>
-                                <p className="text-sm text-slate-300">
+                                <p className="text-xs sm:text-sm text-slate-300 line-clamp-2">
                                   {record.treatment_plan}
                                 </p>
                               </div>
@@ -1410,26 +1419,27 @@ const ConsultationPage = () => {
 
                     {/* Previous Prescriptions */}
                     <div>
-                      <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                        <FiPackage className="w-5 h-5 text-emerald-400" />
-                        Previous Prescriptions (
-                        {patientHistory.prescriptions.length})
+                      <h3 className="text-base sm:text-lg font-medium text-white mb-3 sm:mb-4 flex items-center gap-2">
+                        <FiPackage className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+                        <span className="truncate">
+                          Prescriptions ({patientHistory.prescriptions.length})
+                        </span>
                       </h3>
-                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                      <div className="space-y-3 sm:space-y-4 max-h-[300px] sm:max-h-[400px] lg:max-h-[500px] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
                         {patientHistory.prescriptions.map((prescription) => (
                           <div
                             key={prescription.id}
-                            className="p-4 bg-slate-700/30 rounded-xl border border-slate-600/30 hover:border-emerald-500/30 transition-colors"
+                            className="p-3 sm:p-4 bg-slate-700/30 rounded-xl border border-slate-600/30 hover:border-emerald-500/30 transition-colors"
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-slate-400 flex items-center gap-1">
-                                <FiCalendar className="w-4 h-4" />
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                              <span className="text-xs sm:text-sm text-slate-400 flex items-center gap-1">
+                                <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 {new Date(
                                   prescription.appointment?.date ||
                                     prescription.created_at
                                 ).toLocaleDateString()}
                               </span>
-                              <span className="text-xs text-emerald-400">
+                              <span className="text-xs text-emerald-400 truncate max-w-[120px]">
                                 Dr.{" "}
                                 {prescription.doctor?.user?.full_name ||
                                   "Unknown"}
@@ -1441,25 +1451,31 @@ const ConsultationPage = () => {
                                   key={idx}
                                   className="p-2 bg-slate-800/50 rounded-lg border border-slate-600/20"
                                 >
-                                  <p className="font-medium text-white text-sm">
+                                  <p className="font-medium text-white text-xs sm:text-sm truncate">
                                     {item.medication_name}
                                   </p>
-                                  <div className="flex flex-wrap gap-2 mt-1 text-xs text-slate-400">
+                                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1 text-xs text-slate-400">
                                     {item.dosage && (
-                                      <span>Dosage: {item.dosage}</span>
+                                      <span className="truncate">
+                                        {item.dosage}
+                                      </span>
                                     )}
                                     {item.frequency && (
-                                      <span>• {item.frequency}</span>
+                                      <span className="truncate">
+                                        • {item.frequency}
+                                      </span>
                                     )}
                                     {item.duration && (
-                                      <span>• {item.duration}</span>
+                                      <span className="truncate">
+                                        • {item.duration}
+                                      </span>
                                     )}
                                   </div>
                                 </div>
                               ))}
                             </div>
                             {prescription.notes && (
-                              <p className="text-xs text-slate-500 mt-2 italic">
+                              <p className="text-xs text-slate-500 mt-2 italic line-clamp-2">
                                 {prescription.notes}
                               </p>
                             )}

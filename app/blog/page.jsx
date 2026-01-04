@@ -1,30 +1,75 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { getPublishedBlogs } from "@/lib/actions/blog.actions";
-import { FiArrowLeft, FiCalendar, FiUser, FiArrowRight } from "react-icons/fi";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
+import {
+  FiArrowLeft,
+  FiCalendar,
+  FiUser,
+  FiArrowRight,
+  FiSearch,
+} from "react-icons/fi";
 
 const BlogsPage = () => {
   const router = useRouter();
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
+  // Debounce search term
   useEffect(() => {
-    fetchBlogs();
-  }, []);
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  const fetchBlogs = async () => {
-    try {
-      const response = await getPublishedBlogs(50);
-      setBlogs(response.documents || []);
-    } catch (error) {
-      console.error("Error fetching blogs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch blogs callback for infinite scroll
+  const fetchBlogs = useCallback(
+    async (page, limit) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        published: "true",
+      });
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (selectedCategory && selectedCategory !== "All")
+        params.append("category", selectedCategory);
 
-  if (loading) {
+      const response = await fetch(`/api/admin/blogs?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch blogs");
+      const data = await response.json();
+      return {
+        items: data.blogs || [],
+        total: data.pagination?.total || 0,
+        hasMore: data.pagination?.hasMore || false,
+      };
+    },
+    [debouncedSearch, selectedCategory]
+  );
+
+  // Use infinite scroll hook
+  const {
+    items: blogs,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchBlogs, {
+    limit: 9,
+    enabled: true,
+    dependencies: [debouncedSearch, selectedCategory],
+  });
+
+  // Categories for filtering
+  const categories = useMemo(
+    () => ["All", "Health Tips", "Treatments", "Wellness", "Lifestyle", "News"],
+    []
+  );
+
+  if (loading && blogs.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading blog posts...</div>
@@ -56,7 +101,49 @@ const BlogsPage = () => {
           </p>
         </div>
 
-        {blogs.length === 0 ? (
+        {/* Search and Filter Section */}
+        <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:w-96">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search blog posts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === category
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Results count */}
+        {totalCount > 0 && (
+          <div className="mb-4 text-gray-600">
+            Showing {blogs.length} of {totalCount} posts
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {blogs.length === 0 && !loading ? (
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               No Blog Posts Yet
@@ -69,14 +156,14 @@ const BlogsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogs.map((blog) => (
               <article
-                key={blog.$id}
+                key={blog.id || blog.$id}
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
                 onClick={() => router.push(`/blog/${blog.slug}`)}
               >
                 <div className="relative">
-                  {blog.imageUrl ? (
+                  {blog.imageUrl || blog.image_url ? (
                     <img
-                      src={blog.imageUrl}
+                      src={blog.imageUrl || blog.image_url}
                       alt={blog.title}
                       className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
@@ -91,7 +178,9 @@ const BlogsPage = () => {
                   )}
                   <div className="absolute top-4 right-4">
                     <span className="bg-white bg-opacity-90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700">
-                      {new Date(blog.$createdAt).toLocaleDateString("en-US", {
+                      {new Date(
+                        blog.created_at || blog.$createdAt
+                      ).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                       })}
@@ -105,6 +194,11 @@ const BlogsPage = () => {
                       <FiUser className="mr-1 text-xs" />
                       <span className="font-medium">{blog.author}</span>
                     </div>
+                    {blog.category && (
+                      <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
+                        {blog.category}
+                      </span>
+                    )}
                   </div>
 
                   <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
@@ -112,14 +206,16 @@ const BlogsPage = () => {
                   </h2>
 
                   <p className="text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                    {blog.description}
+                    {blog.description || blog.excerpt}
                   </p>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm text-gray-500">
                       <FiCalendar className="mr-1 text-xs" />
                       <span>
-                        {new Date(blog.$createdAt).toLocaleDateString()}
+                        {new Date(
+                          blog.created_at || blog.$createdAt
+                        ).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center text-blue-600 font-medium text-sm group-hover:text-blue-700 transition-colors">
@@ -132,6 +228,13 @@ const BlogsPage = () => {
             ))}
           </div>
         )}
+
+        {/* Infinite Scroll Loader */}
+        <InfiniteScrollLoader
+          loading={loadingMore}
+          hasMore={hasMore}
+          sentinelRef={sentinelRef}
+        />
       </div>
     </div>
   );

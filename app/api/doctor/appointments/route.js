@@ -27,7 +27,7 @@ async function verifyDoctorSession() {
   return session.user;
 }
 
-// GET - Fetch all appointments for the logged-in doctor
+// GET - Fetch all appointments for the logged-in doctor with pagination
 export async function GET(request) {
   try {
     const doctor = await verifyDoctorSession();
@@ -49,8 +49,29 @@ export async function GET(request) {
       );
     }
 
-    // Fetch all appointments for this doctor
-    const { data: appointments, error: appointmentsError } = await supabaseAdmin
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+    const offset = (page - 1) * limit;
+
+    // First get total count
+    let countQuery = supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .select("*", { count: "exact", head: true })
+      .eq("doctor_id", doctorProfile.id)
+      .in("status", ["approved", "completed"]);
+
+    if (search) {
+      countQuery = countQuery.or(
+        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+
+    const { count: totalCount } = await countQuery;
+
+    // Fetch paginated appointments for this doctor
+    let query = supabaseAdmin
       .from(TABLES.APPOINTMENTS)
       .select(
         `
@@ -73,6 +94,17 @@ export async function GET(request) {
       .order("date", { ascending: false })
       .order("time", { ascending: true });
 
+    if (search) {
+      query = query.or(
+        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+
+    const { data: appointments, error: appointmentsError } = await query.range(
+      offset,
+      offset + limit - 1
+    );
+
     if (appointmentsError) {
       console.error("Error fetching appointments:", appointmentsError);
       return NextResponse.json(
@@ -81,8 +113,17 @@ export async function GET(request) {
       );
     }
 
+    const hasMore = offset + appointments.length < totalCount;
+
     return NextResponse.json({
       appointments: appointments || [],
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
     });
   } catch (error) {
     console.error("Error in doctor appointments API:", error);

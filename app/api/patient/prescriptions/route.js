@@ -27,13 +27,24 @@ async function verifyPatientSession() {
   return session.user;
 }
 
-// GET - Fetch all patient prescriptions
-export async function GET() {
+// GET - Fetch all patient prescriptions with pagination
+export async function GET(request) {
   try {
     const patient = await verifyPatientSession();
     if (!patient) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const offset = (page - 1) * limit;
+
+    // First get total count
+    const { count: totalCount } = await supabaseAdmin
+      .from(TABLES.PRESCRIPTIONS)
+      .select("*", { count: "exact", head: true })
+      .eq("patient_id", patient.id);
 
     const { data: prescriptions, error } = await supabaseAdmin
       .from(TABLES.PRESCRIPTIONS)
@@ -57,7 +68,8 @@ export async function GET() {
       `
       )
       .eq("patient_id", patient.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw error;
@@ -74,8 +86,17 @@ export async function GET() {
         items: p.items || [],
       })) || [];
 
+    const hasMore = offset + prescriptions.length < totalCount;
+
     return NextResponse.json({
       prescriptions: formattedPrescriptions,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching patient prescriptions:", error);

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import PatientSidebar from "../components/PatientSidebar";
 import {
   FiPackage,
@@ -21,8 +23,6 @@ const PatientPrescriptionsPage = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
 
-  const [prescriptions, setPrescriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedPrescription, setExpandedPrescription] = useState(null);
 
@@ -39,30 +39,44 @@ const PatientPrescriptionsPage = () => {
       router.push("/");
       return;
     }
-
-    fetchPrescriptions();
   }, [user, authLoading, router]);
 
-  const fetchPrescriptions = async () => {
-    try {
-      const response = await fetch("/api/patient/prescriptions");
-      if (response.ok) {
-        const data = await response.json();
-        setPrescriptions(data.prescriptions || []);
-      } else {
-        toast.error("Failed to load prescriptions");
-      }
-    } catch (error) {
-      console.error("Error fetching prescriptions:", error);
-      toast.error("Failed to load prescriptions");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchPrescriptions = useCallback(async (page, limit) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await fetch(`/api/patient/prescriptions?${params}`);
+    if (!response.ok) throw new Error("Failed to fetch prescriptions");
+    const data = await response.json();
+    return {
+      items: data.prescriptions || [],
+      total: data.pagination?.total || 0,
+      hasMore: data.pagination?.hasMore || false,
+    };
+  }, []);
+
+  const {
+    items: prescriptions,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchPrescriptions, {
+    limit: 10,
+    enabled: !!user && user.role === "patient" && !authLoading,
+  });
+
+  const filteredPrescriptions = useMemo(() => {
+    return prescriptions;
+  }, [prescriptions]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchPrescriptions();
+    await reset();
     setRefreshing(false);
     toast.success("Prescriptions refreshed!");
   };
@@ -143,7 +157,7 @@ const PatientPrescriptionsPage = () => {
         <div className="p-6 lg:p-8">
           {loading ? (
             <ContentSkeleton />
-          ) : prescriptions.length === 0 ? (
+          ) : filteredPrescriptions.length === 0 ? (
             <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-12 text-center">
               <div className="w-20 h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-6">
                 <FiPackage className="w-10 h-10 text-slate-500" />
@@ -158,7 +172,7 @@ const PatientPrescriptionsPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {prescriptions.map((prescription) => {
+              {filteredPrescriptions.map((prescription) => {
                 const isDispensed = prescription.status === "dispensed";
                 const isExpanded = expandedPrescription === prescription.id;
 
@@ -309,6 +323,13 @@ const PatientPrescriptionsPage = () => {
                   </div>
                 );
               })}
+              <InfiniteScrollLoader
+                sentinelRef={sentinelRef}
+                loadingMore={loadingMore}
+                hasMore={hasMore}
+                itemsCount={filteredPrescriptions.length}
+                totalCount={totalCount}
+              />
             </div>
           )}
         </div>

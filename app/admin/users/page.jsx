@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import AdminSidebar from "../components/AdminSidebar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import {
@@ -20,16 +22,19 @@ import {
   FiBriefcase,
   FiAward,
   FiClock,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
 const UserManagement = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [sortBy, setSortBy] = useState("created");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -53,6 +58,14 @@ const UserManagement = () => {
     licenseNumber: "",
   });
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     // Wait for auth to finish loading
     if (authLoading) return;
@@ -68,27 +81,70 @@ const UserManagement = () => {
       router.push("/");
       return;
     }
-
-    if (user) {
-      fetchUsers();
-    }
   }, [user, authLoading, router]);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/admin/users");
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
+  const fetchUsers = useCallback(
+    async (page, limit) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (filterRole !== "all") {
+        params.append("role", filterRole);
       }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to fetch users");
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch);
+      }
+      const response = await fetch(`/api/admin/users?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch users");
+      const data = await response.json();
+      return {
+        items: data.users || [],
+        total: data.pagination?.total || 0,
+        hasMore: data.pagination?.hasMore || false,
+      };
+    },
+    [filterRole, debouncedSearch]
+  );
+
+  const {
+    items: users,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchUsers, {
+    limit: 12,
+    enabled: !!user && user.role === "admin" && !authLoading,
+    dependencies: [filterRole, debouncedSearch],
+  });
+
+  // Client-side sorting
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case "name":
+          comparison = (a.full_name || "").localeCompare(b.full_name || "");
+          break;
+        case "email":
+          comparison = (a.email || "").localeCompare(b.email || "");
+          break;
+        case "role":
+          comparison = (a.role || "").localeCompare(b.role || "");
+          break;
+        case "created":
+          comparison = new Date(a.created_at) - new Date(b.created_at);
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }, [users, sortBy, sortOrder]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,7 +183,7 @@ const UserManagement = () => {
 
       setShowModal(false);
       resetForm();
-      fetchUsers();
+      reset();
     } catch (error) {
       console.error("Error saving user:", error);
       toast.dismiss(loadingToast);
@@ -153,7 +209,7 @@ const UserManagement = () => {
       }
 
       toast.success("User deactivated successfully!");
-      fetchUsers();
+      reset();
       setConfirmModal({ open: false, userId: null, userName: "" });
     } catch (error) {
       console.error("Error deactivating user:", error);
@@ -196,16 +252,6 @@ const UserManagement = () => {
     setEditingUser(null);
     setShowPassword(false);
   };
-
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch =
-      u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter = filterRole === "all" || u.role === filterRole;
-
-    return matchesSearch && matchesFilter;
-  });
 
   // Content loading skeleton
   const ContentSkeleton = () => (
@@ -253,7 +299,7 @@ const UserManagement = () => {
               <div className="ml-12 lg:ml-0">
                 <h1 className="text-2xl font-bold text-white">Manage Staff</h1>
                 <p className="text-slate-400 text-sm mt-0.5">
-                  {users.length} staff members • {filteredUsers.length} shown
+                  {totalCount} staff members • {sortedUsers.length} loaded
                 </p>
               </div>
               <button
@@ -305,10 +351,43 @@ const UserManagement = () => {
                     </option>
                   </select>
                 </div>
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
+                  >
+                    <option value="created" className="bg-slate-800">
+                      Sort by Joined
+                    </option>
+                    <option value="name" className="bg-slate-800">
+                      Sort by Name
+                    </option>
+                    <option value="email" className="bg-slate-800">
+                      Sort by Email
+                    </option>
+                    <option value="role" className="bg-slate-800">
+                      Sort by Role
+                    </option>
+                  </select>
+                  <button
+                    onClick={() =>
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    }
+                    className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+                    title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                  >
+                    {sortOrder === "asc" ? (
+                      <FiArrowUp className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <FiArrowDown className="w-4 h-4 text-emerald-400" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Users Grid */}
-              {filteredUsers.length === 0 ? (
+              {sortedUsers.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
                     <FiUser className="w-10 h-10 text-slate-500" />
@@ -317,7 +396,7 @@ const UserManagement = () => {
                     No staff found
                   </h2>
                   <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                    {searchTerm || filterRole !== "all"
+                    {debouncedSearch || filterRole !== "all"
                       ? "Try adjusting your search or filter to find what you're looking for"
                       : "Add your first staff member to get started"}
                   </p>
@@ -333,155 +412,165 @@ const UserManagement = () => {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredUsers.map((staffUser) => (
-                    <div
-                      key={staffUser.id}
-                      className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
-                    >
-                      {/* Header with gradient */}
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {sortedUsers.map((staffUser) => (
                       <div
-                        className={`relative h-20 ${
-                          staffUser.role === "doctor"
-                            ? "bg-gradient-to-r from-blue-500/20 to-indigo-500/20"
-                            : "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
-                        }`}
+                        key={staffUser.id}
+                        className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
                       >
-                        <div className="absolute -bottom-10 left-6">
-                          <div
-                            className={`w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 ${
-                              staffUser.role === "doctor"
-                                ? "bg-gradient-to-br from-blue-500 to-indigo-600"
-                                : "bg-gradient-to-br from-emerald-500 to-teal-600"
-                            }`}
-                          >
-                            <span className="text-2xl font-bold text-white">
-                              {staffUser.full_name?.charAt(0) ||
-                                staffUser.email?.charAt(0) ||
-                                "S"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => openEditModal(staffUser)}
-                            className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleDelete(staffUser.id, staffUser.full_name)
-                            }
-                            className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
-                            title="Delete"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="pt-14 px-6 pb-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">
-                              {staffUser.full_name || "No name"}
-                            </h3>
-                            <span
-                              className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
+                        {/* Header with gradient */}
+                        <div
+                          className={`relative h-20 ${
+                            staffUser.role === "doctor"
+                              ? "bg-gradient-to-r from-blue-500/20 to-indigo-500/20"
+                              : "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
+                          }`}
+                        >
+                          <div className="absolute -bottom-10 left-6">
+                            <div
+                              className={`w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 ${
                                 staffUser.role === "doctor"
-                                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                  : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  ? "bg-gradient-to-br from-blue-500 to-indigo-600"
+                                  : "bg-gradient-to-br from-emerald-500 to-teal-600"
                               }`}
                             >
+                              <span className="text-2xl font-bold text-white">
+                                {staffUser.full_name?.charAt(0) ||
+                                  staffUser.email?.charAt(0) ||
+                                  "S"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => openEditModal(staffUser)}
+                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
+                              title="Edit"
+                            >
+                              <FiEdit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDelete(staffUser.id, staffUser.full_name)
+                              }
+                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                              title="Delete"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="pt-14 px-6 pb-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">
+                                {staffUser.full_name || "No name"}
+                              </h3>
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
+                                className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${
                                   staffUser.role === "doctor"
-                                    ? "bg-blue-400"
-                                    : "bg-emerald-400"
+                                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                    : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                                 }`}
-                              ></span>
-                              {staffUser.role === "doctor"
-                                ? "Doctor"
-                                : "Pharmacist"}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    staffUser.role === "doctor"
+                                      ? "bg-blue-400"
+                                      : "bg-emerald-400"
+                                  }`}
+                                ></span>
+                                {staffUser.role === "doctor"
+                                  ? "Doctor"
+                                  : "Pharmacist"}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-xs px-2.5 py-1 rounded-full ${
+                                staffUser.is_active
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-red-500/10 text-red-400 border border-red-500/30"
+                              }`}
+                            >
+                              {staffUser.is_active ? "Active" : "Inactive"}
                             </span>
                           </div>
-                          <span
-                            className={`text-xs px-2.5 py-1 rounded-full ${
-                              staffUser.is_active
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                                : "bg-red-500/10 text-red-400 border border-red-500/30"
-                            }`}
-                          >
-                            {staffUser.is_active ? "Active" : "Inactive"}
-                          </span>
-                        </div>
 
-                        <div className="space-y-3 text-sm">
-                          <div className="flex items-center gap-3 text-slate-400">
-                            <FiMail className="w-4 h-4 text-slate-500" />
-                            <span className="truncate">{staffUser.email}</span>
-                          </div>
-                          {staffUser.phone && (
+                          <div className="space-y-3 text-sm">
                             <div className="flex items-center gap-3 text-slate-400">
-                              <FiPhone className="w-4 h-4 text-slate-500" />
-                              <span>{staffUser.phone}</span>
+                              <FiMail className="w-4 h-4 text-slate-500" />
+                              <span className="truncate">
+                                {staffUser.email}
+                              </span>
                             </div>
-                          )}
-                          {staffUser.role === "doctor" &&
-                            staffUser.roleData && (
-                              <>
-                                {staffUser.roleData.specialization && (
-                                  <div className="flex items-center gap-3 text-slate-400">
-                                    <FiBriefcase className="w-4 h-4 text-slate-500" />
-                                    <span>
-                                      {staffUser.roleData.specialization}
-                                    </span>
-                                  </div>
-                                )}
-                                {staffUser.roleData.experience_years && (
-                                  <div className="flex items-center gap-3 text-slate-400">
-                                    <FiClock className="w-4 h-4 text-slate-500" />
-                                    <span>
-                                      {staffUser.roleData.experience_years}{" "}
-                                      years experience
-                                    </span>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          {staffUser.role === "pharmacist" &&
-                            staffUser.roleData?.license_number && (
+                            {staffUser.phone && (
                               <div className="flex items-center gap-3 text-slate-400">
-                                <FiAward className="w-4 h-4 text-slate-500" />
-                                <span>
-                                  License: {staffUser.roleData.license_number}
-                                </span>
+                                <FiPhone className="w-4 h-4 text-slate-500" />
+                                <span>{staffUser.phone}</span>
                               </div>
                             )}
-                        </div>
+                            {staffUser.role === "doctor" &&
+                              staffUser.roleData && (
+                                <>
+                                  {staffUser.roleData.specialization && (
+                                    <div className="flex items-center gap-3 text-slate-400">
+                                      <FiBriefcase className="w-4 h-4 text-slate-500" />
+                                      <span>
+                                        {staffUser.roleData.specialization}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {staffUser.roleData.experience_years && (
+                                    <div className="flex items-center gap-3 text-slate-400">
+                                      <FiClock className="w-4 h-4 text-slate-500" />
+                                      <span>
+                                        {staffUser.roleData.experience_years}{" "}
+                                        years experience
+                                      </span>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            {staffUser.role === "pharmacist" &&
+                              staffUser.roleData?.license_number && (
+                                <div className="flex items-center gap-3 text-slate-400">
+                                  <FiAward className="w-4 h-4 text-slate-500" />
+                                  <span>
+                                    License: {staffUser.roleData.license_number}
+                                  </span>
+                                </div>
+                              )}
+                          </div>
 
-                        <div className="mt-4 pt-4 border-t border-slate-700/50">
-                          <span className="text-xs text-slate-500">
-                            Added{" "}
-                            {new Date(staffUser.created_at).toLocaleDateString(
-                              "en-US",
-                              {
+                          <div className="mt-4 pt-4 border-t border-slate-700/50">
+                            <span className="text-xs text-slate-500">
+                              Added{" "}
+                              {new Date(
+                                staffUser.created_at
+                              ).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
-                              }
-                            )}
-                          </span>
+                              })}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  <InfiniteScrollLoader
+                    sentinelRef={sentinelRef}
+                    loadingMore={loadingMore}
+                    hasMore={hasMore}
+                    itemsCount={sortedUsers.length}
+                    totalCount={totalCount}
+                  />
+                </>
               )}
             </>
           )}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import PatientSidebar from "../components/PatientSidebar";
 import {
   FiCalendar,
@@ -13,6 +15,8 @@ import {
   FiRefreshCw,
   FiEye,
   FiArrowRight,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import AppointmentModal from "@/app/components/ui/AppointmentModal";
@@ -22,11 +26,40 @@ const PatientAppointmentsPage = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
 
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+
+  const fetchAppointments = useCallback(async (page, limit) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await fetch(`/api/patient/appointments?${params}`);
+    if (!response.ok) throw new Error("Failed to fetch appointments");
+    const data = await response.json();
+    return {
+      items: data.appointments || [],
+      total: data.pagination?.total || 0,
+      hasMore: data.pagination?.hasMore || false,
+    };
+  }, []);
+
+  const {
+    items: appointments,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchAppointments, {
+    limit: 10,
+    enabled: !!user && user.role === "patient" && !authLoading,
+  });
 
   useEffect(() => {
     if (authLoading) return;
@@ -41,30 +74,35 @@ const PatientAppointmentsPage = () => {
       router.push("/");
       return;
     }
-
-    fetchAppointments();
   }, [user, authLoading, router]);
 
-  const fetchAppointments = async () => {
-    try {
-      const response = await fetch("/api/patient/appointments");
-      if (response.ok) {
-        const data = await response.json();
-        setAppointments(data.appointments || []);
-      } else {
-        toast.error("Failed to load appointments");
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      toast.error("Failed to load appointments");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const sortedAppointments = useMemo(() => {
+    return appointments
+      .filter((apt) => {
+        if (statusFilter === "all") return true;
+        if (statusFilter === "completed")
+          return apt.consultation_status === "completed";
+        return apt.status === statusFilter;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case "date":
+            comparison = new Date(a.date) - new Date(b.date);
+            break;
+          case "status":
+            comparison = (a.status || "").localeCompare(b.status || "");
+            break;
+          default:
+            comparison = 0;
+        }
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+  }, [appointments, statusFilter, sortBy, sortOrder]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchAppointments();
+    await reset();
     setRefreshing(false);
     toast.success("Appointments refreshed!");
   };
@@ -105,15 +143,8 @@ const PatientAppointmentsPage = () => {
     return configs[status] || configs.pending;
   };
 
-  const filteredAppointments = appointments.filter((apt) => {
-    if (statusFilter === "all") return true;
-    if (statusFilter === "completed")
-      return apt.consultation_status === "completed";
-    return apt.status === statusFilter;
-  });
-
   const handleAppointmentSuccess = () => {
-    fetchAppointments();
+    reset();
   };
 
   const filterOptions = [
@@ -200,7 +231,7 @@ const PatientAppointmentsPage = () => {
           ) : (
             <>
               {/* Filters */}
-              <div className="mb-6">
+              <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="inline-flex items-center gap-3 p-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
                   <FiFilter className="text-slate-400 ml-2" />
                   {filterOptions.map((option) => (
@@ -217,10 +248,37 @@ const PatientAppointmentsPage = () => {
                     </button>
                   ))}
                 </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer text-sm"
+                  >
+                    <option value="date" className="bg-slate-800">
+                      Sort by Date
+                    </option>
+                    <option value="status" className="bg-slate-800">
+                      Sort by Status
+                    </option>
+                  </select>
+                  <button
+                    onClick={() =>
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    }
+                    className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+                    title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                  >
+                    {sortOrder === "asc" ? (
+                      <FiArrowUp className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <FiArrowDown className="w-4 h-4 text-emerald-400" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Appointments Grid */}
-              {filteredAppointments.length === 0 ? (
+              {sortedAppointments.length === 0 ? (
                 <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-12 text-center">
                   <div className="w-20 h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-6">
                     <FiCalendar className="w-10 h-10 text-slate-500" />
@@ -243,7 +301,7 @@ const PatientAppointmentsPage = () => {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {filteredAppointments.map((appointment) => {
+                  {sortedAppointments.map((appointment) => {
                     const statusConfig = getStatusConfig(
                       appointment.status,
                       appointment.consultation_status
@@ -331,6 +389,13 @@ const PatientAppointmentsPage = () => {
                       </div>
                     );
                   })}
+
+                  {/* Infinite Scroll Loader */}
+                  <InfiniteScrollLoader
+                    sentinelRef={sentinelRef}
+                    loadingMore={loadingMore}
+                    hasMore={hasMore}
+                  />
                 </div>
               )}
             </>

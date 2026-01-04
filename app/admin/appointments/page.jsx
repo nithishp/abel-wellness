@@ -1,9 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import {
   FiCalendar,
   FiClock,
@@ -21,6 +23,8 @@ import {
   FiFileText,
   FiMapPin,
   FiBriefcase,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { formatAppointmentDateTime } from "@/lib/utils";
@@ -28,11 +32,12 @@ import { formatAppointmentDateTime } from "@/lib/utils";
 const AppointmentsManagement = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
-  const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -63,6 +68,58 @@ const AppointmentsManagement = () => {
     doctorId: "",
   });
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch function for infinite scroll
+  const fetchAppointments = useCallback(
+    async (page, limit) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (filterStatus !== "all") {
+        params.append("status", filterStatus);
+      }
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch);
+      }
+
+      const response = await fetch(`/api/admin/appointments?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch appointments");
+      }
+      const data = await response.json();
+      return {
+        items: data.appointments || [],
+        total: data.pagination?.total || 0,
+        hasMore: data.pagination?.hasMore || false,
+      };
+    },
+    [filterStatus, debouncedSearch]
+  );
+
+  // Use infinite scroll hook
+  const {
+    items: appointments,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchAppointments, {
+    limit: 10,
+    enabled: !!user && user.role === "admin" && !authLoading,
+    dependencies: [filterStatus, debouncedSearch],
+  });
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -76,25 +133,8 @@ const AppointmentsManagement = () => {
       return;
     }
 
-    fetchAppointments();
     fetchDoctors();
   }, [user, authLoading, router]);
-
-  const fetchAppointments = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/admin/appointments?limit=100");
-      if (response.ok) {
-        const data = await response.json();
-        setAppointments(data.appointments || []);
-      }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      toast.error("Failed to fetch appointments");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchDoctors = async () => {
     try {
@@ -107,6 +147,32 @@ const AppointmentsManagement = () => {
       console.error("Error fetching doctors:", error);
     }
   };
+
+  // Client-side sorting of loaded items
+  const sortedAppointments = useMemo(() => {
+    return [...appointments].sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case "date":
+          comparison = new Date(a.date) - new Date(b.date);
+          break;
+        case "name":
+          comparison = (a.name || "").localeCompare(b.name || "");
+          break;
+        case "status":
+          comparison = (a.status || "").localeCompare(b.status || "");
+          break;
+        case "created":
+          comparison =
+            new Date(a.$createdAt || a.created_at) -
+            new Date(b.$createdAt || b.created_at);
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }, [appointments, sortBy, sortOrder]);
 
   const handleApproveWithDoctor = (appointment) => {
     setAssigningAppointment(appointment);
@@ -138,7 +204,7 @@ const AppointmentsManagement = () => {
         throw new Error(data.error || "Failed to assign doctor");
       }
 
-      await fetchAppointments();
+      reset();
       toast.dismiss(loadingToast);
       toast.success("Doctor assigned and appointment approved!");
       setShowAssignModal(false);
@@ -178,7 +244,7 @@ const AppointmentsManagement = () => {
         throw new Error("Failed to update appointment status");
       }
 
-      await fetchAppointments();
+      reset();
       toast.dismiss(loadingToast);
       toast.success(`Appointment ${newStatus} successfully!`);
     } catch (error) {
@@ -251,7 +317,7 @@ const AppointmentsManagement = () => {
         throw new Error("Failed to delete appointment");
       }
 
-      await fetchAppointments();
+      reset();
       toast.success("Appointment deleted successfully!");
       setDeleteModal({ open: false, appointmentId: null });
     } catch (error) {
@@ -301,7 +367,7 @@ const AppointmentsManagement = () => {
         throw new Error(data.error || "Failed to create appointment");
       }
 
-      await fetchAppointments();
+      reset();
       toast.dismiss(loadingToast);
       toast.success("Appointment created successfully!");
       setShowCreateModal(false);
@@ -323,18 +389,6 @@ const AppointmentsManagement = () => {
       setProcessing(false);
     }
   };
-
-  const filteredAppointments = appointments.filter((appointment) => {
-    const matchesSearch =
-      appointment.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      appointment.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      appointment.phone?.includes(searchTerm);
-
-    const matchesFilter =
-      filterStatus === "all" || appointment.status === filterStatus;
-
-    return matchesSearch && matchesFilter;
-  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -430,8 +484,7 @@ const AppointmentsManagement = () => {
               <div className="ml-12 lg:ml-0">
                 <h1 className="text-2xl font-bold text-white">Appointments</h1>
                 <p className="text-slate-400 text-sm mt-0.5">
-                  {appointments.length} total • {filteredAppointments.length}{" "}
-                  shown
+                  {totalCount} total • {sortedAppointments.length} loaded
                 </p>
               </div>
               <button
@@ -491,10 +544,43 @@ const AppointmentsManagement = () => {
                     </option>
                   </select>
                 </div>
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
+                  >
+                    <option value="date" className="bg-slate-800">
+                      Sort by Date
+                    </option>
+                    <option value="name" className="bg-slate-800">
+                      Sort by Name
+                    </option>
+                    <option value="status" className="bg-slate-800">
+                      Sort by Status
+                    </option>
+                    <option value="created" className="bg-slate-800">
+                      Sort by Created
+                    </option>
+                  </select>
+                  <button
+                    onClick={() =>
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                    }
+                    className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+                    title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                  >
+                    {sortOrder === "asc" ? (
+                      <FiArrowUp className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <FiArrowDown className="w-4 h-4 text-emerald-400" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Appointments Grid */}
-              {filteredAppointments.length === 0 ? (
+              {sortedAppointments.length === 0 && !loading ? (
                 <div className="text-center py-16">
                   <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
                     <FiCalendar className="w-10 h-10 text-slate-500" />
@@ -516,138 +602,157 @@ const AppointmentsManagement = () => {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredAppointments.map((appointment) => {
-                    const statusConfig = getStatusColor(appointment.status);
-                    return (
-                      <div
-                        key={appointment.$id}
-                        className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
-                      >
-                        {/* Header */}
-                        <div className="p-5 border-b border-slate-700/50">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                <span className="text-white font-bold text-lg">
-                                  {appointment.name?.charAt(0) || "?"}
-                                </span>
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {sortedAppointments.map((appointment) => {
+                      const statusConfig = getStatusColor(appointment.status);
+                      return (
+                        <div
+                          key={appointment.$id}
+                          className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+                        >
+                          {/* Header */}
+                          <div className="p-5 border-b border-slate-700/50">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-white font-bold text-lg">
+                                    {appointment.name?.charAt(0) || "?"}
+                                  </span>
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="text-white font-semibold truncate">
+                                    {appointment.name}
+                                  </h3>
+                                  <p className="text-slate-400 text-sm truncate">
+                                    {appointment.service ||
+                                      "General Consultation"}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <h3 className="text-white font-semibold">
-                                  {appointment.name}
-                                </h3>
-                                <p className="text-slate-400 text-sm">
-                                  {appointment.service ||
-                                    "General Consultation"}
-                                </p>
-                              </div>
-                            </div>
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border}`}
-                            >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
-                              ></span>
-                              {appointment.status?.charAt(0).toUpperCase() +
-                                appointment.status?.slice(1)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-5 space-y-3">
-                          <div className="flex items-center gap-3 text-slate-400 text-sm">
-                            <FiCalendar className="w-4 h-4 text-slate-500" />
-                            <span>
-                              {
-                                formatAppointmentDateTime(
-                                  appointment.date,
-                                  appointment.time
-                                ).date
-                              }
-                            </span>
-                            <span className="text-slate-600">•</span>
-                            <FiClock className="w-4 h-4 text-slate-500" />
-                            <span>
-                              {
-                                formatAppointmentDateTime(
-                                  appointment.date,
-                                  appointment.time
-                                ).time
-                              }
-                            </span>
+                                className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border}`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                                ></span>
+                                {appointment.status?.charAt(0).toUpperCase() +
+                                  appointment.status?.slice(1)}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-3 text-slate-400 text-sm">
-                            <FiMail className="w-4 h-4 text-slate-500" />
-                            <span className="truncate">
-                              {appointment.email}
-                            </span>
-                          </div>
-
-                          {appointment.phone && (
+                          {/* Content */}
+                          <div className="p-5 space-y-3">
                             <div className="flex items-center gap-3 text-slate-400 text-sm">
-                              <FiPhone className="w-4 h-4 text-slate-500" />
-                              <span>{appointment.phone}</span>
+                              <FiCalendar className="w-4 h-4 text-slate-500" />
+                              <span>
+                                {
+                                  formatAppointmentDateTime(
+                                    appointment.date,
+                                    appointment.time
+                                  ).date
+                                }
+                              </span>
+                              <span className="text-slate-600">•</span>
+                              <FiClock className="w-4 h-4 text-slate-500" />
+                              <span>
+                                {
+                                  formatAppointmentDateTime(
+                                    appointment.date,
+                                    appointment.time
+                                  ).time
+                                }
+                              </span>
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-3 text-slate-400 text-sm">
-                            <FiUserCheck className="w-4 h-4 text-slate-500" />
-                            <span>Dr. {getDoctorName(appointment)}</span>
+                            <div className="flex items-center gap-3 text-slate-400 text-sm">
+                              <FiMail className="w-4 h-4 text-slate-500" />
+                              <span className="truncate">
+                                {appointment.email}
+                              </span>
+                            </div>
+
+                            {appointment.phone && (
+                              <div className="flex items-center gap-3 text-slate-400 text-sm">
+                                <FiPhone className="w-4 h-4 text-slate-500" />
+                                <span>{appointment.phone}</span>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-3 text-slate-400 text-sm">
+                              <FiUserCheck className="w-4 h-4 text-slate-500" />
+                              <span>Dr. {getDoctorName(appointment)}</span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="px-5 py-4 border-t border-slate-700/50 flex items-center justify-between">
+                            <button
+                              onClick={() =>
+                                setSelectedAppointment(appointment)
+                              }
+                              className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                            >
+                              <FiEye className="w-4 h-4" />
+                              View Details
+                            </button>
+
+                            {appointment.status === "pending" && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleApproveWithDoctor(appointment)
+                                  }
+                                  className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
+                                  title="Approve & Assign"
+                                >
+                                  <FiCheck className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleCancelWithReason(appointment)
+                                  }
+                                  className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                                  title="Cancel"
+                                >
+                                  <FiX className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+
+                            {appointment.status === "completed" && (
+                              <button
+                                onClick={() => fetchCaseSheet(appointment.$id)}
+                                disabled={loadingCaseSheet}
+                                className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
+                                title="View Case Sheet"
+                              >
+                                <FiFileText className="w-4 h-4" />
+                                Case Sheet
+                              </button>
+                            )}
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        {/* Actions */}
-                        <div className="px-5 py-4 border-t border-slate-700/50 flex items-center justify-between">
-                          <button
-                            onClick={() => setSelectedAppointment(appointment)}
-                            className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
-                          >
-                            <FiEye className="w-4 h-4" />
-                            View Details
-                          </button>
-
-                          {appointment.status === "pending" && (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() =>
-                                  handleApproveWithDoctor(appointment)
-                                }
-                                className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all"
-                                title="Approve & Assign"
-                              >
-                                <FiCheck className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleCancelWithReason(appointment)
-                                }
-                                className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
-                                title="Cancel"
-                              >
-                                <FiX className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-
-                          {appointment.status === "completed" && (
-                            <button
-                              onClick={() => fetchCaseSheet(appointment.$id)}
-                              disabled={loadingCaseSheet}
-                              className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors"
-                              title="View Case Sheet"
-                            >
-                              <FiFileText className="w-4 h-4" />
-                              Case Sheet
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                  {/* Infinite Scroll Loader */}
+                  <InfiniteScrollLoader
+                    ref={sentinelRef}
+                    loading={loading}
+                    loadingMore={loadingMore}
+                    hasMore={hasMore}
+                    error={error}
+                    itemCount={sortedAppointments.length}
+                    totalCount={totalCount}
+                    emptyMessage="No appointments found"
+                    endMessage="You've seen all appointments"
+                    onRetry={reset}
+                    loaderColor="emerald"
+                  />
+                </>
               )}
             </>
           )}

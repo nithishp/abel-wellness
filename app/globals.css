@@ -61,4 +61,151 @@ body {
   background: #475569;
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Toast Notification Styles - Matches Dashboard Theme */
+[data-sonner-toaster] {
+  --normal-bg: rgba(30, 41, 59, 0.95);
+  --normal-border: rgba(71, 85, 105, 0.5);
+  --normal-text: #ffffff;
+  font-family: inherit;
+}
+
+[data-sonner-toast] {
+  padding: 16px;
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(20, 184, 166, 0.1) 100%
+  ) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(220, 38, 38, 0.1) 100%
+  ) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.15) 0%,
+    rgba(217, 119, 6, 0.1) 100%
+  ) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(37, 99, 235, 0.1) 100%
+  ) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="loading"] {
+  background: rgba(51, 65, 85, 0.95) !important;
+  border: 1px solid rgba(71, 85, 105, 0.5) !important;
+}
+
+/* Toast title styling */
+[data-sonner-toast] [data-title] {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Toast description styling */
+[data-sonner-toast] [data-description] {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+/* Close button styling */
+[data-sonner-toast] [data-close-button] {
+  background: rgba(71, 85, 105, 0.5) !important;
+  border: 1px solid rgba(100, 116, 139, 0.3) !important;
+  color: #94a3b8 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: rgba(71, 85, 105, 0.8) !important;
+  color: #ffffff !important;
+}
+
+/* Action button styling */
+[data-sonner-toast] [data-button] {
+  background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%) !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px -1px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Cancel button styling */
+[data-sonner-toast] [data-cancel] {
+  background: rgba(71, 85, 105, 0.5) !important;
+  color: #cbd5e1 !important;
+  font-weight: 500 !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(100, 116, 139, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-cancel]:hover {
+  background: rgba(71, 85, 105, 0.8) !important;
+  color: #ffffff !important;
+}
+
+/* Toast icon container */
+[data-sonner-toast] [data-icon] {
+  margin-right: 12px;
+}
+
+/* Progress bar for loading toasts */
+[data-sonner-toast] [data-progress] {
+  background: linear-gradient(90deg, #10b981, #14b8a6) !important;
+  height: 3px !important;
+  border-radius: 2px !important;
+}
+
 

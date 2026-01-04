@@ -54,6 +54,7 @@ function transformAppointment(appointment) {
     assigned_by: appointment.assigned_by,
     reason_for_visit: appointment.reason_for_visit,
     rejection_reason: appointment.rejection_reason,
+    cancellation_reason: appointment.cancellation_reason,
     rescheduled_from: appointment.rescheduled_from,
     consultation_status: appointment.consultation_status,
     notes: appointment.notes,
@@ -263,10 +264,33 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit")) || 50;
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
     const status = searchParams.get("status");
     const doctorId = searchParams.get("doctorId");
+    const search = searchParams.get("search") || "";
+    const offset = (page - 1) * limit;
 
+    // First get total count for pagination
+    let countQuery = supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .select("*", { count: "exact", head: true });
+
+    if (status && status !== "all") {
+      countQuery = countQuery.eq("status", status);
+    }
+    if (doctorId) {
+      countQuery = countQuery.eq("doctor_id", doctorId);
+    }
+    if (search) {
+      countQuery = countQuery.or(
+        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+
+    const { count: totalCount } = await countQuery;
+
+    // Then get paginated data
     let query = supabaseAdmin
       .from(TABLES.APPOINTMENTS)
       .select(
@@ -291,8 +315,7 @@ export async function GET(request) {
         )
       `
       )
-      .order("created_at", { ascending: false })
-      .limit(limit);
+      .order("created_at", { ascending: false });
 
     if (status && status !== "all") {
       query = query.eq("status", status);
@@ -302,7 +325,16 @@ export async function GET(request) {
       query = query.eq("doctor_id", doctorId);
     }
 
-    const { data: appointments, error } = await query;
+    if (search) {
+      query = query.or(
+        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+
+    const { data: appointments, error } = await query.range(
+      offset,
+      offset + limit - 1
+    );
 
     if (error) {
       console.error("Supabase error fetching appointments:", error);
@@ -312,9 +344,18 @@ export async function GET(request) {
       );
     }
 
+    const hasMore = offset + appointments.length < totalCount;
+
     return NextResponse.json({
       success: true,
       appointments: appointments.map(transformAppointment),
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching appointments:", error);
@@ -626,7 +667,7 @@ export async function PUT(request) {
       default: {
         // Regular status update - handle cancellation with reason
         const { status, cancellation_reason, ...otherData } = updateData;
-        
+
         const updateFields = { ...otherData };
         if (status) {
           updateFields.status = status;

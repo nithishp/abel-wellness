@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import DoctorSidebar from "../components/DoctorSidebar";
 import {
   FiCalendar,
@@ -15,6 +17,8 @@ import {
   FiPlay,
   FiEye,
   FiRefreshCw,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -24,12 +28,21 @@ const DoctorAppointmentsPage = () => {
   const router = useRouter();
   const { user, loading: authLoading, isDoctor } = useRoleAuth();
 
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [refreshing, setRefreshing] = useState(false);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -44,30 +57,47 @@ const DoctorAppointmentsPage = () => {
       router.push("/");
       return;
     }
-
-    fetchAppointments();
   }, [user, authLoading, router]);
 
-  const fetchAppointments = async () => {
-    try {
-      const response = await fetch("/api/doctor/appointments");
-      if (response.ok) {
-        const data = await response.json();
-        setAppointments(data.appointments || []);
-      } else {
-        toast.error("Failed to load appointments");
+  const fetchAppointments = useCallback(
+    async (page, limit) => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch);
       }
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      toast.error("Failed to load appointments");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const response = await fetch(`/api/doctor/appointments?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch appointments");
+      const data = await response.json();
+      return {
+        items: data.appointments || [],
+        total: data.pagination?.total || 0,
+        hasMore: data.pagination?.hasMore || false,
+      };
+    },
+    [debouncedSearch]
+  );
+
+  const {
+    items: appointments,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchAppointments, {
+    limit: 10,
+    enabled: !!user && user.role === "doctor" && !authLoading,
+    dependencies: [debouncedSearch],
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchAppointments();
+    await reset();
     setRefreshing(false);
     toast.success("Appointments refreshed!");
   };
@@ -109,48 +139,59 @@ const DoctorAppointmentsPage = () => {
     return formatAppointmentDateTime(dateString, timeString).date;
   };
 
-  const filteredAppointments = appointments.filter((apt) => {
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesName = apt.name?.toLowerCase().includes(query);
-      const matchesEmail = apt.email?.toLowerCase().includes(query);
-      const matchesPhone = apt.phone?.includes(query);
-      if (!matchesName && !matchesEmail && !matchesPhone) {
-        return false;
-      }
-    }
+  const sortedAppointments = useMemo(() => {
+    return appointments
+      .filter((apt) => {
+        // Status filter
+        if (statusFilter !== "all") {
+          if (statusFilter === "completed") {
+            if (apt.consultation_status !== "completed") return false;
+          } else if (statusFilter === "pending") {
+            if (apt.consultation_status !== "pending") return false;
+          } else if (statusFilter === "in_progress") {
+            if (apt.consultation_status !== "in_progress") return false;
+          }
+        }
 
-    // Status filter
-    if (statusFilter !== "all") {
-      if (statusFilter === "completed") {
-        if (apt.consultation_status !== "completed") return false;
-      } else if (statusFilter === "pending") {
-        if (apt.consultation_status !== "pending") return false;
-      } else if (statusFilter === "in_progress") {
-        if (apt.consultation_status !== "in_progress") return false;
-      }
-    }
+        // Date filter
+        if (dateFilter !== "all") {
+          const aptDate = new Date(apt.date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
 
-    // Date filter
-    if (dateFilter !== "all") {
-      const aptDate = new Date(apt.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+          if (dateFilter === "today") {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (aptDate < today || aptDate >= tomorrow) return false;
+          } else if (dateFilter === "upcoming") {
+            if (aptDate < today) return false;
+          } else if (dateFilter === "past") {
+            if (aptDate >= today) return false;
+          }
+        }
 
-      if (dateFilter === "today") {
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        if (aptDate < today || aptDate >= tomorrow) return false;
-      } else if (dateFilter === "upcoming") {
-        if (aptDate < today) return false;
-      } else if (dateFilter === "past") {
-        if (aptDate >= today) return false;
-      }
-    }
-
-    return true;
-  });
+        return true;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        switch (sortBy) {
+          case "date":
+            comparison = new Date(a.date) - new Date(b.date);
+            break;
+          case "name":
+            comparison = (a.name || "").localeCompare(b.name || "");
+            break;
+          case "status":
+            comparison = (a.consultation_status || "").localeCompare(
+              b.consultation_status || ""
+            );
+            break;
+          default:
+            comparison = 0;
+        }
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+  }, [appointments, statusFilter, dateFilter, sortBy, sortOrder]);
 
   // Calculate appointment counts
   const appointmentCounts = {
@@ -223,7 +264,12 @@ const DoctorAppointmentsPage = () => {
                   My Appointments
                 </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
-                  Manage your patient consultations
+                  Manage your patient consultations{" "}
+                  {totalCount > 0 && (
+                    <span className="text-slate-500">
+                      ({sortedAppointments.length} of {totalCount} loaded)
+                    </span>
+                  )}
                 </p>
               </div>
               <button
@@ -286,6 +332,32 @@ const DoctorAppointmentsPage = () => {
                       <option value="upcoming">Upcoming</option>
                       <option value="past">Past</option>
                     </select>
+                  </div>
+
+                  {/* Sort */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="date">Sort by Date</option>
+                      <option value="name">Sort by Name</option>
+                      <option value="status">Sort by Status</option>
+                    </select>
+                    <button
+                      onClick={() =>
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                      }
+                      className="p-3 bg-slate-700/50 border border-slate-600/50 rounded-xl hover:bg-slate-600/50 transition-colors"
+                      title={sortOrder === "asc" ? "Ascending" : "Descending"}
+                    >
+                      {sortOrder === "asc" ? (
+                        <FiArrowUp className="w-5 h-5 text-blue-400" />
+                      ) : (
+                        <FiArrowDown className="w-5 h-5 text-blue-400" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -360,7 +432,7 @@ const DoctorAppointmentsPage = () => {
               </div>
 
               {/* Appointments List */}
-              {filteredAppointments.length === 0 ? (
+              {sortedAppointments.length === 0 && !loading ? (
                 <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-12 text-center">
                   <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
                     <FiCalendar className="w-8 h-8 text-slate-500" />
@@ -369,7 +441,7 @@ const DoctorAppointmentsPage = () => {
                     No appointments found
                   </h3>
                   <p className="text-slate-400">
-                    {searchQuery ||
+                    {debouncedSearch ||
                     statusFilter !== "all" ||
                     dateFilter !== "all"
                       ? "Try adjusting your filters"
@@ -377,117 +449,129 @@ const DoctorAppointmentsPage = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {filteredAppointments.map((appointment, index) => {
-                    const statusConfig = getStatusConfig(
-                      appointment.status,
-                      appointment.consultation_status
-                    );
-                    return (
-                      <motion.div
-                        key={appointment.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
-                                <FiUser className="w-5 h-5" />
-                              </div>
-                              <h3 className="text-lg font-semibold text-white">
-                                {appointment.name}
-                              </h3>
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
-                              >
+                <>
+                  <div className="space-y-4">
+                    {sortedAppointments.map((appointment, index) => {
+                      const statusConfig = getStatusConfig(
+                        appointment.status,
+                        appointment.consultation_status
+                      );
+                      return (
+                        <motion.div
+                          key={appointment.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+                                  <FiUser className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-white">
+                                  {appointment.name}
+                                </h3>
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
-                                ></span>
-                                {statusConfig.label}
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <FiCalendar className="w-4 h-4" />
-                                <span>
-                                  {formatDate(
-                                    appointment.date,
-                                    appointment.time
-                                  )}
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                                  ></span>
+                                  {statusConfig.label}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <FiClock className="w-4 h-4" />
-                                <span>
-                                  {
-                                    formatAppointmentDateTime(
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div className="flex items-center gap-2 text-slate-400">
+                                  <FiCalendar className="w-4 h-4" />
+                                  <span>
+                                    {formatDate(
                                       appointment.date,
                                       appointment.time
-                                    ).time
-                                  }
-                                </span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-slate-400">
+                                  <FiClock className="w-4 h-4" />
+                                  <span>
+                                    {
+                                      formatAppointmentDateTime(
+                                        appointment.date,
+                                        appointment.time
+                                      ).time
+                                    }
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-slate-400">
+                                  <FiPhone className="w-4 h-4" />
+                                  <span>{appointment.phone}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-slate-400">
+                                  <FiMail className="w-4 h-4" />
+                                  <span className="truncate">
+                                    {appointment.email}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <FiPhone className="w-4 h-4" />
-                                <span>{appointment.phone}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <FiMail className="w-4 h-4" />
-                                <span className="truncate">
-                                  {appointment.email}
-                                </span>
-                              </div>
+
+                              {appointment.reason_for_visit && (
+                                <p className="mt-3 text-sm text-slate-400 bg-slate-700/30 px-4 py-2 rounded-lg border border-slate-600/30">
+                                  <strong className="text-slate-300">
+                                    Reason:
+                                  </strong>{" "}
+                                  {appointment.reason_for_visit}
+                                </p>
+                              )}
                             </div>
 
-                            {appointment.reason_for_visit && (
-                              <p className="mt-3 text-sm text-slate-400 bg-slate-700/30 px-4 py-2 rounded-lg border border-slate-600/30">
-                                <strong className="text-slate-300">
-                                  Reason:
-                                </strong>{" "}
-                                {appointment.reason_for_visit}
-                              </p>
-                            )}
+                            <div className="flex gap-2">
+                              {appointment.consultation_status ===
+                              "completed" ? (
+                                <button
+                                  onClick={() =>
+                                    router.push(
+                                      `/doctor/consultation/${appointment.id}`
+                                    )
+                                  }
+                                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-700/50 text-slate-300 rounded-xl hover:bg-slate-700 transition-colors"
+                                >
+                                  <FiEye className="w-4 h-4" />
+                                  View Record
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    router.push(
+                                      `/doctor/consultation/${appointment.id}`
+                                    )
+                                  }
+                                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
+                                >
+                                  <FiPlay className="w-4 h-4" />
+                                  {appointment.consultation_status ===
+                                  "in_progress"
+                                    ? "Continue"
+                                    : "Start Consultation"}
+                                </button>
+                              )}
+                            </div>
                           </div>
-
-                          <div className="flex gap-2">
-                            {appointment.consultation_status === "completed" ? (
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/doctor/consultation/${appointment.id}`
-                                  )
-                                }
-                                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700/50 text-slate-300 rounded-xl hover:bg-slate-700 transition-colors"
-                              >
-                                <FiEye className="w-4 h-4" />
-                                View Record
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/doctor/consultation/${appointment.id}`
-                                  )
-                                }
-                                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
-                              >
-                                <FiPlay className="w-4 h-4" />
-                                {appointment.consultation_status ===
-                                "in_progress"
-                                  ? "Continue"
-                                  : "Start Consultation"}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                  <InfiniteScrollLoader
+                    sentinelRef={sentinelRef}
+                    loadingMore={loadingMore}
+                    hasMore={hasMore}
+                    error={error}
+                    onRetry={reset}
+                    itemsLoaded={sortedAppointments.length}
+                    totalItems={totalCount}
+                  />
+                </>
               )}
 
               {/* Stats Summary */}

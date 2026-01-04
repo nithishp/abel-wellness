@@ -27,13 +27,24 @@ async function verifyPatientSession() {
   return session.user;
 }
 
-// GET - Fetch all patient medical records
-export async function GET() {
+// GET - Fetch all patient medical records with pagination
+export async function GET(request) {
   try {
     const patient = await verifyPatientSession();
     if (!patient) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const offset = (page - 1) * limit;
+
+    // First get total count
+    const { count: totalCount } = await supabaseAdmin
+      .from(TABLES.MEDICAL_RECORDS)
+      .select("*", { count: "exact", head: true })
+      .eq("patient_id", patient.id);
 
     const { data: records, error } = await supabaseAdmin
       .from(TABLES.MEDICAL_RECORDS)
@@ -82,14 +93,24 @@ export async function GET() {
       `
       )
       .eq("patient_id", patient.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw error;
     }
 
+    const hasMore = offset + records.length < totalCount;
+
     return NextResponse.json({
       records: records || [],
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        hasMore,
+        totalPages: Math.ceil(totalCount / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching medical records:", error);

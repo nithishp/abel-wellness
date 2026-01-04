@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
+import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
+import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import PatientSidebar from "../components/PatientSidebar";
 import {
   FiFileText,
@@ -23,8 +25,6 @@ const PatientRecordsPage = () => {
   const router = useRouter();
   const { user, loading: authLoading } = useRoleAuth();
 
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedRecord, setExpandedRecord] = useState(null);
 
@@ -41,30 +41,44 @@ const PatientRecordsPage = () => {
       router.push("/");
       return;
     }
-
-    fetchRecords();
   }, [user, authLoading, router]);
 
-  const fetchRecords = async () => {
-    try {
-      const response = await fetch("/api/patient/records");
-      if (response.ok) {
-        const data = await response.json();
-        setRecords(data.records || []);
-      } else {
-        toast.error("Failed to load medical records");
-      }
-    } catch (error) {
-      console.error("Error fetching records:", error);
-      toast.error("Failed to load medical records");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchRecords = useCallback(async (page, limit) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const response = await fetch(`/api/patient/records?${params}`);
+    if (!response.ok) throw new Error("Failed to fetch records");
+    const data = await response.json();
+    return {
+      items: data.records || [],
+      total: data.pagination?.total || 0,
+      hasMore: data.pagination?.hasMore || false,
+    };
+  }, []);
+
+  const {
+    items: records,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    totalCount,
+    reset,
+    sentinelRef,
+  } = useInfiniteScroll(fetchRecords, {
+    limit: 10,
+    enabled: !!user && user.role === "patient" && !authLoading,
+  });
+
+  const filteredRecords = useMemo(() => {
+    return records;
+  }, [records]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchRecords();
+    await reset();
     setRefreshing(false);
     toast.success("Records refreshed!");
   };
@@ -155,7 +169,7 @@ const PatientRecordsPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {records.map((record) => {
+              {filteredRecords.map((record) => {
                 const isExpanded = expandedRecord === record.id;
 
                 return (
@@ -382,6 +396,13 @@ const PatientRecordsPage = () => {
                   </div>
                 );
               })}
+              <InfiniteScrollLoader
+                sentinelRef={sentinelRef}
+                loadingMore={loadingMore}
+                hasMore={hasMore}
+                itemsCount={filteredRecords.length}
+                totalCount={totalCount}
+              />
             </div>
           )}
         </div>

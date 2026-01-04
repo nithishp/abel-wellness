@@ -255,7 +255,9 @@ const PrescriptionDetailsPage = ({ params }) => {
                   {prescription.patient_address && (
                     <div className="text-slate-400 flex items-start gap-3">
                       <FiMapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                      <span className="break-words">{prescription.patient_address}</span>
+                      <span className="break-words">
+                        {prescription.patient_address}
+                      </span>
                     </div>
                   )}
                 </div>
