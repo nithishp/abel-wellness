@@ -8,6 +8,9 @@ import {
   FiCalendar,
   FiPackage,
   FiFileText,
+  FiAlertTriangle,
+  FiAlertCircle,
+  FiBox,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -94,9 +97,39 @@ const NotificationBell = () => {
         return <FiPackage className="w-4 h-4" />;
       case "consultation_completed":
         return <FiFileText className="w-4 h-4" />;
+      case "warning":
+      case "inventory":
+        return <FiAlertTriangle className="w-4 h-4" />;
+      case "error":
+        return <FiAlertCircle className="w-4 h-4" />;
+      case "inventory_alert":
+        return <FiBox className="w-4 h-4" />;
       default:
         return <FiBell className="w-4 h-4" />;
     }
+  };
+
+  const getNotificationColor = (notification) => {
+    if (notification.related_type === "inventory_alert") {
+      if (notification.type === "error") {
+        return {
+          bg: notification.is_read ? "bg-red-50" : "bg-red-100",
+          iconBg: "bg-red-100 text-red-600",
+        };
+      }
+      if (notification.type === "warning") {
+        return {
+          bg: notification.is_read ? "bg-yellow-50" : "bg-yellow-100",
+          iconBg: "bg-yellow-100 text-yellow-600",
+        };
+      }
+    }
+    return {
+      bg: notification.is_read ? "" : "bg-blue-50",
+      iconBg: notification.is_read
+        ? "bg-gray-100 text-gray-600"
+        : "bg-blue-100 text-blue-600",
+    };
   };
 
   const formatTime = (dateString) => {
@@ -159,57 +192,58 @@ const NotificationBell = () => {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors ${
-                        !notification.is_read ? "bg-blue-50" : ""
-                      }`}
-                    >
-                      <div className="flex gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            !notification.is_read
-                              ? "bg-blue-100 text-blue-600"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p
-                              className={`text-sm ${
-                                !notification.is_read
-                                  ? "font-medium text-gray-900"
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              {notification.title}
-                            </p>
-                            {!notification.is_read && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  markAsRead(notification.id);
-                                }}
-                                className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"
-                                title="Mark as read"
-                              >
-                                <FiCheck className="w-3 h-3" />
-                              </button>
+                  {notifications.map((notification) => {
+                    const colors = getNotificationColor(notification);
+                    return (
+                      <div
+                        key={notification.id}
+                        className={`p-4 hover:bg-gray-50 transition-colors ${colors.bg}`}
+                      >
+                        <div className="flex gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${colors.iconBg}`}
+                          >
+                            {notification.related_type === "inventory_alert" ? (
+                              <FiBox className="w-4 h-4" />
+                            ) : (
+                              getNotificationIcon(notification.type)
                             )}
                           </div>
-                          <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {formatTime(notification.created_at)}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p
+                                className={`text-sm ${
+                                  !notification.is_read
+                                    ? "font-medium text-gray-900"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                {notification.title}
+                              </p>
+                              {!notification.is_read && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRead(notification.id);
+                                  }}
+                                  className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"
+                                  title="Mark as read"
+                                >
+                                  <FiCheck className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatTime(notification.created_at)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

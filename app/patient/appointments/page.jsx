@@ -31,6 +31,15 @@ const PatientAppointmentsPage = () => {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [expandedReasons, setExpandedReasons] = useState({});
+
+  const toggleReasonExpanded = (appointmentId, type) => {
+    const key = `${appointmentId}-${type}`;
+    setExpandedReasons((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   const fetchAppointments = useCallback(async (page, limit) => {
     const params = new URLSearchParams({
@@ -112,6 +121,7 @@ const PatientAppointmentsPage = () => {
   };
 
   const getStatusConfig = (status, consultationStatus) => {
+    // Check consultation status for completed appointments
     if (consultationStatus === "completed") {
       return {
         bg: "bg-emerald-500/10",
@@ -120,6 +130,8 @@ const PatientAppointmentsPage = () => {
         label: "Completed",
       };
     }
+
+    // Check appointment status (pending, approved, rejected, cancelled)
     const configs = {
       pending: {
         bg: "bg-amber-500/10",
@@ -139,6 +151,12 @@ const PatientAppointmentsPage = () => {
         dot: "bg-red-400",
         label: "Rejected",
       },
+      cancelled: {
+        bg: "bg-slate-500/10",
+        text: "text-slate-400",
+        dot: "bg-slate-400",
+        label: "Cancelled",
+      },
     };
     return configs[status] || configs.pending;
   };
@@ -153,6 +171,7 @@ const PatientAppointmentsPage = () => {
     { value: "approved", label: "Approved" },
     { value: "completed", label: "Completed" },
     { value: "rejected", label: "Rejected" },
+    { value: "cancelled", label: "Cancelled" },
   ];
 
   // Only show full-page loading for initial auth check
@@ -193,66 +212,73 @@ const PatientAppointmentsPage = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-6 lg:px-8 py-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex items-center justify-between">
-              <div className="ml-12 lg:ml-0">
-                <h1 className="text-2xl font-bold text-white">
+              <div className="ml-12 lg:ml-0 min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-white">
                   My Appointments
                 </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
                   Manage your healthcare appointments
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all disabled:opacity-50"
+                  className="p-2 sm:p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all disabled:opacity-50"
                 >
                   <FiRefreshCw
-                    className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                      refreshing ? "animate-spin" : ""
+                    }`}
                   />
                 </button>
                 <button
                   onClick={() => setShowAppointmentModal(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all font-medium"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all font-medium text-sm sm:text-base"
                 >
-                  <FiPlus className="w-5 h-5" />
-                  <span className="hidden sm:inline">Book Appointment</span>
+                  <FiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden xs:inline sm:inline">Book</span>
+                  <span className="hidden sm:inline">Appointment</span>
                 </button>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {loading ? (
             <ContentSkeleton />
           ) : (
             <>
               {/* Filters */}
-              <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div className="inline-flex items-center gap-3 p-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
-                  <FiFilter className="text-slate-400 ml-2" />
-                  {filterOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setStatusFilter(option.value)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        statusFilter === option.value
-                          ? "bg-emerald-500/20 text-emerald-400 shadow-lg shadow-emerald-500/10"
-                          : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+              <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
+                {/* Status Filter - Horizontal scroll on mobile */}
+                <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                  <div className="inline-flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-slate-800/50 rounded-xl border border-slate-700/50 min-w-max">
+                    <FiFilter className="text-slate-400 ml-1.5 sm:ml-2 w-4 h-4" />
+                    {filterOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setStatusFilter(option.value)}
+                        className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                          statusFilter === option.value
+                            ? "bg-emerald-500/20 text-emerald-400 shadow-lg shadow-emerald-500/10"
+                            : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                {/* Sort Controls */}
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50 self-start">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer text-sm"
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer text-xs sm:text-sm"
                   >
                     <option value="date" className="bg-slate-800">
                       Sort by Date
@@ -269,9 +295,9 @@ const PatientAppointmentsPage = () => {
                     title={sortOrder === "asc" ? "Ascending" : "Descending"}
                   >
                     {sortOrder === "asc" ? (
-                      <FiArrowUp className="w-4 h-4 text-emerald-400" />
+                      <FiArrowUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                     ) : (
-                      <FiArrowDown className="w-4 h-4 text-emerald-400" />
+                      <FiArrowDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                     )}
                   </button>
                 </div>
@@ -279,28 +305,28 @@ const PatientAppointmentsPage = () => {
 
               {/* Appointments Grid */}
               {sortedAppointments.length === 0 ? (
-                <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-12 text-center">
-                  <div className="w-20 h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-6">
-                    <FiCalendar className="w-10 h-10 text-slate-500" />
+                <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 sm:p-12 text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <FiCalendar className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
                     No appointments found
                   </h3>
-                  <p className="text-slate-400 mb-6 max-w-md mx-auto">
+                  <p className="text-slate-400 mb-4 sm:mb-6 max-w-md mx-auto text-sm sm:text-base">
                     {statusFilter !== "all"
                       ? "Try changing the filter to see more appointments"
                       : "You haven't booked any appointments yet. Get started by booking your first appointment."}
                   </p>
                   <button
                     onClick={() => setShowAppointmentModal(true)}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all font-medium"
+                    className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all font-medium text-sm sm:text-base"
                   >
-                    <FiPlus className="w-5 h-5" />
+                    <FiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
                     Book an Appointment
                   </button>
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-3 sm:gap-4">
                   {sortedAppointments.map((appointment) => {
                     const statusConfig = getStatusConfig(
                       appointment.status,
@@ -314,77 +340,133 @@ const PatientAppointmentsPage = () => {
                     return (
                       <div
                         key={appointment.id}
-                        className="group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all duration-200"
+                        className="group rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6 hover:border-slate-600/50 transition-all duration-200"
                       >
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                          <div className="flex items-start gap-4">
-                            <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0">
-                              <FiCalendar className="w-6 h-6" />
+                        <div className="flex flex-col gap-3 sm:gap-4">
+                          {/* Main Info Row */}
+                          <div className="flex items-start gap-3 sm:gap-4">
+                            <div className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0">
+                              <FiCalendar className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-white">
-                                {formattedDateTime.date}
-                              </h3>
-                              <div className="flex items-center gap-4 mt-1">
-                                <span className="text-slate-400 text-sm flex items-center gap-1">
-                                  <FiClock className="w-4 h-4" />
-                                  {formattedDateTime.time}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                  <h3 className="text-base sm:text-lg font-semibold text-white">
+                                    {formattedDateTime.date}
+                                  </h3>
+                                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
+                                    <span className="text-slate-400 text-xs sm:text-sm flex items-center gap-1">
+                                      <FiClock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                      {formattedDateTime.time}
+                                    </span>
+                                    {appointment.doctor_name && (
+                                      <span className="text-slate-400 text-xs sm:text-sm flex items-center gap-1">
+                                        <FiUser className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        Dr. {appointment.doctor_name}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span
+                                  className={`self-start sm:self-center inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${statusConfig.dot}`}
+                                  ></span>
+                                  {statusConfig.label}
                                 </span>
-                                {appointment.doctor_name && (
-                                  <span className="text-slate-400 text-sm flex items-center gap-1">
-                                    <FiUser className="w-4 h-4" />
-                                    Dr. {appointment.doctor_name}
-                                  </span>
-                                )}
                               </div>
+
                               {appointment.reason_for_visit && (
-                                <div className="mt-3 p-3 rounded-lg bg-slate-700/30 border border-slate-600/30">
-                                  <p className="text-sm text-slate-300">
+                                <div
+                                  className="mt-2 sm:mt-3 p-2.5 sm:p-3 rounded-lg bg-slate-700/30 border border-slate-600/30 cursor-pointer hover:bg-slate-700/40 transition-colors"
+                                  onClick={() =>
+                                    toggleReasonExpanded(
+                                      appointment.id,
+                                      "visit"
+                                    )
+                                  }
+                                >
+                                  <p
+                                    className={`text-xs sm:text-sm text-slate-300 ${
+                                      !expandedReasons[
+                                        `${appointment.id}-visit`
+                                      ]
+                                        ? "line-clamp-2"
+                                        : ""
+                                    }`}
+                                  >
                                     <span className="text-slate-500">
                                       Reason:{" "}
                                     </span>
                                     {appointment.reason_for_visit}
                                   </p>
+                                  {appointment.reason_for_visit.length >
+                                    100 && (
+                                    <span className="text-[10px] sm:text-xs text-slate-500 mt-1 block">
+                                      {expandedReasons[
+                                        `${appointment.id}-visit`
+                                      ]
+                                        ? "Click to collapse"
+                                        : "Click to expand"}
+                                    </span>
+                                  )}
                                 </div>
                               )}
                               {appointment.rejection_reason && (
-                                <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                  <p className="text-sm text-red-400">
+                                <div
+                                  className="mt-2 sm:mt-3 p-2.5 sm:p-3 rounded-lg bg-red-500/10 border border-red-500/20 cursor-pointer hover:bg-red-500/15 transition-colors"
+                                  onClick={() =>
+                                    toggleReasonExpanded(
+                                      appointment.id,
+                                      "rejection"
+                                    )
+                                  }
+                                >
+                                  <p
+                                    className={`text-xs sm:text-sm text-red-400 ${
+                                      !expandedReasons[
+                                        `${appointment.id}-rejection`
+                                      ]
+                                        ? "line-clamp-2"
+                                        : ""
+                                    }`}
+                                  >
                                     <span className="font-medium">
                                       Rejection Reason:{" "}
                                     </span>
                                     {appointment.rejection_reason}
                                   </p>
+                                  {appointment.rejection_reason.length > 80 && (
+                                    <span className="text-[10px] sm:text-xs text-red-400/70 mt-1 block">
+                                      {expandedReasons[
+                                        `${appointment.id}-rejection`
+                                      ]
+                                        ? "Click to collapse"
+                                        : "Click to expand"}
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-4 lg:flex-shrink-0">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
-                            >
-                              <span
-                                className={`w-2 h-2 rounded-full ${statusConfig.dot}`}
-                              ></span>
-                              {statusConfig.label}
-                            </span>
-
-                            {appointment.consultation_status ===
-                              "completed" && (
+                          {/* Action Button */}
+                          {appointment.consultation_status === "completed" && (
+                            <div className="flex justify-end">
                               <button
                                 onClick={() =>
                                   router.push(
                                     `/patient/records/${appointment.id}`
                                   )
                                 }
-                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 rounded-lg hover:bg-blue-500/20 transition-colors"
+                                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-400 bg-blue-500/10 rounded-lg hover:bg-blue-500/20 transition-colors"
                               >
-                                <FiEye className="w-4 h-4" />
+                                <FiEye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 View Record
                               </button>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

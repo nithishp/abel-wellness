@@ -2,7 +2,15 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
-import { FiArrowLeft, FiSave, FiEye } from "react-icons/fi";
+import AdminSidebar from "../../../components/AdminSidebar";
+import {
+  FiArrowLeft,
+  FiSave,
+  FiEye,
+  FiFileText,
+  FiImage,
+  FiSettings,
+} from "react-icons/fi";
 import { toast } from "sonner";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
 import ImageUpload from "@/app/components/ui/ImageUpload";
@@ -154,215 +162,282 @@ const EditBlog = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading blog...</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
+          </div>
+          <p className="text-slate-400 font-medium">Loading blog...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <button
-                onClick={() => router.push("/admin/blogs")}
-                className="mr-4 p-2 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                <FiArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Edit Blog</h1>
-                <p className="text-gray-600">Update your blog post</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                type="button"
-                onClick={() => {
-                  // Preview functionality can be added later
-                  toast.info("Preview functionality coming soon!");
-                }}
-                className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                <FiEye className="mr-2" />
-                Preview
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center transition-colors"
-              >
-                <FiSave className="mr-2" />
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <AdminSidebar />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSave} className="space-y-6">
-          {/* Basic Information */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Basic Information
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  value={blog.title}
-                  onChange={(e) =>
-                    setBlog((prev) => ({ ...prev, title: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter blog title"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Author
-                </label>
-                <input
-                  type="text"
-                  value={blog.author}
-                  onChange={(e) =>
-                    setBlog((prev) => ({ ...prev, author: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={admin?.name || "Admin"}
-                />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
-                <span className="text-sm text-gray-500 ml-1">
-                  ({blog.description.length}/500)
-                </span>
-              </label>
-              <textarea
-                value={blog.description}
-                onChange={(e) => {
-                  if (e.target.value.length <= 500) {
-                    setBlog((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }));
-                  }
-                }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
-                  blog.description.length > 450
-                    ? "border-yellow-300 focus:ring-yellow-500"
-                    : blog.description.length > 500
-                    ? "border-red-300 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-blue-500"
-                }`}
-                rows={3}
-                placeholder="Enter a brief description of your blog post (max 500 characters)"
-                maxLength={500}
-                required
-              />
-              {blog.description.length > 450 && (
-                <p
-                  className={`text-sm mt-1 ${
-                    blog.description.length > 500
-                      ? "text-red-600"
-                      : "text-yellow-600"
-                  }`}
+      {/* Main Content */}
+      <main className="lg:ml-72 min-h-screen">
+        {/* Header */}
+        <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 ml-12 lg:ml-0 min-w-0 flex-1">
+                <button
+                  onClick={() => router.push("/admin/blogs")}
+                  className="p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all shrink-0"
                 >
-                  {blog.description.length > 500
-                    ? "Description exceeds 500 characters!"
-                    : "Approaching character limit"}
-                </p>
-              )}
+                  <FiArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
+                    Edit Blog
+                  </h1>
+                  <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
+                    Update your blog post
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 sm:gap-3 ml-12 sm:ml-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    toast.info("Preview functionality coming soon!")
+                  }
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-700/50 border border-slate-600/50 text-white rounded-xl hover:bg-slate-700 transition-colors text-sm sm:text-base flex-1 sm:flex-none"
+                >
+                  <FiEye className="w-4 h-4" />
+                  <span className="hidden sm:inline">Preview</span>
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex-1 sm:flex-none"
+                >
+                  <FiSave className="w-4 h-4" />
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             </div>
           </div>
+        </header>
 
-          {/* Featured Image */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Featured Image
-            </h2>
-            <ImageUpload
-              onImageUpload={handleImageUpload}
-              currentImage={blog.imageUrl}
-              onImageRemove={handleImageRemove}
-            />
-          </div>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <form onSubmit={handleSave} className="space-y-4 sm:space-y-6">
+            {/* Basic Information Card */}
+            <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <FiFileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                </div>
+                <h2 className="text-base sm:text-lg font-semibold text-white">
+                  Basic Information
+                </h2>
+              </div>
 
-          {/* Content */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Content *
-            </h2>
-            <RichTextEditor
-              content={blog.content}
-              onChange={(content) => setBlog((prev) => ({ ...prev, content }))}
-              placeholder="Write your blog content here..."
-            />
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Title <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={blog.title}
+                    onChange={(e) =>
+                      setBlog((prev) => ({ ...prev, title: e.target.value }))
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    placeholder="Enter blog title"
+                    required
+                  />
+                </div>
 
-          {/* Publishing Options */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Publishing Options
-            </h2>
+                {/* Author */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Author
+                  </label>
+                  <input
+                    type="text"
+                    value={blog.author}
+                    onChange={(e) =>
+                      setBlog((prev) => ({ ...prev, author: e.target.value }))
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    placeholder="Author name"
+                  />
+                </div>
 
-            <div className="flex items-center space-x-6">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={blog.published}
-                  onChange={(e) =>
-                    setBlog((prev) => ({
-                      ...prev,
-                      published: e.target.checked,
-                    }))
-                  }
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Published
-                  <span className="text-gray-500 block text-xs">
-                    Make this blog visible to the public
-                  </span>
-                </span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={blog.featured}
-                  onChange={(e) =>
-                    setBlog((prev) => ({ ...prev, featured: e.target.checked }))
-                  }
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Featured
-                  <span className="text-gray-500 block text-xs">
-                    Highlight this blog on the homepage
-                  </span>
-                </span>
-              </label>
+                {/* Description */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Description <span className="text-red-400">*</span>
+                    <span
+                      className={`ml-2 text-xs ${
+                        blog.description.length > 450
+                          ? "text-amber-400"
+                          : "text-slate-500"
+                      }`}
+                    >
+                      ({blog.description.length}/500)
+                    </span>
+                  </label>
+                  <textarea
+                    value={blog.description}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 500) {
+                        setBlog((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }));
+                      }
+                    }}
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900/50 border rounded-xl text-white text-sm sm:text-base placeholder-slate-500 focus:outline-none focus:ring-2 transition-all resize-none ${
+                      blog.description.length > 450
+                        ? "border-amber-500/50 focus:ring-amber-500/50 focus:border-amber-500/50"
+                        : "border-slate-600/50 focus:ring-emerald-500/50 focus:border-emerald-500/50"
+                    }`}
+                    rows={3}
+                    placeholder="Enter a brief description of your blog post (max 500 characters)"
+                    maxLength={500}
+                    required
+                  />
+                  {blog.description.length > 450 && (
+                    <p className="text-xs text-amber-400 mt-1">
+                      Approaching character limit
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </form>
-      </div>
+
+            {/* Featured Image Card */}
+            <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                  <FiImage className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
+                </div>
+                <h2 className="text-base sm:text-lg font-semibold text-white">
+                  Featured Image
+                </h2>
+              </div>
+              <ImageUpload
+                onImageUpload={handleImageUpload}
+                currentImage={blog.imageUrl}
+                onImageRemove={handleImageRemove}
+              />
+            </div>
+
+            {/* Content Card */}
+            <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <FiFileText className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+                </div>
+                <h2 className="text-base sm:text-lg font-semibold text-white">
+                  Content <span className="text-red-400">*</span>
+                </h2>
+              </div>
+              <div className="bg-slate-900/50 rounded-xl border border-slate-600/50 overflow-hidden">
+                <RichTextEditor
+                  content={blog.content}
+                  onChange={(content) =>
+                    setBlog((prev) => ({ ...prev, content }))
+                  }
+                  placeholder="Write your blog content here..."
+                />
+              </div>
+            </div>
+
+            {/* Publishing Options Card */}
+            <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <FiSettings className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                </div>
+                <h2 className="text-base sm:text-lg font-semibold text-white">
+                  Publishing Options
+                </h2>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
+                {/* Published Toggle */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={blog.published}
+                      onChange={(e) =>
+                        setBlog((prev) => ({
+                          ...prev,
+                          published: e.target.checked,
+                        }))
+                      }
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-11 h-6 rounded-full transition-colors ${
+                        blog.published ? "bg-emerald-500" : "bg-slate-600"
+                      }`}
+                    ></div>
+                    <div
+                      className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                        blog.published ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    ></div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors block">
+                      Published
+                    </span>
+                    <span className="text-xs text-slate-500 block">
+                      Make this blog visible to the public
+                    </span>
+                  </div>
+                </label>
+
+                {/* Featured Toggle */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={blog.featured}
+                      onChange={(e) =>
+                        setBlog((prev) => ({
+                          ...prev,
+                          featured: e.target.checked,
+                        }))
+                      }
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-11 h-6 rounded-full transition-colors ${
+                        blog.featured ? "bg-amber-500" : "bg-slate-600"
+                      }`}
+                    ></div>
+                    <div
+                      className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                        blog.featured ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    ></div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors block">
+                      Featured
+                    </span>
+                    <span className="text-xs text-slate-500 block">
+                      Highlight this blog on the homepage
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+      </main>
     </div>
   );
 };

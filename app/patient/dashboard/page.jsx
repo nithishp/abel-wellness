@@ -233,10 +233,12 @@ const PatientDashboardPage = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-6 lg:px-8 py-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex items-center justify-between">
-              <div className="ml-12 lg:ml-0">
-                <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+              <div className="ml-12 lg:ml-0 min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                  Dashboard
+                </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
                   Welcome back, {user?.full_name || "Patient"}
                 </p>
@@ -256,17 +258,17 @@ const PatientDashboardPage = () => {
           </div>
         </header>
 
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {loading ? (
             <ContentSkeleton />
           ) : (
             <>
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
                 {statCards.map((stat, index) => (
                   <div
                     key={index}
-                    className={`relative group rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6 overflow-hidden transition-all duration-300 hover:border-slate-600/50 hover:shadow-xl ${stat.bgGlow}`}
+                    className={`relative group rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-3 sm:p-6 overflow-hidden transition-all duration-300 hover:border-slate-600/50 hover:shadow-xl ${stat.bgGlow}`}
                   >
                     {/* Background Glow Effect */}
                     <div
@@ -275,32 +277,32 @@ const PatientDashboardPage = () => {
 
                     {/* Alert Indicator */}
                     {stat.alert && (
-                      <div className="absolute top-4 right-4">
-                        <span className="relative flex h-3 w-3">
+                      <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                        <span className="relative flex h-2 w-2 sm:h-3 sm:w-3">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-emerald-500"></span>
                         </span>
                       </div>
                     )}
 
                     <div className="relative">
                       <div
-                        className={`w-12 h-12 rounded-xl ${stat.iconBg} flex items-center justify-center mb-4`}
+                        className={`w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl ${stat.iconBg} flex items-center justify-center mb-2 sm:mb-4`}
                       >
                         <stat.icon
-                          className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text`}
+                          className={`w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text`}
                           style={{ color: `var(--tw-gradient-from)` }}
                         />
                       </div>
-                      <p className="text-slate-400 text-sm font-medium mb-1">
+                      <p className="text-slate-400 text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 truncate">
                         {stat.title}
                       </p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-white">
+                        <span className="text-xl sm:text-3xl font-bold text-white">
                           {stat.value}
                         </span>
                       </div>
-                      <p className="text-slate-500 text-sm mt-1">
+                      <p className="text-slate-500 text-xs sm:text-sm mt-0.5 sm:mt-1 hidden sm:block">
                         {stat.subtitle}
                       </p>
                     </div>
@@ -309,18 +311,18 @@ const PatientDashboardPage = () => {
               </div>
 
               {/* Quick Actions */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <div>
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-lg sm:text-xl font-bold text-white">
                       Quick Actions
                     </h2>
-                    <p className="text-slate-400 text-sm mt-0.5">
+                    <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
                       Frequently used features
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {quickActions.map((action, index) => (
                     <button
                       key={index}
@@ -329,22 +331,23 @@ const PatientDashboardPage = () => {
                           ? action.action()
                           : router.push(action.href)
                       }
-                      className={`group relative rounded-2xl bg-gradient-to-br ${action.gradient} p-6 text-left transition-all duration-300 hover:shadow-2xl ${action.hoverGlow} hover:-translate-y-1`}
+                      className={`group relative rounded-xl sm:rounded-2xl bg-gradient-to-br ${action.gradient} p-4 sm:p-6 text-left transition-all duration-300 hover:shadow-2xl ${action.hoverGlow} hover:-translate-y-1`}
                     >
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="relative">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                          <action.icon className="w-6 h-6 text-white" />
+                        <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-2 sm:mb-4 group-hover:scale-110 transition-transform">
+                          <action.icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                         </div>
-                        <h3 className="text-lg font-semibold text-white mb-1">
+                        <h3 className="text-sm sm:text-lg font-semibold text-white mb-0.5 sm:mb-1 truncate">
                           {action.title}
                         </h3>
-                        <p className="text-white/70 text-sm">
+                        <p className="text-white/70 text-xs sm:text-sm hidden sm:block">
                           {action.description}
                         </p>
-                        <div className="mt-4 flex items-center text-white/80 text-sm font-medium group-hover:text-white transition-colors">
-                          <span>Get started</span>
-                          <FiArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        <div className="mt-2 sm:mt-4 flex items-center text-white/80 text-xs sm:text-sm font-medium group-hover:text-white transition-colors">
+                          <span className="hidden sm:inline">Get started</span>
+                          <span className="sm:hidden">View</span>
+                          <FiArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
                     </button>
@@ -353,47 +356,48 @@ const PatientDashboardPage = () => {
               </div>
 
               {/* Two Column Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 {/* Upcoming Appointments */}
-                <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
-                  <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
+                <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
+                  <div className="p-4 sm:p-6 border-b border-slate-700/50 flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-bold text-white">
+                      <h2 className="text-base sm:text-xl font-bold text-white">
                         Upcoming Appointments
                       </h2>
-                      <p className="text-slate-400 text-sm mt-0.5">
+                      <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
                         Your scheduled visits
                       </p>
                     </div>
                     <button
                       onClick={() => router.push("/patient/appointments")}
-                      className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                      className="text-xs sm:text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
                     >
-                      View all
-                      <FiArrowUpRight className="w-4 h-4" />
+                      <span className="hidden sm:inline">View all</span>
+                      <span className="sm:hidden">All</span>
+                      <FiArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     {upcomingAppointments.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
-                          <FiCalendar className="w-8 h-8 text-slate-500" />
+                      <div className="text-center py-8 sm:py-12">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                          <FiCalendar className="w-6 h-6 sm:w-8 sm:h-8 text-slate-500" />
                         </div>
-                        <p className="text-slate-400 font-medium">
+                        <p className="text-slate-400 font-medium text-sm sm:text-base">
                           No upcoming appointments
                         </p>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1">
                           Book an appointment to get started
                         </p>
                         <button
                           onClick={() => setShowAppointmentModal(true)}
-                          className="mt-4 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors"
+                          className="mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-sm rounded-lg hover:bg-emerald-700 transition-colors"
                         >
                           Book Now
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {upcomingAppointments.slice(0, 4).map((appointment) => {
                           const statusConfig = getStatusConfig(
                             appointment.status
@@ -405,34 +409,34 @@ const PatientDashboardPage = () => {
                           return (
                             <div
                               key={appointment.id}
-                              className="group flex items-start gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
+                              className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
                             >
-                              <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0">
-                                <FiCalendar className="w-5 h-5" />
+                              <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0">
+                                <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-white font-medium truncate">
+                                <p className="text-white font-medium text-sm sm:text-base truncate">
                                   {formattedDateTime.date}
                                 </p>
-                                <p className="text-slate-400 text-sm truncate mt-0.5">
+                                <p className="text-slate-400 text-xs sm:text-sm truncate mt-0.5">
                                   {appointment.doctor_name
                                     ? `Dr. ${appointment.doctor_name}`
                                     : "Doctor to be assigned"}
                                 </p>
-                                <div className="flex items-center gap-3 mt-2">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2">
                                   <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
+                                    className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
                                   >
                                     <span
-                                      className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                                      className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${statusConfig.dot}`}
                                     ></span>
                                     {appointment.status
                                       .charAt(0)
                                       .toUpperCase() +
                                       appointment.status.slice(1)}
                                   </span>
-                                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                                    <FiClock className="w-3 h-3" />
+                                  <span className="text-[10px] sm:text-xs text-slate-500 flex items-center gap-1">
+                                    <FiClock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                     {formattedDateTime.time}
                                   </span>
                                 </div>
@@ -446,39 +450,40 @@ const PatientDashboardPage = () => {
                 </div>
 
                 {/* Recent Prescriptions */}
-                <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
-                  <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
+                <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden">
+                  <div className="p-4 sm:p-6 border-b border-slate-700/50 flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-bold text-white">
+                      <h2 className="text-base sm:text-xl font-bold text-white">
                         Recent Prescriptions
                       </h2>
-                      <p className="text-slate-400 text-sm mt-0.5">
+                      <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
                         Your medications
                       </p>
                     </div>
                     <button
                       onClick={() => router.push("/patient/prescriptions")}
-                      className="text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                      className="text-xs sm:text-sm text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
                     >
-                      View all
-                      <FiArrowUpRight className="w-4 h-4" />
+                      <span className="hidden sm:inline">View all</span>
+                      <span className="sm:hidden">All</span>
+                      <FiArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     {recentPrescriptions.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
-                          <FiPackage className="w-8 h-8 text-slate-500" />
+                      <div className="text-center py-8 sm:py-12">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                          <FiPackage className="w-6 h-6 sm:w-8 sm:h-8 text-slate-500" />
                         </div>
-                        <p className="text-slate-400 font-medium">
+                        <p className="text-slate-400 font-medium text-sm sm:text-base">
                           No prescriptions yet
                         </p>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1">
                           Prescriptions will appear after consultations
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {recentPrescriptions.slice(0, 4).map((prescription) => {
                           const isDispensed =
                             prescription.status === "dispensed";
@@ -488,34 +493,34 @@ const PatientDashboardPage = () => {
                               onClick={() =>
                                 router.push("/patient/prescriptions")
                               }
-                              className="group flex items-start gap-4 p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
+                              className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
                             >
                               <div
-                                className={`p-3 rounded-xl ${
+                                className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${
                                   isDispensed
                                     ? "bg-emerald-500/20 text-emerald-400"
                                     : "bg-amber-500/20 text-amber-400"
                                 } flex-shrink-0`}
                               >
-                                <FiPackage className="w-5 h-5" />
+                                <FiPackage className="w-4 h-4 sm:w-5 sm:h-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-white font-medium truncate">
+                                <p className="text-white font-medium text-sm sm:text-base truncate">
                                   {formatDate(prescription.created_at)}
                                 </p>
-                                <p className="text-slate-400 text-sm truncate mt-0.5">
+                                <p className="text-slate-400 text-xs sm:text-sm truncate mt-0.5">
                                   Dr. {prescription.doctor_name}
                                 </p>
-                                <div className="flex items-center gap-3 mt-2">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2">
                                   <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${
+                                    className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${
                                       isDispensed
                                         ? "bg-emerald-500/10 text-emerald-400"
                                         : "bg-amber-500/10 text-amber-400"
                                     }`}
                                   >
                                     <span
-                                      className={`w-1.5 h-1.5 rounded-full ${
+                                      className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${
                                         isDispensed
                                           ? "bg-emerald-400"
                                           : "bg-amber-400"
@@ -523,7 +528,7 @@ const PatientDashboardPage = () => {
                                     ></span>
                                     {isDispensed ? "Dispensed" : "Pending"}
                                   </span>
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-[10px] sm:text-xs text-slate-500">
                                     {prescription.items?.length || 0} items
                                   </span>
                                 </div>

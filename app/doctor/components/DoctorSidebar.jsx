@@ -58,7 +58,7 @@ const DoctorSidebar = () => {
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-white font-bold text-lg tracking-tight">
-                Abel Wellness
+                AWHCC
               </h1>
               <p className="text-slate-400 text-xs">Doctor Portal</p>
             </div>

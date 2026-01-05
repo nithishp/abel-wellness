@@ -13,6 +13,7 @@ import {
   FiMenu,
   FiX,
   FiChevronRight,
+  FiPackage,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -41,6 +42,12 @@ const AdminSidebar = () => {
       icon: FiCalendar,
       href: "/admin/appointments",
       description: "View & manage appointments",
+    },
+    {
+      name: "Inventory",
+      icon: FiPackage,
+      href: "/admin/inventory",
+      description: "Manage stock & supplies",
     },
     {
       name: "Patients",
@@ -78,7 +85,7 @@ const AdminSidebar = () => {
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-white font-bold text-lg tracking-tight">
-                Abel Wellness
+                AWHCC
               </h1>
               <p className="text-slate-400 text-xs">Admin Portal</p>
             </div>

@@ -304,7 +304,7 @@ const ConsultationPage = () => {
   const ContentSkeleton = () => (
     <main className="lg:ml-72 min-h-screen">
       <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-        <div className="px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-5">
           <div className="h-8 w-48 bg-slate-700/50 rounded animate-pulse"></div>
         </div>
       </header>
@@ -350,9 +350,9 @@ const ConsultationPage = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="ml-12 lg:ml-0">
+              <div className="ml-12 lg:ml-0 min-w-0 flex-1">
                 <h1 className="text-xl sm:text-2xl font-bold text-white">
                   Consultation
                 </h1>

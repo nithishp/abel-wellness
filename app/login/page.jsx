@@ -224,7 +224,7 @@ const LoginPage = () => {
               <FiArrowLeft className="w-4 h-4 mr-1" />
               Back to Home
             </Link>
-            <h1 className="text-2xl font-bold">Welcome to Abel Wellness</h1>
+            <h1 className="text-2xl font-bold">Welcome to AWHCC</h1>
             <p className="text-blue-100 mt-1">Sign in to your account</p>
           </div>
 

@@ -10,6 +10,7 @@ import {
   FiX,
   FiChevronRight,
   FiActivity,
+  FiBox,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -32,6 +33,12 @@ const PharmacistSidebar = () => {
       icon: FiPackage,
       href: "/pharmacist/prescriptions",
       description: "Manage prescriptions",
+    },
+    {
+      name: "Inventory",
+      icon: FiBox,
+      href: "/pharmacist/inventory",
+      description: "Manage stock & supplies",
     },
   ];
 
@@ -58,7 +65,7 @@ const PharmacistSidebar = () => {
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-white font-bold text-lg tracking-tight">
-                Abel Wellness
+                AWHCC
               </h1>
               <p className="text-slate-400 text-xs">Pharmacy Portal</p>
             </div>

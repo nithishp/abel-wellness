@@ -9,7 +9,7 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Abel wellness & Homoeopathic Care Center",
+  title: "AWHCC - Abel Wellness & Homoeopathic Care Center",
   description: "Your trusted home for holistic healing and wellness.",
 };
 

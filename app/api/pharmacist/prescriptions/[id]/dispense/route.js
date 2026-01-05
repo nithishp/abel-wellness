@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase.config";
 import { TABLES, PRESCRIPTION_STATUS } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
+import {
+  dispensePrescriptionItems,
+  checkStockAvailability,
+} from "@/lib/actions/inventory.actions";
 
 // Helper to verify pharmacist session
 async function verifyPharmacistSession() {
@@ -37,6 +41,8 @@ export async function POST(request, { params }) {
     }
 
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const forceDispense = body.forceDispense || false;
 
     // Get pharmacist profile
     const { data: pharmacistProfile } = await supabaseAdmin
@@ -78,6 +84,62 @@ export async function POST(request, { params }) {
         { error: "Prescription already dispensed" },
         { status: 400 }
       );
+    }
+
+    // Check inventory stock availability
+    if (prescription.items && prescription.items.length > 0) {
+      const itemsToCheck = prescription.items.map((item) => ({
+        medication_name: item.medication_name,
+        quantity: item.quantity || 1,
+      }));
+
+      // Check stock availability
+      const stockCheck = await checkStockAvailability(itemsToCheck);
+
+      if (!stockCheck.success) {
+        return NextResponse.json(
+          { error: stockCheck.error || "Failed to check stock" },
+          { status: 500 }
+        );
+      }
+
+      // If there are insufficient stock items and forceDispense is false, return warning
+      if (
+        stockCheck.insufficientItems &&
+        stockCheck.insufficientItems.length > 0 &&
+        !forceDispense
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            requiresConfirmation: true,
+            message: "Some items have insufficient stock",
+            insufficientItems: stockCheck.insufficientItems,
+            availabilityDetails: stockCheck.items,
+          },
+          { status: 200 }
+        );
+      }
+
+      // Dispense items from inventory
+      const dispenseResult = await dispensePrescriptionItems(
+        id,
+        itemsToCheck,
+        pharmacist.id,
+        forceDispense
+      );
+
+      if (!dispenseResult.success && !forceDispense) {
+        return NextResponse.json(
+          {
+            success: false,
+            requiresConfirmation: true,
+            message: dispenseResult.error || "Failed to dispense items",
+            insufficientItems: dispenseResult.insufficientItems,
+          },
+          { status: 200 }
+        );
+      }
     }
 
     // Update prescription status

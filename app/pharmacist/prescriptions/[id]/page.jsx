@@ -140,7 +140,7 @@ const PrescriptionDetailsPage = ({ params }) => {
   const ContentSkeleton = () => (
     <main className="lg:ml-72 min-h-screen">
       <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-        <div className="px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-5">
           <div className="h-8 w-48 bg-slate-700/50 rounded animate-pulse"></div>
         </div>
       </header>
@@ -192,68 +192,75 @@ const PrescriptionDetailsPage = ({ params }) => {
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 ml-12 lg:ml-0">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3 sm:gap-4 ml-12 lg:ml-0 min-w-0 flex-1">
                 <button
                   onClick={() => router.push("/pharmacist/prescriptions")}
-                  className="p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all"
+                  className="p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all shrink-0"
                 >
-                  <FiArrowLeft className="w-5 h-5" />
+                  <FiArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
                     Prescription Details
                   </h1>
-                  <p className="text-slate-400 text-sm mt-0.5">
+                  <p className="text-slate-400 text-xs sm:text-sm mt-0.5 truncate">
                     ID: {prescription.id.slice(0, 8)}...
                   </p>
                 </div>
               </div>
               <span
-                className={`px-4 py-2 text-sm font-medium rounded-full flex items-center gap-2 ${statusConfig.bg} ${statusConfig.text}`}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-full flex items-center gap-1.5 sm:gap-2 ${statusConfig.bg} ${statusConfig.text} self-start sm:self-auto ml-12 sm:ml-0 shrink-0`}
               >
-                <StatusIcon className="w-4 h-4" />
-                {statusConfig.label}
+                <StatusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">{statusConfig.label}</span>
+                <span className="xs:hidden">
+                  {prescription.status === "dispensed"
+                    ? "Dispensed"
+                    : "Pending"}
+                </span>
               </span>
             </div>
           </div>
         </header>
 
-        <div className="p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* Patient & Doctor Info */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Patient Card */}
-              <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+              <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 sm:mb-4">
                   Patient Information
                 </h3>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                    <FiUser className="w-7 h-7 text-purple-400" />
+                <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+                    <FiUser className="w-5 h-5 sm:w-7 sm:h-7 text-purple-400" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-white text-lg">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-white text-base sm:text-lg truncate">
                       {prescription.patient_name}
                     </p>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {prescription.patient_email && (
-                    <p className="text-slate-400 flex items-center gap-3">
-                      <FiMail className="w-4 h-4 text-slate-500" />
-                      {prescription.patient_email}
+                    <p className="text-slate-400 text-sm flex items-center gap-2 sm:gap-3">
+                      <FiMail className="w-4 h-4 text-slate-500 shrink-0" />
+                      <span className="truncate">
+                        {prescription.patient_email}
+                      </span>
                     </p>
                   )}
                   {prescription.patient_phone && (
-                    <p className="text-slate-400 flex items-center gap-3">
-                      <FiPhone className="w-4 h-4 text-slate-500" />
+                    <p className="text-slate-400 text-sm flex items-center gap-2 sm:gap-3">
+                      <FiPhone className="w-4 h-4 text-slate-500 shrink-0" />
                       {prescription.patient_phone}
                     </p>
                   )}
                   {prescription.patient_address && (
-                    <div className="text-slate-400 flex items-start gap-3">
+                    <div className="text-slate-400 text-sm flex items-start gap-2 sm:gap-3">
                       <FiMapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
                       <span className="break-words">
                         {prescription.patient_address}
@@ -264,41 +271,47 @@ const PrescriptionDetailsPage = ({ params }) => {
               </div>
 
               {/* Doctor & Date Card */}
-              <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+              <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 sm:mb-4">
                   Prescription Details
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                      <FiUser className="w-5 h-5 text-blue-400" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                      <FiUser className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                     </div>
-                    <div>
-                      <p className="text-sm text-slate-500">Prescribed by</p>
-                      <p className="font-medium text-white">
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        Prescribed by
+                      </p>
+                      <p className="font-medium text-white text-sm sm:text-base truncate">
                         Dr. {prescription.doctor_name}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                      <FiCalendar className="w-5 h-5 text-violet-400" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-violet-500/20 flex items-center justify-center shrink-0">
+                      <FiCalendar className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
                     </div>
-                    <div>
-                      <p className="text-sm text-slate-500">Created on</p>
-                      <p className="font-medium text-white">
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        Created on
+                      </p>
+                      <p className="font-medium text-white text-sm sm:text-base">
                         {formatDate(prescription.created_at)}
                       </p>
                     </div>
                   </div>
                   {prescription.dispensed_at && (
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                        <FiCheck className="w-5 h-5 text-emerald-400" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <FiCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                       </div>
-                      <div>
-                        <p className="text-sm text-slate-500">Dispensed on</p>
-                        <p className="font-medium text-white">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm text-slate-500">
+                          Dispensed on
+                        </p>
+                        <p className="font-medium text-white text-sm sm:text-base">
                           {formatDate(prescription.dispensed_at)}
                         </p>
                       </div>
@@ -309,25 +322,25 @@ const PrescriptionDetailsPage = ({ params }) => {
             </div>
 
             {/* Medications */}
-            <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <FiPackage className="w-5 h-5 text-purple-400" />
+            <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                <FiPackage className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                 Medications ({prescription.items?.length || 0})
               </h3>
 
               {prescription.items?.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {prescription.items.map((item, index) => (
                     <div
                       key={item.id || index}
-                      className="rounded-xl bg-slate-700/30 border border-slate-600/30 p-4 hover:bg-slate-700/50 transition-all"
+                      className="rounded-xl bg-slate-700/30 border border-slate-600/30 p-3 sm:p-4 hover:bg-slate-700/50 transition-all"
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white text-lg">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-white text-base sm:text-lg truncate">
                             {item.medication_name}
                           </h4>
-                          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                          <div className="mt-2 sm:mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
                             {item.dosage && (
                               <div>
                                 <span className="text-slate-500">Dosage</span>
@@ -364,8 +377,8 @@ const PrescriptionDetailsPage = ({ params }) => {
                             )}
                           </div>
                           {item.instructions && (
-                            <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                              <p className="text-sm text-blue-400">
+                            <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                              <p className="text-xs sm:text-sm text-blue-400">
                                 <strong>Instructions:</strong>{" "}
                                 {item.instructions}
                               </p>
@@ -377,20 +390,22 @@ const PrescriptionDetailsPage = ({ params }) => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-slate-500">No medications listed</p>
+                <div className="text-center py-6 sm:py-8">
+                  <p className="text-slate-500 text-sm">
+                    No medications listed
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Notes */}
             {prescription.notes && (
-              <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <FiFileText className="w-5 h-5 text-slate-400" />
+              <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-2 sm:mb-3 flex items-center gap-2">
+                  <FiFileText className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
                   Notes
                 </h3>
-                <p className="text-slate-400 bg-slate-700/30 p-4 rounded-xl border border-slate-600/30">
+                <p className="text-slate-400 text-sm bg-slate-700/30 p-3 sm:p-4 rounded-xl border border-slate-600/30">
                   {prescription.notes}
                 </p>
               </div>
@@ -398,13 +413,13 @@ const PrescriptionDetailsPage = ({ params }) => {
 
             {/* Actions */}
             {prescription.status === "pending" && (
-              <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                   <div>
-                    <h3 className="font-semibold text-white">
+                    <h3 className="font-semibold text-white text-sm sm:text-base">
                       Ready to dispense?
                     </h3>
-                    <p className="text-sm text-slate-400 mt-1">
+                    <p className="text-xs sm:text-sm text-slate-400 mt-1">
                       Mark this prescription as dispensed once the patient has
                       received the medications.
                     </p>
@@ -412,7 +427,7 @@ const PrescriptionDetailsPage = ({ params }) => {
                   <button
                     onClick={handleDispense}
                     disabled={dispensing}
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm rounded-xl hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all shrink-0"
                   >
                     {dispensing ? (
                       <>
@@ -421,8 +436,11 @@ const PrescriptionDetailsPage = ({ params }) => {
                       </>
                     ) : (
                       <>
-                        <FiCheck className="w-5 h-5" />
-                        Mark as Dispensed
+                        <FiCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="hidden xs:inline">
+                          Mark as Dispensed
+                        </span>
+                        <span className="xs:hidden">Dispense</span>
                       </>
                     )}
                   </button>

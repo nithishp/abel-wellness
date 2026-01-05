@@ -129,10 +129,10 @@ const PatientRecordsPage = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-6 lg:px-8 py-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex items-center justify-between">
-              <div className="ml-12 lg:ml-0">
-                <h1 className="text-2xl font-bold text-white">
+              <div className="ml-12 lg:ml-0 min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-white">
                   Medical Records
                 </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
@@ -152,65 +152,67 @@ const PatientRecordsPage = () => {
           </div>
         </header>
 
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {loading ? (
             <ContentSkeleton />
           ) : records.length === 0 ? (
-            <div className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-12 text-center">
-              <div className="w-20 h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-6">
-                <FiFileText className="w-10 h-10 text-slate-500" />
+            <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 sm:p-12 text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <FiFileText className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
                 No Medical Records Yet
               </h3>
-              <p className="text-slate-400 max-w-md mx-auto">
+              <p className="text-slate-400 max-w-md mx-auto text-sm sm:text-base">
                 Your medical records will appear here after consultations
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredRecords.map((record) => {
                 const isExpanded = expandedRecord === record.id;
 
                 return (
                   <div
                     key={record.id}
-                    className="rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden transition-all duration-200 hover:border-slate-600/50"
+                    className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 overflow-hidden transition-all duration-200 hover:border-slate-600/50"
                   >
                     {/* Record Header */}
                     <div
-                      className="p-6 cursor-pointer"
+                      className="p-4 sm:p-6 cursor-pointer"
                       onClick={() => toggleExpand(record.id)}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-4">
-                          <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0">
-                            <FiFileText className="w-6 h-6" />
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                          <div className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0">
+                            <FiFileText className="w-5 h-5 sm:w-6 sm:h-6" />
                           </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-base sm:text-lg font-semibold text-white line-clamp-2">
                               {record.final_diagnosis ||
                                 record.provisional_diagnosis ||
                                 "Consultation Record"}
                             </h3>
-                            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-slate-400">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-400">
                               <span className="flex items-center gap-1">
-                                <FiCalendar className="w-4 h-4" />
+                                <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 {formatDate(record.created_at)}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <FiUser className="w-4 h-4" />
-                                Dr.{" "}
-                                {record.doctor?.user?.full_name || "Unknown"}
+                              <span className="flex items-center gap-1 truncate">
+                                <FiUser className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="truncate">
+                                  Dr.{" "}
+                                  {record.doctor?.user?.full_name || "Unknown"}
+                                </span>
                               </span>
                             </div>
                           </div>
                         </div>
-                        <button className="text-slate-400 hover:text-white transition-colors">
+                        <button className="text-slate-400 hover:text-white transition-colors flex-shrink-0">
                           {isExpanded ? (
-                            <FiChevronUp className="w-5 h-5" />
+                            <FiChevronUp className="w-4 h-4 sm:w-5 sm:h-5" />
                           ) : (
-                            <FiChevronDown className="w-5 h-5" />
+                            <FiChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
                           )}
                         </button>
                       </div>
@@ -218,20 +220,20 @@ const PatientRecordsPage = () => {
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-6 pb-6 border-t border-slate-700/50 pt-4 space-y-6">
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-slate-700/50 pt-3 sm:pt-4 space-y-4 sm:space-y-6">
                         {/* Chief Complaints */}
                         {record.chief_complaints && (
                           <div>
-                            <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
-                              <FiClipboard className="w-4 h-4 text-blue-400" />
+                            <h4 className="text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <FiClipboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
                               Chief Complaints
                             </h4>
-                            <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30">
-                              <p className="text-slate-300">
+                            <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30">
+                              <p className="text-slate-300 text-sm sm:text-base">
                                 {record.chief_complaints}
                               </p>
                               {(record.onset || record.duration) && (
-                                <div className="mt-3 flex gap-4 text-sm">
+                                <div className="mt-2 sm:mt-3 flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
                                   {record.onset && (
                                     <span className="text-slate-400">
                                       <span className="text-slate-500">
@@ -258,27 +260,27 @@ const PatientRecordsPage = () => {
                         {(record.provisional_diagnosis ||
                           record.final_diagnosis) && (
                           <div>
-                            <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
-                              <FiActivity className="w-4 h-4 text-purple-400" />
+                            <h4 className="text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                              <FiActivity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
                               Diagnosis
                             </h4>
-                            <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 space-y-3">
+                            <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30 space-y-2 sm:space-y-3">
                               {record.provisional_diagnosis && (
                                 <div>
-                                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                  <span className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wide">
                                     Provisional
                                   </span>
-                                  <p className="text-slate-300 mt-1">
+                                  <p className="text-slate-300 mt-0.5 sm:mt-1 text-sm sm:text-base">
                                     {record.provisional_diagnosis}
                                   </p>
                                 </div>
                               )}
                               {record.final_diagnosis && (
                                 <div>
-                                  <span className="text-xs font-medium text-emerald-400 uppercase tracking-wide">
+                                  <span className="text-[10px] sm:text-xs font-medium text-emerald-400 uppercase tracking-wide">
                                     Final
                                   </span>
-                                  <p className="text-white font-medium mt-1">
+                                  <p className="text-white font-medium mt-0.5 sm:mt-1 text-sm sm:text-base">
                                     {record.final_diagnosis}
                                   </p>
                                 </div>
@@ -291,57 +293,57 @@ const PatientRecordsPage = () => {
                         {record.vital_signs &&
                           Object.values(record.vital_signs).some((v) => v) && (
                             <div>
-                              <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
-                                <FiHeart className="w-4 h-4 text-red-400" />
+                              <h4 className="text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                                <FiHeart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
                                 Vital Signs
                               </h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
                                 {record.vital_signs.blood_pressure && (
-                                  <div className="p-3 rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
-                                    <p className="text-xs text-slate-500 mb-1">
+                                  <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">
                                       Blood Pressure
                                     </p>
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-white text-sm sm:text-base">
                                       {record.vital_signs.blood_pressure}
                                     </p>
                                   </div>
                                 )}
                                 {record.vital_signs.pulse && (
-                                  <div className="p-3 rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
-                                    <p className="text-xs text-slate-500 mb-1">
+                                  <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">
                                       Pulse
                                     </p>
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-white text-sm sm:text-base">
                                       {record.vital_signs.pulse}
                                     </p>
                                   </div>
                                 )}
                                 {record.vital_signs.temperature && (
-                                  <div className="p-3 rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
-                                    <p className="text-xs text-slate-500 mb-1">
+                                  <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">
                                       Temperature
                                     </p>
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-white text-sm sm:text-base">
                                       {record.vital_signs.temperature}
                                     </p>
                                   </div>
                                 )}
                                 {record.vital_signs.weight && (
-                                  <div className="p-3 rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
-                                    <p className="text-xs text-slate-500 mb-1">
+                                  <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">
                                       Weight
                                     </p>
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-white text-sm sm:text-base">
                                       {record.vital_signs.weight}
                                     </p>
                                   </div>
                                 )}
                                 {record.vital_signs.height && (
-                                  <div className="p-3 rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
-                                    <p className="text-xs text-slate-500 mb-1">
+                                  <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30 text-center">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">
                                       Height
                                     </p>
-                                    <p className="font-semibold text-white">
+                                    <p className="font-semibold text-white text-sm sm:text-base">
                                       {record.vital_signs.height}
                                     </p>
                                   </div>
@@ -353,11 +355,11 @@ const PatientRecordsPage = () => {
                         {/* Treatment Plan */}
                         {record.treatment_plan && (
                           <div>
-                            <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                            <h4 className="text-xs sm:text-sm font-semibold text-slate-300 mb-2 sm:mb-3">
                               Treatment Plan
                             </h4>
-                            <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30">
-                              <p className="text-slate-300">
+                            <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30">
+                              <p className="text-slate-300 text-sm sm:text-base">
                                 {record.treatment_plan}
                               </p>
                             </div>
@@ -367,11 +369,11 @@ const PatientRecordsPage = () => {
                         {/* Follow Up */}
                         {record.follow_up_instructions && (
                           <div>
-                            <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                            <h4 className="text-xs sm:text-sm font-semibold text-slate-300 mb-2 sm:mb-3">
                               Follow-up Instructions
                             </h4>
-                            <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                              <p className="text-blue-300">
+                            <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-blue-500/10 border border-blue-500/20">
+                              <p className="text-blue-300 text-sm sm:text-base">
                                 {record.follow_up_instructions}
                               </p>
                             </div>
@@ -381,11 +383,11 @@ const PatientRecordsPage = () => {
                         {/* Doctor's Notes */}
                         {record.additional_notes && (
                           <div>
-                            <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                            <h4 className="text-xs sm:text-sm font-semibold text-slate-300 mb-2 sm:mb-3">
                               Doctor's Notes
                             </h4>
-                            <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30">
-                              <p className="text-slate-300">
+                            <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-700/30 border border-slate-600/30">
+                              <p className="text-slate-300 text-sm sm:text-base">
                                 {record.additional_notes}
                               </p>
                             </div>

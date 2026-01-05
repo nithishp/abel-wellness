@@ -36,7 +36,7 @@ const AppointmentsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("date");
+  const [sortBy, setSortBy] = useState("created");
   const [sortOrder, setSortOrder] = useState("desc");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -479,10 +479,12 @@ const AppointmentsManagement = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Header */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-6 lg:px-8 py-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex items-center justify-between">
-              <div className="ml-12 lg:ml-0">
-                <h1 className="text-2xl font-bold text-white">Appointments</h1>
+              <div className="ml-12 lg:ml-0 min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                  Appointments
+                </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
                   {totalCount} total • {sortedAppointments.length} loaded
                 </p>
