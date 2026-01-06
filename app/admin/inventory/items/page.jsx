@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 
-const InventoryItemsPage = () => {
+const InventoryItemsContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useRoleAuth();
@@ -479,6 +479,14 @@ const InventoryItemsPage = () => {
         />
       </main>
     </div>
+  );
+};
+
+const InventoryItemsPage = () => {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#5B8C51]"></div></div>}>
+      <InventoryItemsContent />
+    </Suspense>
   );
 };
 
