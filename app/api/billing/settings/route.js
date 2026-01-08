@@ -74,7 +74,9 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const result = await updateBillingSettings(body);
+    // Handle both { settings: {...} } and direct settings object
+    const settingsToUpdate = body.settings || body;
+    const result = await updateBillingSettings(settingsToUpdate);
 
     if (!result.success) {
       return NextResponse.json(

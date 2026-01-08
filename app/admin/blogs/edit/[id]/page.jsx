@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
 import ImageUpload from "@/app/components/ui/ImageUpload";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 const EditBlog = () => {
   const router = useRouter();
@@ -182,15 +183,23 @@ const EditBlog = () => {
       <main className="lg:ml-72 min-h-screen">
         {/* Header */}
         <header className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-          <div className="px-4 sm:px-6 lg:px-8 py-5">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            {/* Breadcrumb */}
+            <div className="mb-3 ml-12 lg:ml-0">
+              <Breadcrumb
+                items={[
+                  {
+                    label: "Blogs",
+                    href: "/admin/blogs",
+                    icon: <FiFileText className="w-4 h-4" />,
+                  },
+                  { label: "Edit" },
+                ]}
+                backHref="/admin/blogs"
+              />
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3 sm:gap-4 ml-12 lg:ml-0 min-w-0 flex-1">
-                <button
-                  onClick={() => router.push("/admin/blogs")}
-                  className="p-2 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all shrink-0"
-                >
-                  <FiArrowLeft className="w-5 h-5" />
-                </button>
                 <div className="min-w-0">
                   <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
                     Edit Blog

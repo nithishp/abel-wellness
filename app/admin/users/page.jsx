@@ -54,6 +54,7 @@ const UserManagement = () => {
     specialization: "",
     qualification: "",
     experienceYears: "",
+    consultationFee: "",
     bio: "",
     licenseNumber: "",
   });
@@ -230,6 +231,7 @@ const UserManagement = () => {
       specialization: userToEdit.roleData?.specialization || "",
       qualification: userToEdit.roleData?.qualification || "",
       experienceYears: userToEdit.roleData?.experience_years || "",
+      consultationFee: userToEdit.roleData?.consultation_fee || "",
       bio: userToEdit.roleData?.bio || "",
       licenseNumber: userToEdit.roleData?.license_number || "",
     });
@@ -246,6 +248,7 @@ const UserManagement = () => {
       specialization: "",
       qualification: "",
       experienceYears: "",
+      consultationFee: "",
       bio: "",
       licenseNumber: "",
     });
@@ -536,6 +539,19 @@ const UserManagement = () => {
                                       </span>
                                     </div>
                                   )}
+                                  {staffUser.roleData.consultation_fee && (
+                                    <div className="flex items-center gap-3 text-emerald-400">
+                                      <span className="text-slate-500 text-sm">
+                                        ₹
+                                      </span>
+                                      <span>
+                                        Consultation: ₹
+                                        {parseFloat(
+                                          staffUser.roleData.consultation_fee
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  )}
                                 </>
                               )}
                             {staffUser.role === "pharmacist" &&
@@ -747,6 +763,30 @@ const UserManagement = () => {
                       min="0"
                       className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Consultation Fee (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.consultationFee}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          consultationFee: e.target.value,
+                        })
+                      }
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g., 500"
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      This fee will be automatically added to invoices when
+                      enabled in billing settings.
+                    </p>
                   </div>
 
                   <div>

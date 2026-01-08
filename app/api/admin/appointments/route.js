@@ -268,6 +268,7 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get("limit")) || 10;
     const status = searchParams.get("status");
     const doctorId = searchParams.get("doctorId");
+    const patientId = searchParams.get("patientId");
     const search = searchParams.get("search") || "";
     const offset = (page - 1) * limit;
 
@@ -281,6 +282,9 @@ export async function GET(request) {
     }
     if (doctorId) {
       countQuery = countQuery.eq("doctor_id", doctorId);
+    }
+    if (patientId) {
+      countQuery = countQuery.eq("patient_id", patientId);
     }
     if (search) {
       countQuery = countQuery.or(
@@ -307,6 +311,7 @@ export async function GET(request) {
         doctor:doctors!appointments_doctor_id_fkey (
           id,
           specialization,
+          consultation_fee,
           user:users (
             id,
             full_name,
@@ -323,6 +328,10 @@ export async function GET(request) {
 
     if (doctorId) {
       query = query.eq("doctor_id", doctorId);
+    }
+
+    if (patientId) {
+      query = query.eq("patient_id", patientId);
     }
 
     if (search) {

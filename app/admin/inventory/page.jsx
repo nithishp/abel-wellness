@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 import {
   ChartContainer,
   ChartTooltip,
@@ -270,9 +271,91 @@ const InventoryDashboardPage = () => {
     return (
       <div className="min-h-screen bg-slate-900">
         <AdminSidebar />
-        <div className="lg:ml-72 min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-        </div>
+        <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+          {/* Breadcrumb Skeleton */}
+          <div className="mb-4 ml-12 lg:ml-0">
+            <div className="h-5 w-32 bg-slate-700/50 rounded animate-pulse"></div>
+          </div>
+
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 ml-12 lg:ml-0">
+            <div>
+              <div className="h-7 w-48 bg-slate-700/50 rounded animate-pulse mb-2"></div>
+              <div className="h-4 w-64 bg-slate-700/30 rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-24 bg-slate-700/50 rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* Quick Actions Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50"
+              >
+                <div className="w-11 h-11 bg-slate-700/50 rounded-lg animate-pulse"></div>
+                <div className="h-5 w-24 bg-slate-700/50 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="p-4 rounded-xl border bg-slate-800/50 border-slate-700/50"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-slate-700/50 rounded-lg animate-pulse"></div>
+                </div>
+                <div className="h-8 w-16 bg-slate-700/50 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-20 bg-slate-700/30 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Analytics Section Skeleton */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-5 w-40 bg-slate-700/50 rounded animate-pulse"></div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 h-72"
+                >
+                  <div className="h-5 w-36 bg-slate-700/50 rounded animate-pulse mb-4"></div>
+                  <div className="h-52 bg-slate-700/30 rounded animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Two Column Skeleton */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {[...Array(2)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-6 w-32 bg-slate-700/50 rounded animate-pulse"></div>
+                  <div className="h-4 w-16 bg-slate-700/30 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, j) => (
+                    <div key={j} className="p-3 bg-slate-700/30 rounded-lg">
+                      <div className="h-4 w-full bg-slate-700/50 rounded animate-pulse mb-2"></div>
+                      <div className="h-3 w-24 bg-slate-700/30 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -281,23 +364,33 @@ const InventoryDashboardPage = () => {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              { label: "Inventory", icon: <FiPackage className="w-4 h-4" /> },
+            ]}
+            backHref="/admin/dashboard"
+          />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 ml-12 lg:ml-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 ml-12 lg:ml-0">
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
               Inventory Dashboard
             </h1>
-            <p className="text-slate-400 mt-1">
+            <p className="text-slate-400 text-sm sm:text-base mt-1">
               Overview of your inventory management
             </p>
           </div>
           <button
             onClick={fetchDashboardData}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors w-full sm:w-auto"
           >
             <FiRefreshCw className="w-4 h-4" />
-            Refresh
+            <span>Refresh</span>
           </button>
         </div>
 

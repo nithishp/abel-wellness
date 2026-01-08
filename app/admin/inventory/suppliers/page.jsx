@@ -17,9 +17,11 @@ import {
   FiMail,
   FiMapPin,
   FiSearch,
+  FiPackage,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 const SuppliersPage = () => {
   const router = useRouter();
@@ -193,27 +195,38 @@ const SuppliersPage = () => {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              {
+                label: "Inventory",
+                href: "/admin/inventory",
+                icon: <FiPackage className="w-4 h-4" />,
+              },
+              { label: "Suppliers", icon: <FiTruck className="w-4 h-4" /> },
+            ]}
+            backHref="/admin/inventory"
+          />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 ml-12 lg:ml-0">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/inventory"
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              <FiArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Suppliers</h1>
-              <p className="text-slate-400 mt-1">Manage inventory suppliers</p>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 ml-12 lg:ml-0">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              Suppliers
+            </h1>
+            <p className="text-slate-400 text-sm sm:text-base mt-1">
+              Manage inventory suppliers
+            </p>
           </div>
           <button
             onClick={openNewModal}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto"
           >
             <FiPlus className="w-4 h-4" />
-            Add Supplier
+            <span>Add Supplier</span>
           </button>
         </div>
 

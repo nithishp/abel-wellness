@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default function BillingDashboard() {
   const router = useRouter();
@@ -199,9 +200,82 @@ export default function BillingDashboard() {
     return (
       <div className="min-h-screen bg-slate-900">
         <AdminSidebar />
-        <div className="lg:ml-72 min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-        </div>
+        <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+          {/* Breadcrumb Skeleton */}
+          <div className="mb-4 ml-12 lg:ml-0">
+            <div className="h-5 w-24 bg-slate-700/50 rounded animate-pulse"></div>
+          </div>
+
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 ml-12 lg:ml-0">
+            <div>
+              <div className="h-7 w-44 bg-slate-700/50 rounded animate-pulse mb-2"></div>
+              <div className="h-4 w-56 bg-slate-700/30 rounded animate-pulse"></div>
+            </div>
+            <div className="flex gap-2">
+              <div className="h-10 w-24 bg-slate-700/50 rounded-lg animate-pulse"></div>
+              <div className="h-10 w-32 bg-emerald-600/30 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Quick Actions Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50"
+              >
+                <div className="w-11 h-11 bg-slate-700/50 rounded-lg animate-pulse"></div>
+                <div className="h-5 w-24 bg-slate-700/50 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="p-4 rounded-xl border bg-slate-800/50 border-slate-700/50"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-slate-700/50 rounded-lg animate-pulse"></div>
+                </div>
+                <div className="h-8 w-24 bg-slate-700/50 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-20 bg-slate-700/30 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Two Column Skeleton */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {[...Array(2)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-6 w-36 bg-slate-700/50 rounded animate-pulse"></div>
+                  <div className="h-4 w-16 bg-slate-700/30 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, j) => (
+                    <div
+                      key={j}
+                      className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg"
+                    >
+                      <div>
+                        <div className="h-4 w-28 bg-slate-700/50 rounded animate-pulse mb-2"></div>
+                        <div className="h-3 w-20 bg-slate-700/30 rounded animate-pulse"></div>
+                      </div>
+                      <div className="h-6 w-20 bg-slate-700/50 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -210,29 +284,41 @@ export default function BillingDashboard() {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              { label: "Billing", icon: <FiDollarSign className="w-4 h-4" /> },
+            ]}
+            backHref="/admin/dashboard"
+          />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 ml-12 lg:ml-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 ml-12 lg:ml-0">
           <div>
-            <h1 className="text-2xl font-bold text-white">Billing Dashboard</h1>
-            <p className="text-slate-400 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              Billing Dashboard
+            </h1>
+            <p className="text-slate-400 text-sm sm:text-base mt-1">
               Overview of invoices, payments, and revenue
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={fetchDashboardData}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors text-sm sm:text-base"
             >
               <FiRefreshCw className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <Link
               href="/admin/billing/invoices/create"
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm sm:text-base"
             >
               <FiPlus className="w-4 h-4" />
-              Create Invoice
+              <span>Create Invoice</span>
             </Link>
           </div>
         </div>

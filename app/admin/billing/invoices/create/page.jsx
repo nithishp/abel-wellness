@@ -13,9 +13,12 @@ import {
   FiUser,
   FiCalendar,
   FiX,
+  FiDollarSign,
+  FiFileText,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 const ITEM_TYPES = [
   { value: "consultation", label: "Consultation" },
@@ -108,7 +111,11 @@ export default function CreateInvoicePage() {
           due_date: dueDate.toISOString().split("T")[0],
         }));
 
-        const defaultTaxRate = parseFloat(data.settings.default_tax_rate) || 0;
+        // Check if tax is enabled globally
+        const taxEnabled = data.settings.tax_enabled !== false;
+        const defaultTaxRate = taxEnabled
+          ? parseFloat(data.settings.default_tax_rate) || 0
+          : 0;
         setItems((prev) =>
           prev.map((item) => ({ ...item, tax_rate: defaultTaxRate }))
         );
@@ -165,9 +172,17 @@ export default function CreateInvoicePage() {
     setSelectedAppointment(appointment);
     setFormData((prev) => ({ ...prev, appointment_id: appointmentId }));
 
-    if (appointment?.doctor) {
-      const consultationFee = appointment.doctor.consultation_fee || 0;
-      const doctorName = appointment.doctor.user?.full_name || "Doctor";
+    // Check if auto-add consultation fee is enabled (default: true)
+    const autoAddConsultationFee = settings.auto_add_consultation_fee !== false;
+
+    if (appointment?.doctor && autoAddConsultationFee) {
+      const consultationFee =
+        parseFloat(appointment.doctor.consultation_fee) || 0;
+      const rawDoctorName = appointment.doctor.user?.full_name || "Doctor";
+      // Avoid "Dr. Dr." if name already starts with "Dr."
+      const doctorName = rawDoctorName.startsWith("Dr.")
+        ? rawDoctorName
+        : `Dr. ${rawDoctorName}`;
       const specialization = appointment.doctor.specialization || "General";
 
       const hasConsultation = items.some(
@@ -177,15 +192,19 @@ export default function CreateInvoicePage() {
       );
 
       if (!hasConsultation && consultationFee > 0) {
+        const taxEnabled = settings.tax_enabled !== false;
+        const taxRate = taxEnabled
+          ? parseFloat(settings.default_tax_rate) || 0
+          : 0;
         setItems((prev) => [
           {
             id: Date.now(),
             item_type: "consultation",
-            description: `Consultation - Dr. ${doctorName} (${specialization})`,
+            description: `Consultation - ${doctorName} (${specialization})`,
             quantity: 1,
             unit: "session",
             unit_price: consultationFee,
-            tax_rate: parseFloat(settings.default_tax_rate) || 0,
+            tax_rate: taxRate,
           },
           ...prev.filter((item) => item.description),
         ]);
@@ -194,6 +213,8 @@ export default function CreateInvoicePage() {
   };
 
   const addItem = () => {
+    const taxEnabled = settings.tax_enabled !== false;
+    const taxRate = taxEnabled ? parseFloat(settings.default_tax_rate) || 0 : 0;
     setItems((prev) => [
       ...prev,
       {
@@ -203,7 +224,7 @@ export default function CreateInvoicePage() {
         quantity: 1,
         unit: "unit",
         unit_price: 0,
-        tax_rate: parseFloat(settings.default_tax_rate) || 0,
+        tax_rate: taxRate,
       },
     ]);
   };
@@ -321,18 +342,36 @@ export default function CreateInvoicePage() {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              {
+                label: "Billing",
+                href: "/admin/billing",
+                icon: <FiDollarSign className="w-4 h-4" />,
+              },
+              {
+                label: "Invoices",
+                href: "/admin/billing/invoices",
+                icon: <FiFileText className="w-4 h-4" />,
+              },
+              { label: "Create Invoice" },
+            ]}
+            backHref="/admin/billing/invoices"
+          />
+        </div>
+
         {/* Header */}
         <div className="flex items-center gap-4 mb-6 ml-12 lg:ml-0">
-          <Link
-            href="/admin/billing/invoices"
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            <FiArrowLeft className="w-5 h-5" />
-          </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">Create Invoice</h1>
-            <p className="text-slate-400">Create a new invoice for a patient</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              Create Invoice
+            </h1>
+            <p className="text-slate-400 text-sm sm:text-base">
+              Create a new invoice for a patient
+            </p>
           </div>
         </div>
 
@@ -535,7 +574,11 @@ export default function CreateInvoicePage() {
                             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
                           />
                         </div>
-                        <div>
+                        <div
+                          className={
+                            settings.tax_enabled === false ? "opacity-50" : ""
+                          }
+                        >
                           <label className="block text-sm text-slate-400 mb-1">
                             Tax %
                           </label>
@@ -551,7 +594,8 @@ export default function CreateInvoicePage() {
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                            disabled={settings.tax_enabled === false}
+                            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div>

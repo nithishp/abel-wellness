@@ -15,9 +15,11 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiX,
+  FiDollarSign,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 function InvoicesListContent() {
   const router = useRouter();
@@ -198,21 +200,38 @@ function InvoicesListContent() {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              {
+                label: "Billing",
+                href: "/admin/billing",
+                icon: <FiDollarSign className="w-4 h-4" />,
+              },
+              { label: "Invoices" },
+            ]}
+            backHref="/admin/billing"
+          />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 ml-12 lg:ml-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 ml-12 lg:ml-0">
           <div>
-            <h1 className="text-2xl font-bold text-white">Invoices</h1>
-            <p className="text-slate-400 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              Invoices
+            </h1>
+            <p className="text-slate-400 text-sm sm:text-base mt-1">
               Manage and track all patient invoices
             </p>
           </div>
           <Link
             href="/admin/billing/invoices/create"
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors w-full sm:w-auto"
           >
             <FiPlus className="w-4 h-4" />
-            Create Invoice
+            <span>Create Invoice</span>
           </Link>
         </div>
 
@@ -490,11 +509,13 @@ function InvoicesListContent() {
 
 export default function InvoicesListPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+        </div>
+      }
+    >
       <InvoicesListContent />
     </Suspense>
   );

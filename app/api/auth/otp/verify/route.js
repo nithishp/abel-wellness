@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
-import { sendEmail, emailTemplates } from "@/lib/email/service";
+import { supabaseAdmin, TABLES } from "@/lib/supabase.config";
 import crypto from "crypto";
 
 // Generate session token
@@ -52,42 +51,28 @@ export async function POST(request) {
       .update({ is_used: true })
       .eq("id", otpRecord.id);
 
-    // Find or create user
-    let { data: user } = await supabaseAdmin
+    // Find user - user must exist (created via appointment booking)
+    const { data: user, error: userError } = await supabaseAdmin
       .from(TABLES.USERS)
       .select("*")
       .eq("email", normalizedEmail)
       .single();
 
-    let isNewUser = false;
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          error:
+            "No account found with this email. Please book an appointment first to create your account.",
+        },
+        { status: 404 }
+      );
+    }
 
-    if (!user) {
-      // Create new patient user
-      const { data: newUser, error: createError } = await supabaseAdmin
-        .from(TABLES.USERS)
-        .insert({
-          email: normalizedEmail,
-          role: ROLES.PATIENT,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error("Error creating user:", createError);
-        return NextResponse.json(
-          { error: "Failed to create user account" },
-          { status: 500 }
-        );
-      }
-
-      user = newUser;
-      isNewUser = true;
-
-      // Send welcome email
-      await sendEmail(
-        normalizedEmail,
-        emailTemplates.welcomePatient(user.full_name || "")
+    // Check if user is active
+    if (!user.is_active) {
+      return NextResponse.json(
+        { error: "Your account has been deactivated. Please contact support." },
+        { status: 403 }
       );
     }
 
@@ -150,7 +135,6 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       user: safeUser,
-      isNewUser,
     });
   } catch (error) {
     console.error("Error in OTP verification:", error);

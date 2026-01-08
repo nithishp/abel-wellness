@@ -8,6 +8,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FiArrowLeft, FiSave, FiPackage } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 const NewInventoryItemPage = () => {
   const router = useRouter();
@@ -151,18 +152,31 @@ const NewInventoryItemPage = () => {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              {
+                label: "Inventory",
+                href: "/admin/inventory",
+                icon: <FiPackage className="w-4 h-4" />,
+              },
+              { label: "Items", href: "/admin/inventory/items" },
+              { label: "Add New Item" },
+            ]}
+            showBackButton={true}
+            backHref="/admin/inventory/items"
+          />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6 ml-12 lg:ml-0">
-          <Link
-            href="/admin/inventory/items"
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <FiArrowLeft className="w-5 h-5" />
-          </Link>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 ml-12 lg:ml-0">
           <div>
-            <h1 className="text-2xl font-bold text-white">Add New Item</h1>
-            <p className="text-slate-400 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              Add New Item
+            </h1>
+            <p className="text-slate-400 text-sm sm:text-base mt-1">
               Add a new item to your inventory
             </p>
           </div>

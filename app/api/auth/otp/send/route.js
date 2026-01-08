@@ -26,8 +26,24 @@ export async function POST(request) {
       .eq("email", normalizedEmail)
       .single();
 
-    // If user doesn't exist, we'll create them when they verify OTP
-    // For now, just generate and send OTP
+    // If user doesn't exist, they need to book an appointment first
+    if (!existingUser) {
+      return NextResponse.json(
+        {
+          error:
+            "No account found with this email. Please book an appointment first to create your account.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check if user is active
+    if (!existingUser.is_active) {
+      return NextResponse.json(
+        { error: "Your account has been deactivated. Please contact support." },
+        { status: 403 }
+      );
+    }
 
     // Delete any existing OTPs for this email
     await supabaseAdmin
@@ -70,7 +86,6 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       message: "OTP sent to your email",
-      isNewUser: !existingUser,
     });
   } catch (error) {
     console.error("Error in OTP send:", error);

@@ -13,9 +13,11 @@ import {
   FiPercent,
   FiCreditCard,
   FiFileText,
+  FiDollarSign,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default function BillingSettingsPage() {
   const router = useRouter();
@@ -34,10 +36,12 @@ export default function BillingSettingsPage() {
     invoice_prefix: "INV",
     default_tax_rate: "18",
     tax_name: "GST",
+    tax_enabled: true,
     payment_due_days: "7",
     enabled_payment_methods: ["cash", "card", "upi", "bank_transfer"],
     invoice_notes: "",
     invoice_terms: "",
+    auto_add_consultation_fee: true,
   });
 
   const PAYMENT_METHODS = [
@@ -92,6 +96,7 @@ export default function BillingSettingsPage() {
           invoice_prefix: settingsObj.invoice_prefix || "INV",
           default_tax_rate: settingsObj.default_tax_rate || "18",
           tax_name: settingsObj.tax_name || "GST",
+          tax_enabled: settingsObj.tax_enabled !== false,
           payment_due_days: settingsObj.payment_due_days || "7",
           enabled_payment_methods: paymentMethods || [
             "cash",
@@ -101,6 +106,8 @@ export default function BillingSettingsPage() {
           ],
           invoice_notes: settingsObj.invoice_notes || "",
           invoice_terms: settingsObj.invoice_terms || "",
+          auto_add_consultation_fee:
+            settingsObj.auto_add_consultation_fee !== false,
         });
       }
     } catch (error) {
@@ -147,12 +154,14 @@ export default function BillingSettingsPage() {
             invoice_prefix: formData.invoice_prefix,
             default_tax_rate: formData.default_tax_rate,
             tax_name: formData.tax_name,
+            tax_enabled: formData.tax_enabled,
             payment_due_days: formData.payment_due_days,
             enabled_payment_methods: JSON.stringify(
               formData.enabled_payment_methods
             ),
             invoice_notes: formData.invoice_notes,
             invoice_terms: formData.invoice_terms,
+            auto_add_consultation_fee: formData.auto_add_consultation_fee,
           },
         }),
       });
@@ -188,15 +197,24 @@ export default function BillingSettingsPage() {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              {
+                label: "Billing",
+                href: "/admin/billing",
+                icon: <FiDollarSign className="w-4 h-4" />,
+              },
+              { label: "Settings", icon: <FiSettings className="w-4 h-4" /> },
+            ]}
+            backHref="/admin/billing"
+          />
+        </div>
+
         {/* Header */}
         <div className="flex items-center gap-4 mb-6 ml-12 lg:ml-0">
-          <Link
-            href="/admin/billing"
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            <FiArrowLeft className="w-5 h-5" />
-          </Link>
           <div>
             <h1 className="text-2xl font-bold text-white">Billing Settings</h1>
             <p className="text-slate-400">
@@ -342,6 +360,43 @@ export default function BillingSettingsPage() {
                     Default due date is invoice date + this many days
                   </p>
                 </div>
+
+                {/* Auto Consultation Fee Toggle */}
+                <div className="pt-2 border-t border-slate-700/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300">
+                        Auto-add Consultation Fee
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Automatically add doctor's consultation fee when
+                        creating invoices from appointments
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInputChange(
+                          "auto_add_consultation_fee",
+                          !formData.auto_add_consultation_fee
+                        )
+                      }
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        formData.auto_add_consultation_fee
+                          ? "bg-emerald-600"
+                          : "bg-slate-600"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          formData.auto_add_consultation_fee
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -357,7 +412,36 @@ export default function BillingSettingsPage() {
               </div>
 
               <div className="space-y-4">
-                <div>
+                {/* Enable Tax Toggle */}
+                <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">Enable Tax</p>
+                    <p className="text-sm text-slate-400">
+                      Apply tax to invoices and billing items
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleInputChange("tax_enabled", !formData.tax_enabled)
+                    }
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      formData.tax_enabled ? "bg-emerald-600" : "bg-slate-600"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        formData.tax_enabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div
+                  className={
+                    formData.tax_enabled ? "" : "opacity-50 pointer-events-none"
+                  }
+                >
                   <label className="block text-sm font-medium text-slate-300 mb-1">
                     Tax Name
                   </label>
@@ -369,9 +453,14 @@ export default function BillingSettingsPage() {
                     }
                     className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
                     placeholder="GST"
+                    disabled={!formData.tax_enabled}
                   />
                 </div>
-                <div>
+                <div
+                  className={
+                    formData.tax_enabled ? "" : "opacity-50 pointer-events-none"
+                  }
+                >
                   <label className="block text-sm font-medium text-slate-300 mb-1">
                     Default Tax Rate (%)
                   </label>
@@ -385,6 +474,7 @@ export default function BillingSettingsPage() {
                       handleInputChange("default_tax_rate", e.target.value)
                     }
                     className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                    disabled={!formData.tax_enabled}
                   />
                 </div>
               </div>

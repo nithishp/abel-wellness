@@ -24,6 +24,7 @@ import {
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default function InvoiceDetailPage({ params }) {
   const router = useRouter();
@@ -277,55 +278,69 @@ export default function InvoiceDetailPage({ params }) {
     <div className="min-h-screen bg-slate-900">
       <AdminSidebar />
 
-      <main className="lg:ml-72 min-h-screen p-6 overflow-auto">
+      <main className="lg:ml-72 min-h-screen p-4 sm:p-6 overflow-auto">
+        {/* Breadcrumb */}
+        <div className="mb-4 ml-12 lg:ml-0">
+          <Breadcrumb
+            items={[
+              {
+                label: "Billing",
+                href: "/admin/billing",
+                icon: <FiDollarSign className="w-4 h-4" />,
+              },
+              {
+                label: "Invoices",
+                href: "/admin/billing/invoices",
+                icon: <FiFileText className="w-4 h-4" />,
+              },
+              { label: invoice.invoice_number },
+            ]}
+            backHref="/admin/billing/invoices"
+          />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 ml-12 lg:ml-0">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/billing/invoices"
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <FiArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-white">
-                  {invoice.invoice_number}
-                </h1>
-                <span
-                  className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
-                >
-                  {invoice.status}
-                </span>
-              </div>
-              <p className="text-slate-400 mt-1">
-                Created on {formatDateTime(invoice.created_at)}
-              </p>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 ml-12 lg:ml-0">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-white">
+                {invoice.invoice_number}
+              </h1>
+              <span
+                className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${statusConfig.bg} ${statusConfig.text}`}
+              >
+                {invoice.status}
+              </span>
             </div>
+            <p className="text-slate-400 mt-1 text-sm sm:text-base">
+              Created on {formatDateTime(invoice.created_at)}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={handleDownloadPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm sm:text-base"
             >
               <FiDownload className="w-4 h-4" />
-              Download PDF
+              <span className="hidden sm:inline">Download PDF</span>
+              <span className="sm:hidden">PDF</span>
             </button>
             {invoice.status !== "paid" && invoice.status !== "cancelled" && (
               <>
                 <button
                   onClick={() => setShowPaymentModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm sm:text-base"
                 >
                   <FiDollarSign className="w-4 h-4" />
-                  Record Payment
+                  <span className="hidden sm:inline">Record Payment</span>
+                  <span className="sm:hidden">Pay</span>
                 </button>
                 <button
                   onClick={() => setShowCancelModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm sm:text-base"
                 >
                   <FiX className="w-4 h-4" />
-                  Cancel
+                  <span className="hidden sm:inline">Cancel</span>
                 </button>
               </>
             )}
