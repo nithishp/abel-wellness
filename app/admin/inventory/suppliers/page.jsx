@@ -36,6 +36,7 @@ const SuppliersPage = () => {
     email: "",
     phone: "",
     address: "",
+    drug_license_number: "",
     notes: "",
     is_active: true,
   });
@@ -121,6 +122,7 @@ const SuppliersPage = () => {
       email: supplier.email || "",
       phone: supplier.phone || "",
       address: supplier.address || "",
+      drug_license_number: supplier.drug_license_number || "",
       notes: supplier.notes || "",
       is_active: supplier.is_active,
     });
@@ -157,6 +159,7 @@ const SuppliersPage = () => {
       email: "",
       phone: "",
       address: "",
+      drug_license_number: "",
       notes: "",
       is_active: true,
     });
@@ -300,6 +303,12 @@ const SuppliersPage = () => {
                     <span className="truncate">{supplier.address}</span>
                   </div>
                 )}
+                {supplier.drug_license_number && (
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <span className="font-medium">License:</span>
+                    <span>{supplier.drug_license_number}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -414,6 +423,24 @@ const SuppliersPage = () => {
                   className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 resize-none"
                   placeholder="Full address"
                   rows={2}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Drug License Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.drug_license_number}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      drug_license_number: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  placeholder="e.g., DL-12345-2024"
                 />
               </div>
 

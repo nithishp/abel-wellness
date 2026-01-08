@@ -13,6 +13,7 @@ import {
   FiChevronRight,
   FiHeart,
   FiUser,
+  FiCreditCard,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -47,6 +48,12 @@ const PatientSidebar = () => {
       icon: FiFileText,
       href: "/patient/records",
       description: "Consultation history",
+    },
+    {
+      name: "Billing",
+      icon: FiCreditCard,
+      href: "/patient/billing",
+      description: "Invoices & payments",
     },
   ];
 

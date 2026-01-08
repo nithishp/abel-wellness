@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../../../components/AdminSidebar";
+import { Combobox } from "@/components/ui/combobox";
 import {
   FiArrowLeft,
   FiPlus,
@@ -116,17 +117,18 @@ const NewPurchaseOrderPage = () => {
 
   const updateItemQuantity = (index, quantity) => {
     const newItems = [...orderItems];
-    newItems[index].quantity = parseInt(quantity) || 0;
+    newItems[index].quantity = quantity === "" ? "" : parseInt(quantity);
     newItems[index].total_price =
-      newItems[index].quantity * newItems[index].unit_price;
+      (parseInt(newItems[index].quantity) || 0) * newItems[index].unit_price;
     setOrderItems(newItems);
   };
 
   const updateItemPrice = (index, price) => {
     const newItems = [...orderItems];
-    newItems[index].unit_price = parseFloat(price) || 0;
+    newItems[index].unit_price = price === "" ? "" : parseFloat(price);
     newItems[index].total_price =
-      newItems[index].quantity * newItems[index].unit_price;
+      (parseInt(newItems[index].quantity) || 0) *
+      (parseFloat(newItems[index].unit_price) || 0);
     setOrderItems(newItems);
   };
 
@@ -230,20 +232,19 @@ const NewPurchaseOrderPage = () => {
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Supplier *
                   </label>
-                  <select
+                  <Combobox
+                    options={suppliers.map((supplier) => ({
+                      value: supplier.id,
+                      label: supplier.name,
+                    }))}
                     value={formData.supplier_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, supplier_id: e.target.value })
+                    onChange={(value) =>
+                      setFormData({ ...formData, supplier_id: value })
                     }
-                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="">Select Supplier</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select Supplier"
+                    searchPlaceholder="Search suppliers..."
+                    emptyMessage="No suppliers found."
+                  />
                 </div>
 
                 <div>

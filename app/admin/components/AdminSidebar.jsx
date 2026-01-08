@@ -14,6 +14,7 @@ import {
   FiX,
   FiChevronRight,
   FiPackage,
+  FiDollarSign,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -48,6 +49,12 @@ const AdminSidebar = () => {
       icon: FiPackage,
       href: "/admin/inventory",
       description: "Manage stock & supplies",
+    },
+    {
+      name: "Billing",
+      icon: FiDollarSign,
+      href: "/admin/billing",
+      description: "Invoices & payments",
     },
     {
       name: "Patients",

@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../../../../components/AdminSidebar";
+import { Combobox } from "@/components/ui/combobox";
 import { FiArrowLeft, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -26,10 +27,10 @@ const EditInventoryItemPage = ({ params }) => {
     category_id: "",
     supplier_id: "",
     unit_of_measure: "units",
-    minimum_stock: 10,
-    reorder_level: 20,
-    cost_price: 0,
-    selling_price: 0,
+    minimum_stock: "",
+    reorder_level: "",
+    cost_price: "",
+    selling_price: "",
     is_active: true,
     requires_prescription: false,
     storage_conditions: "",
@@ -37,6 +38,14 @@ const EditInventoryItemPage = ({ params }) => {
     generic_name: "",
     dosage_form: "",
     strength: "",
+    // Homeopathy-specific fields
+    potency: "",
+    potency_scale: "",
+    source_type: "",
+    latin_name: "",
+    pharmacopoeia: "",
+    vehicle: "",
+    globule_size: "",
   });
 
   useEffect(() => {
@@ -89,6 +98,14 @@ const EditInventoryItemPage = ({ params }) => {
           generic_name: itemData.item.generic_name || "",
           dosage_form: itemData.item.dosage_form || "",
           strength: itemData.item.strength || "",
+          // Homeopathy-specific fields
+          potency: itemData.item.potency || "",
+          potency_scale: itemData.item.potency_scale || "",
+          source_type: itemData.item.source_type || "",
+          latin_name: itemData.item.latin_name || "",
+          pharmacopoeia: itemData.item.pharmacopoeia || "",
+          vehicle: itemData.item.vehicle || "",
+          globule_size: itemData.item.globule_size || "",
         });
       } else {
         toast.error("Item not found");
@@ -220,20 +237,19 @@ const EditInventoryItemPage = ({ params }) => {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Category
                 </label>
-                <select
+                <Combobox
+                  options={categories.map((cat) => ({
+                    value: cat.id,
+                    label: cat.name,
+                  }))}
                   value={formData.category_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, category_id: e.target.value })
+                  onChange={(value) =>
+                    setFormData({ ...formData, category_id: value })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select Category"
+                  searchPlaceholder="Search categories..."
+                  emptyMessage="No categories found."
+                />
               </div>
 
               <div>
@@ -334,13 +350,16 @@ const EditInventoryItemPage = ({ params }) => {
                   >
                     <option value="">Select Form</option>
                     <option value="tablet">Tablet</option>
-                    <option value="capsule">Capsule</option>
                     <option value="syrup">Syrup</option>
-                    <option value="injection">Injection</option>
-                    <option value="cream">Cream/Ointment</option>
                     <option value="drops">Drops</option>
-                    <option value="inhaler">Inhaler</option>
                     <option value="powder">Powder</option>
+                    <option value="ointment">Ointment</option>
+                    <option value="globules">Globules (Homeopathic)</option>
+                    <option value="mother_tincture">Mother Tincture (Q)</option>
+                    <option value="dilution">Dilution</option>
+                    <option value="trituration">Trituration</option>
+                    <option value="pills">Pills/Pillules</option>
+                    <option value="lm_potency">LM Potency</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -402,6 +421,169 @@ const EditInventoryItemPage = ({ params }) => {
             </div>
           )}
 
+          {/* Homeopathy Details (if dosage form is homeopathic) */}
+          {formData.item_type === "medication" &&
+            [
+              "globules",
+              "mother_tincture",
+              "dilution",
+              "trituration",
+              "pills",
+              "lm_potency",
+            ].includes(formData.dosage_form) && (
+              <div className="bg-slate-800/50 rounded-xl border border-emerald-700/50 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                  Homeopathy Details
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Potency
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.potency}
+                      onChange={(e) =>
+                        setFormData({ ...formData, potency: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                      placeholder="e.g., 6, 30, 200, 1M, 10M"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Potency Scale
+                    </label>
+                    <select
+                      value={formData.potency_scale}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          potency_scale: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Scale</option>
+                      <option value="X">X (Decimal - 1:10)</option>
+                      <option value="C">C (Centesimal - 1:100)</option>
+                      <option value="LM">LM (50 Millesimal)</option>
+                      <option value="Q">Q (Mother Tincture)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Source Type
+                    </label>
+                    <select
+                      value={formData.source_type}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          source_type: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Source</option>
+                      <option value="plant">Plant Kingdom</option>
+                      <option value="animal">Animal Kingdom</option>
+                      <option value="mineral">Mineral Kingdom</option>
+                      <option value="nosode">Nosode</option>
+                      <option value="sarcode">Sarcode</option>
+                      <option value="imponderabilia">Imponderabilia</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Latin Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.latin_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, latin_name: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                      placeholder="e.g., Arnica montana"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Pharmacopoeia
+                    </label>
+                    <select
+                      value={formData.pharmacopoeia}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pharmacopoeia: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Reference</option>
+                      <option value="HPI">
+                        HPI (Homoeopathic Pharmacopoeia of India)
+                      </option>
+                      <option value="HPUS">
+                        HPUS (Homoeopathic Pharmacopoeia of US)
+                      </option>
+                      <option value="GHP">
+                        GHP (German Homoeopathic Pharmacopoeia)
+                      </option>
+                      <option value="BHP">
+                        BHP (British Homoeopathic Pharmacopoeia)
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Vehicle/Medium
+                    </label>
+                    <select
+                      value={formData.vehicle}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vehicle: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Vehicle</option>
+                      <option value="alcohol_90">Alcohol 90%</option>
+                      <option value="alcohol_60">Alcohol 60%</option>
+                      <option value="alcohol_40">Alcohol 40%</option>
+                      <option value="sucrose_globules">Sucrose Globules</option>
+                      <option value="lactose_globules">Lactose Globules</option>
+                      <option value="cane_sugar_pills">Cane Sugar Pills</option>
+                      <option value="distilled_water">Distilled Water</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Globule/Pill Size
+                    </label>
+                    <select
+                      value={formData.globule_size}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          globule_size: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Size</option>
+                      <option value="size_10">Size 10 (Smallest)</option>
+                      <option value="size_20">Size 20</option>
+                      <option value="size_30">Size 30</option>
+                      <option value="size_40">Size 40 (Largest)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
           {/* Stock Management */}
           <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6">
             <h2 className="text-lg font-semibold text-white mb-4">
@@ -446,11 +628,13 @@ const EditInventoryItemPage = ({ params }) => {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      minimum_stock: parseInt(e.target.value) || 0,
+                      minimum_stock:
+                        e.target.value === "" ? "" : parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                   min="0"
+                  placeholder="e.g., 10"
                 />
               </div>
 
@@ -464,11 +648,13 @@ const EditInventoryItemPage = ({ params }) => {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      reorder_level: parseInt(e.target.value) || 0,
+                      reorder_level:
+                        e.target.value === "" ? "" : parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                   min="0"
+                  placeholder="e.g., 20"
                 />
               </div>
 
@@ -476,20 +662,19 @@ const EditInventoryItemPage = ({ params }) => {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Supplier
                 </label>
-                <select
+                <Combobox
+                  options={suppliers.map((supplier) => ({
+                    value: supplier.id,
+                    label: supplier.name,
+                  }))}
                   value={formData.supplier_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, supplier_id: e.target.value })
+                  onChange={(value) =>
+                    setFormData({ ...formData, supplier_id: value })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">Select Supplier</option>
-                  {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select Supplier"
+                  searchPlaceholder="Search suppliers..."
+                  emptyMessage="No suppliers found."
+                />
               </div>
             </div>
           </div>
@@ -509,12 +694,14 @@ const EditInventoryItemPage = ({ params }) => {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      cost_price: parseFloat(e.target.value) || 0,
+                      cost_price:
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                   min="0"
                   step="0.01"
+                  placeholder="0.00"
                 />
               </div>
 
@@ -528,12 +715,14 @@ const EditInventoryItemPage = ({ params }) => {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      selling_price: parseFloat(e.target.value) || 0,
+                      selling_price:
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                   min="0"
                   step="0.01"
+                  placeholder="0.00"
                 />
               </div>
             </div>

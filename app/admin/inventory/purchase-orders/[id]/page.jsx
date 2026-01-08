@@ -557,12 +557,14 @@ const PurchaseOrderDetailPage = ({ params }) => {
                         </label>
                         <input
                           type="number"
-                          value={receivedItems[index]?.received_quantity || 0}
+                          value={receivedItems[index]?.received_quantity ?? ""}
                           onChange={(e) =>
                             updateReceivedItem(
                               index,
                               "received_quantity",
-                              parseInt(e.target.value) || 0
+                              e.target.value === ""
+                                ? ""
+                                : parseInt(e.target.value)
                             )
                           }
                           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../../../components/AdminSidebar";
+import { Combobox } from "@/components/ui/combobox";
 import { FiArrowLeft, FiSave, FiPackage } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -27,13 +28,13 @@ const NewInventoryItemPage = () => {
     dosage_form: "",
     strength: "",
     manufacturer: "",
-    current_stock: 0,
-    minimum_stock: 10,
-    maximum_stock: 1000,
-    reorder_level: 20,
+    current_stock: "",
+    minimum_stock: "",
+    maximum_stock: "",
+    reorder_level: "",
     unit_of_measure: "units",
-    cost_price: 0,
-    selling_price: 0,
+    cost_price: "",
+    selling_price: "",
     requires_prescription: false,
     is_controlled_substance: false,
     storage_conditions: "",
@@ -84,7 +85,9 @@ const NewInventoryItemPage = () => {
         type === "checkbox"
           ? checked
           : type === "number"
-          ? parseFloat(value) || 0
+          ? value === ""
+            ? ""
+            : parseFloat(value)
           : value,
     }));
   };
@@ -244,39 +247,39 @@ const NewInventoryItemPage = () => {
                 <label className="block text-sm text-slate-400 mb-1">
                   Category
                 </label>
-                <select
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">Select Category</option>
-                  {categories
+                <Combobox
+                  options={categories
                     .filter((c) => c.type === formData.item_type)
-                    .map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                </select>
+                    .map((cat) => ({
+                      value: cat.id,
+                      label: cat.name,
+                    }))}
+                  value={formData.category_id}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, category_id: value }))
+                  }
+                  placeholder="Select Category"
+                  searchPlaceholder="Search categories..."
+                  emptyMessage="No categories found."
+                />
               </div>
               <div>
                 <label className="block text-sm text-slate-400 mb-1">
                   Supplier
                 </label>
-                <select
-                  name="supplier_id"
+                <Combobox
+                  options={suppliers.map((sup) => ({
+                    value: sup.id,
+                    label: sup.name,
+                  }))}
                   value={formData.supplier_id}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">Select Supplier</option>
-                  {suppliers.map((sup) => (
-                    <option key={sup.id} value={sup.id}>
-                      {sup.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, supplier_id: value }))
+                  }
+                  placeholder="Select Supplier"
+                  searchPlaceholder="Search suppliers..."
+                  emptyMessage="No suppliers found."
+                />
               </div>
               <div>
                 <label className="block text-sm text-slate-400 mb-1">
@@ -324,18 +327,16 @@ const NewInventoryItemPage = () => {
                   >
                     <option value="">Select Form</option>
                     <option value="tablet">Tablet</option>
-                    <option value="capsule">Capsule</option>
                     <option value="syrup">Syrup</option>
-                    <option value="injection">Injection</option>
-                    <option value="cream">Cream</option>
                     <option value="ointment">Ointment</option>
                     <option value="drops">Drops</option>
                     <option value="powder">Powder</option>
-                    <option value="inhaler">Inhaler</option>
-                    <option value="patch">Patch</option>
                     <option value="globules">Globules (Homeopathic)</option>
-                    <option value="mother_tincture">Mother Tincture</option>
+                    <option value="mother_tincture">Mother Tincture (Q)</option>
                     <option value="dilution">Dilution</option>
+                    <option value="trituration">Trituration</option>
+                    <option value="pills">Pills/Pillules</option>
+                    <option value="lm_potency">LM Potency</option>
                   </select>
                 </div>
                 <div>
@@ -395,6 +396,150 @@ const NewInventoryItemPage = () => {
             </div>
           )}
 
+          {/* Homeopathy Details (if dosage form is homeopathic) */}
+          {formData.item_type === "medication" &&
+            [
+              "globules",
+              "mother_tincture",
+              "dilution",
+              "trituration",
+              "pills",
+              "lm_potency",
+            ].includes(formData.dosage_form) && (
+              <div className="bg-slate-800/50 rounded-xl border border-emerald-700/50 p-6 mb-6">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                  Homeopathy Details
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Potency
+                    </label>
+                    <input
+                      type="text"
+                      name="potency"
+                      value={formData.potency}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                      placeholder="e.g., 6, 30, 200, 1M, 10M"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Potency Scale
+                    </label>
+                    <select
+                      name="potency_scale"
+                      value={formData.potency_scale}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Scale</option>
+                      <option value="X">X (Decimal - 1:10)</option>
+                      <option value="C">C (Centesimal - 1:100)</option>
+                      <option value="LM">LM (50 Millesimal)</option>
+                      <option value="Q">Q (Mother Tincture)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Source Type
+                    </label>
+                    <select
+                      name="source_type"
+                      value={formData.source_type}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Source</option>
+                      <option value="plant">Plant Kingdom</option>
+                      <option value="animal">Animal Kingdom</option>
+                      <option value="mineral">Mineral Kingdom</option>
+                      <option value="nosode">Nosode</option>
+                      <option value="sarcode">Sarcode</option>
+                      <option value="imponderabilia">Imponderabilia</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Latin Name
+                    </label>
+                    <input
+                      type="text"
+                      name="latin_name"
+                      value={formData.latin_name}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                      placeholder="e.g., Arnica montana"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Pharmacopoeia
+                    </label>
+                    <select
+                      name="pharmacopoeia"
+                      value={formData.pharmacopoeia}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Reference</option>
+                      <option value="HPI">
+                        HPI (Homoeopathic Pharmacopoeia of India)
+                      </option>
+                      <option value="HPUS">
+                        HPUS (Homoeopathic Pharmacopoeia of US)
+                      </option>
+                      <option value="GHP">
+                        GHP (German Homoeopathic Pharmacopoeia)
+                      </option>
+                      <option value="BHP">
+                        BHP (British Homoeopathic Pharmacopoeia)
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Vehicle/Medium
+                    </label>
+                    <select
+                      name="vehicle"
+                      value={formData.vehicle}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Vehicle</option>
+                      <option value="alcohol_90">Alcohol 90%</option>
+                      <option value="alcohol_60">Alcohol 60%</option>
+                      <option value="alcohol_40">Alcohol 40%</option>
+                      <option value="sucrose_globules">Sucrose Globules</option>
+                      <option value="lactose_globules">Lactose Globules</option>
+                      <option value="cane_sugar_pills">Cane Sugar Pills</option>
+                      <option value="distilled_water">Distilled Water</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-400 mb-1">
+                      Globule/Pill Size
+                    </label>
+                    <select
+                      name="globule_size"
+                      value={formData.globule_size}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select Size</option>
+                      <option value="size_10">Size 10 (Smallest)</option>
+                      <option value="size_20">Size 20</option>
+                      <option value="size_30">Size 30</option>
+                      <option value="size_40">Size 40 (Largest)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
           {/* Stock Management */}
           <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 mb-6">
             <h2 className="text-lg font-semibold text-white mb-4">
@@ -411,7 +556,8 @@ const NewInventoryItemPage = () => {
                   value={formData.current_stock}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="0"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                 />
               </div>
               <div>
@@ -424,7 +570,8 @@ const NewInventoryItemPage = () => {
                   value={formData.minimum_stock}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="e.g., 10"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                 />
               </div>
               <div>
@@ -437,7 +584,8 @@ const NewInventoryItemPage = () => {
                   value={formData.reorder_level}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="e.g., 20"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                 />
               </div>
               <div>
@@ -450,7 +598,8 @@ const NewInventoryItemPage = () => {
                   value={formData.maximum_stock}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="e.g., 1000"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                 />
               </div>
               <div>
@@ -496,7 +645,8 @@ const NewInventoryItemPage = () => {
                   onChange={handleChange}
                   min="0"
                   step="0.01"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                 />
               </div>
               <div>
@@ -510,7 +660,8 @@ const NewInventoryItemPage = () => {
                   onChange={handleChange}
                   min="0"
                   step="0.01"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
                 />
               </div>
             </div>

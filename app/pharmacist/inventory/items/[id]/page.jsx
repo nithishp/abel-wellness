@@ -494,7 +494,8 @@ const PharmacistItemDetailPage = ({ params }) => {
                   onChange={(e) =>
                     setAdjustmentData({
                       ...adjustmentData,
-                      quantity: parseInt(e.target.value) || 0,
+                      quantity:
+                        e.target.value === "" ? "" : parseInt(e.target.value),
                     })
                   }
                   className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
