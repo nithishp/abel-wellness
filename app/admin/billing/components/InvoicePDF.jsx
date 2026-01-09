@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 
 // Register custom fonts (optional - using default fonts for now)
@@ -47,6 +48,17 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.primary,
   },
   logoSection: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  clinicLogo: {
+    width: 50,
+    height: 50,
+    objectFit: "contain",
+  },
+  clinicInfo: {
     flex: 1,
   },
   clinicName: {
@@ -341,7 +353,7 @@ const formatDate = (dateString) => {
 };
 
 // Invoice PDF Component
-const InvoicePDF = ({ invoice, settings = {} }) => {
+const InvoicePDF = ({ invoice, settings = {}, clinicLogo = null }) => {
   const statusStyles = getStatusStyles(invoice.status);
   const currencySymbol = settings.currency_symbol?.replace(/"/g, "") || "₹";
   const clinicName =
@@ -360,8 +372,13 @@ const InvoicePDF = ({ invoice, settings = {} }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoSection}>
-            <Text style={styles.clinicName}>{clinicName}</Text>
-            <Text style={styles.clinicTagline}>Your Health, Our Priority</Text>
+            {clinicLogo && <Image src={clinicLogo} style={styles.clinicLogo} />}
+            <View style={styles.clinicInfo}>
+              <Text style={styles.clinicName}>{clinicName}</Text>
+              <Text style={styles.clinicTagline}>
+                Your Health, Our Priority
+              </Text>
+            </View>
           </View>
           <View style={styles.invoiceTitle}>
             <Text style={styles.invoiceLabel}>INVOICE</Text>
@@ -434,7 +451,9 @@ const InvoicePDF = ({ invoice, settings = {} }) => {
                 <Text style={styles.tableTextLight}>
                   {item.item_type?.charAt(0).toUpperCase() +
                     item.item_type?.slice(1)}
+                  {item.hsn_code && ` • HSN: ${item.hsn_code}`}
                 </Text>
+                
               </View>
               <Text style={[styles.tableText, styles.col3]}>
                 {item.quantity} {item.unit}
@@ -442,9 +461,26 @@ const InvoicePDF = ({ invoice, settings = {} }) => {
               <Text style={[styles.tableText, styles.col4]}>
                 {formatCurrency(item.unit_price, currencySymbol)}
               </Text>
-              <Text style={[styles.tableText, styles.col5]}>
-                {item.tax_rate > 0 ? `${item.tax_rate}%` : "-"}
-              </Text>
+              <View style={styles.col5}>
+                {item.cgst_amount > 0 || item.sgst_amount > 0 ? (
+                  <>
+                    <Text style={styles.tableTextLight}>
+                      C: {item.cgst_rate || item.tax_rate / 2}%
+                    </Text>
+                    <Text style={styles.tableTextLight}>
+                      S: {item.sgst_rate || item.tax_rate / 2}%
+                    </Text>
+                  </>
+                ) : item.igst_amount > 0 ? (
+                  <Text style={styles.tableText}>
+                    I: {item.igst_rate || item.tax_rate}%
+                  </Text>
+                ) : (
+                  <Text style={styles.tableText}>
+                    {item.tax_rate > 0 ? `${item.tax_rate}%` : "-"}
+                  </Text>
+                )}
+              </View>
               <Text style={[styles.tableText, styles.col6]}>
                 {formatCurrency(item.total, currencySymbol)}
               </Text>
@@ -469,16 +505,51 @@ const InvoicePDF = ({ invoice, settings = {} }) => {
                 </Text>
               </View>
             )}
-            {invoice.tax_amount > 0 && (
+            {/* GST Breakdown - Show CGST/SGST for intra-state or IGST for inter-state */}
+            {(invoice.cgst_amount > 0 || invoice.sgst_amount > 0) && (
+              <>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>
+                    CGST ({invoice.cgst_rate || invoice.tax_rate / 2}%)
+                  </Text>
+                  <Text style={styles.totalValue}>
+                    {formatCurrency(invoice.cgst_amount, currencySymbol)}
+                  </Text>
+                </View>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>
+                    SGST ({invoice.sgst_rate || invoice.tax_rate / 2}%)
+                  </Text>
+                  <Text style={styles.totalValue}>
+                    {formatCurrency(invoice.sgst_amount, currencySymbol)}
+                  </Text>
+                </View>
+              </>
+            )}
+            {invoice.igst_amount > 0 && (
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>
-                  Tax ({invoice.tax_rate}% GST)
+                  IGST ({invoice.igst_rate || invoice.tax_rate}%)
                 </Text>
                 <Text style={styles.totalValue}>
-                  {formatCurrency(invoice.tax_amount, currencySymbol)}
+                  {formatCurrency(invoice.igst_amount, currencySymbol)}
                 </Text>
               </View>
             )}
+            {/* Fallback: Show combined tax if GST breakdown not available */}
+            {invoice.tax_amount > 0 &&
+              !invoice.cgst_amount &&
+              !invoice.sgst_amount &&
+              !invoice.igst_amount && (
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>
+                    Tax ({invoice.tax_rate}% GST)
+                  </Text>
+                  <Text style={styles.totalValue}>
+                    {formatCurrency(invoice.tax_amount, currencySymbol)}
+                  </Text>
+                </View>
+              )}
             <View style={styles.totalRowFinal}>
               <Text style={styles.totalLabelFinal}>Total Amount</Text>
               <Text style={styles.totalValueFinal}>

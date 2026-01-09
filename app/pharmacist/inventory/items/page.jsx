@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import PharmacistSidebar from "../../components/PharmacistSidebar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import InfiniteScrollLoader from "@/components/ui/InfiniteScrollLoader";
-import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
 import {
   FiArrowLeft,
   FiPlus,
@@ -119,7 +118,25 @@ const PharmacistItemsPage = () => {
     }
   }, [loading, hasMore, page]);
 
-  const { observerRef } = useInfiniteScroll(loadMore, { threshold: 0.5 });
+  const observerRef = useRef(null);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadMore]);
 
   const handleDelete = async () => {
     if (!deleteItem) return;

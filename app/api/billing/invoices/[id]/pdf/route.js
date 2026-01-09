@@ -76,9 +76,25 @@ export async function GET(request, { params }) {
     const settingsResult = await getBillingSettings();
     const settings = settingsResult.success ? settingsResult.settings : {};
 
+    // Get clinic logo
+    let clinicLogo = null;
+    try {
+      const { data: logoData } = await supabaseAdmin
+        .from("clinic_logo")
+        .select("img")
+        .limit(1)
+        .single();
+
+      if (logoData?.img) {
+        clinicLogo = logoData.img;
+      }
+    } catch (error) {
+      console.log("No clinic logo found:", error.message);
+    }
+
     // Generate PDF buffer
     const pdfBuffer = await renderToBuffer(
-      InvoicePDF({ invoice: invoiceResult.invoice, settings })
+      InvoicePDF({ invoice: invoiceResult.invoice, settings, clinicLogo })
     );
 
     // Return PDF as response

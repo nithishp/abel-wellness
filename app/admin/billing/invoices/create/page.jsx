@@ -244,8 +244,20 @@ export default function CreateInvoicePage() {
   };
 
   const calculateItemTotal = (item) => {
-    const subtotal = item.quantity * item.unit_price;
-    const taxAmount = subtotal * (item.tax_rate / 100);
+    const quantity =
+      typeof item.quantity === "string" && item.quantity === ""
+        ? 0
+        : Number(item.quantity) || 0;
+    const unitPrice =
+      typeof item.unit_price === "string" && item.unit_price === ""
+        ? 0
+        : Number(item.unit_price) || 0;
+    const taxRate =
+      typeof item.tax_rate === "string" && item.tax_rate === ""
+        ? 0
+        : Number(item.tax_rate) || 0;
+    const subtotal = quantity * unitPrice;
+    const taxAmount = subtotal * (taxRate / 100);
     return subtotal + taxAmount;
   };
 
@@ -549,9 +561,19 @@ export default function CreateInvoicePage() {
                               updateItem(
                                 item.id,
                                 "quantity",
-                                parseInt(e.target.value) || 1
+                                e.target.value === ""
+                                  ? ""
+                                  : parseInt(e.target.value) || 1
                               )
                             }
+                            onBlur={(e) => {
+                              if (
+                                e.target.value === "" ||
+                                parseInt(e.target.value) < 1
+                              ) {
+                                updateItem(item.id, "quantity", 1);
+                              }
+                            }}
                             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
                           />
                         </div>
@@ -568,9 +590,16 @@ export default function CreateInvoicePage() {
                               updateItem(
                                 item.id,
                                 "unit_price",
-                                parseFloat(e.target.value) || 0
+                                e.target.value === ""
+                                  ? ""
+                                  : parseFloat(e.target.value) || 0
                               )
                             }
+                            onBlur={(e) => {
+                              if (e.target.value === "") {
+                                updateItem(item.id, "unit_price", 0);
+                              }
+                            }}
                             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
                           />
                         </div>
@@ -591,9 +620,16 @@ export default function CreateInvoicePage() {
                               updateItem(
                                 item.id,
                                 "tax_rate",
-                                parseFloat(e.target.value) || 0
+                                e.target.value === ""
+                                  ? ""
+                                  : parseFloat(e.target.value) || 0
                               )
                             }
+                            onBlur={(e) => {
+                              if (e.target.value === "") {
+                                updateItem(item.id, "tax_rate", 0);
+                              }
+                            }}
                             disabled={settings.tax_enabled === false}
                             className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
@@ -714,9 +750,20 @@ export default function CreateInvoicePage() {
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          discount_amount: parseFloat(e.target.value) || 0,
+                          discount_amount:
+                            e.target.value === ""
+                              ? ""
+                              : parseFloat(e.target.value) || 0,
                         }))
                       }
+                      onBlur={(e) => {
+                        if (e.target.value === "") {
+                          setFormData((prev) => ({
+                            ...prev,
+                            discount_amount: 0,
+                          }));
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
                       placeholder="Discount amount"
                     />

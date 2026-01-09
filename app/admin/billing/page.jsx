@@ -14,6 +14,12 @@ import {
   FiArrowRight,
   FiRefreshCw,
   FiSettings,
+  FiZap,
+  FiShoppingBag,
+  FiBook,
+  FiLayers,
+  FiClipboard,
+  FiActivity,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -139,6 +145,18 @@ export default function BillingDashboard() {
 
   const quickActions = [
     {
+      name: "Quick Bill",
+      icon: FiZap,
+      href: "/admin/billing/quick-bill",
+      color: "bg-amber-500",
+    },
+    {
+      name: "Pharmacy",
+      icon: FiShoppingBag,
+      href: "/admin/billing/pharmacy",
+      color: "bg-teal-500",
+    },
+    {
       name: "New Invoice",
       icon: FiPlus,
       href: "/admin/billing/invoices/create",
@@ -149,6 +167,30 @@ export default function BillingDashboard() {
       icon: FiFileText,
       href: "/admin/billing/invoices",
       color: "bg-blue-500",
+    },
+    {
+      name: "Treatment Cases",
+      icon: FiLayers,
+      href: "/admin/billing/treatment-cases",
+      color: "bg-indigo-500",
+    },
+    {
+      name: "Credit Notes",
+      icon: FiClipboard,
+      href: "/admin/billing/credit-notes",
+      color: "bg-orange-500",
+    },
+    {
+      name: "Ledger",
+      icon: FiBook,
+      href: "/admin/billing/ledger",
+      color: "bg-cyan-500",
+    },
+    {
+      name: "Audit Logs",
+      icon: FiActivity,
+      href: "/admin/billing/audit-logs",
+      color: "bg-rose-500",
     },
     {
       name: "Reports",
