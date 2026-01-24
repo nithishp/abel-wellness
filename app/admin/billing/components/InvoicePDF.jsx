@@ -15,8 +15,8 @@ import {
 //   src: '/fonts/Inter-Regular.ttf',
 // });
 
-// Color palette
-const colors = {
+// Default color palette
+const defaultColors = {
   primary: "#059669", // Emerald green
   secondary: "#065f46",
   text: "#1f2937",
@@ -29,292 +29,310 @@ const colors = {
   danger: "#ef4444",
 };
 
-// Styles
-const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontSize: 10,
-    fontFamily: "Helvetica",
-    color: colors.text,
-    backgroundColor: colors.white,
-  },
-  // Header
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 30,
-    paddingBottom: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.primary,
-  },
-  logoSection: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  clinicLogo: {
-    width: 50,
-    height: 50,
-    objectFit: "contain",
-  },
-  clinicInfo: {
-    flex: 1,
-  },
-  clinicName: {
-    fontSize: 24,
-    fontFamily: "Helvetica-Bold",
-    color: colors.primary,
-    marginBottom: 4,
-  },
-  clinicTagline: {
-    fontSize: 10,
-    color: colors.textLight,
-  },
-  invoiceTitle: {
-    textAlign: "right",
-  },
-  invoiceLabel: {
-    fontSize: 28,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  invoiceNumber: {
-    fontSize: 12,
-    color: colors.textLight,
-  },
-  // Status badge
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: "flex-end",
-    marginTop: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-  },
-  // Info sections
-  infoSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 30,
-  },
-  infoBlock: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 9,
-    color: colors.textLight,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  infoText: {
-    fontSize: 11,
-    color: colors.text,
-    marginBottom: 2,
-  },
-  infoTextBold: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  // Table
-  table: {
-    marginBottom: 20,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-  },
-  tableHeaderText: {
-    color: colors.white,
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tableRowAlt: {
-    backgroundColor: colors.background,
-  },
-  col1: { flex: 0.5, textAlign: "center" },
-  col2: { flex: 3 },
-  col3: { flex: 1, textAlign: "center" },
-  col4: { flex: 1.2, textAlign: "right" },
-  col5: { flex: 1.2, textAlign: "right" },
-  col6: { flex: 1.2, textAlign: "right" },
-  tableText: {
-    fontSize: 10,
-    color: colors.text,
-  },
-  tableTextLight: {
-    fontSize: 9,
-    color: colors.textLight,
-  },
-  // Totals section
-  totalsSection: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 30,
-  },
-  totalsBox: {
-    width: 250,
-    backgroundColor: colors.background,
-    padding: 16,
-    borderRadius: 4,
-  },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  totalLabel: {
-    fontSize: 10,
-    color: colors.textLight,
-  },
-  totalValue: {
-    fontSize: 10,
-    color: colors.text,
-  },
-  totalRowFinal: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 12,
-    marginTop: 8,
-    borderTopWidth: 2,
-    borderTopColor: colors.primary,
-  },
-  totalLabelFinal: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-  },
-  totalValueFinal: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
-    color: colors.primary,
-  },
-  amountDue: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  amountDueLabel: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: colors.danger,
-  },
-  amountDueValue: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: colors.danger,
-  },
-  // Payments section
-  paymentsSection: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    marginBottom: 12,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  paymentRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: colors.background,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  paymentInfo: {
-    flex: 1,
-  },
-  paymentMethod: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    textTransform: "capitalize",
-  },
-  paymentDate: {
-    fontSize: 9,
-    color: colors.textLight,
-  },
-  paymentAmount: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: colors.success,
-  },
-  // Notes section
-  notesSection: {
-    marginBottom: 30,
-  },
-  notesText: {
-    fontSize: 10,
-    color: colors.textLight,
-    lineHeight: 1.6,
-  },
-  // Footer
-  footer: {
-    position: "absolute",
-    bottom: 40,
-    left: 40,
-    right: 40,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 20,
-  },
-  footerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  footerSection: {
-    flex: 1,
-  },
-  footerTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  footerText: {
-    fontSize: 8,
-    color: colors.textLight,
-    marginBottom: 2,
-  },
-  footerCenter: {
-    textAlign: "center",
-  },
-  thankYou: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: colors.primary,
-    textAlign: "center",
-    marginTop: 10,
-  },
-});
+// Helper function to darken a color for secondary shade
+const darkenColor = (hex, percent = 20) => {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max((num >> 16) - amt, 0);
+  const G = Math.max(((num >> 8) & 0x00ff) - amt, 0);
+  const B = Math.max((num & 0x0000ff) - amt, 0);
+  return `#${((1 << 24) | (R << 16) | (G << 8) | B).toString(16).slice(1)}`;
+};
+
+// Generate styles based on theme color
+const createStyles = (themeColor = "#059669") => {
+  const colors = {
+    ...defaultColors,
+    primary: themeColor,
+    secondary: darkenColor(themeColor, 20),
+  };
+
+  return StyleSheet.create({
+    page: {
+      padding: 40,
+      fontSize: 10,
+      fontFamily: "Helvetica",
+      color: colors.text,
+      backgroundColor: colors.white,
+    },
+    // Header
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 30,
+      paddingBottom: 20,
+      borderBottomWidth: 2,
+      borderBottomColor: colors.primary,
+    },
+    logoSection: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    clinicLogo: {
+      width: 50,
+      height: 50,
+      objectFit: "contain",
+    },
+    clinicInfo: {
+      flex: 1,
+    },
+    clinicName: {
+      fontSize: 24,
+      fontFamily: "Helvetica-Bold",
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    clinicTagline: {
+      fontSize: 10,
+      color: colors.textLight,
+    },
+    invoiceTitle: {
+      textAlign: "right",
+    },
+    invoiceLabel: {
+      fontSize: 28,
+      fontFamily: "Helvetica-Bold",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    invoiceNumber: {
+      fontSize: 12,
+      color: colors.textLight,
+    },
+    // Status badge
+    statusBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+      alignSelf: "flex-end",
+      marginTop: 8,
+    },
+    statusText: {
+      fontSize: 10,
+      fontFamily: "Helvetica-Bold",
+      textTransform: "uppercase",
+    },
+    // Info sections
+    infoSection: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 30,
+    },
+    infoBlock: {
+      flex: 1,
+    },
+    infoLabel: {
+      fontSize: 9,
+      color: colors.textLight,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: 6,
+    },
+    infoText: {
+      fontSize: 11,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    infoTextBold: {
+      fontSize: 11,
+      fontFamily: "Helvetica-Bold",
+      color: colors.text,
+      marginBottom: 2,
+    },
+    // Table
+    table: {
+      marginBottom: 20,
+    },
+    tableHeader: {
+      flexDirection: "row",
+      backgroundColor: colors.primary,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderTopLeftRadius: 4,
+      borderTopRightRadius: 4,
+    },
+    tableHeaderText: {
+      color: colors.white,
+      fontSize: 9,
+      fontFamily: "Helvetica-Bold",
+      textTransform: "uppercase",
+    },
+    tableRow: {
+      flexDirection: "row",
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tableRowAlt: {
+      backgroundColor: colors.background,
+    },
+    col1: { flex: 0.5, textAlign: "center" },
+    col2: { flex: 3 },
+    col3: { flex: 1, textAlign: "center" },
+    col4: { flex: 1.2, textAlign: "right" },
+    col5: { flex: 1.2, textAlign: "right" },
+    col6: { flex: 1.2, textAlign: "right" },
+    tableText: {
+      fontSize: 10,
+      color: colors.text,
+    },
+    tableTextLight: {
+      fontSize: 9,
+      color: colors.textLight,
+    },
+    // Totals section
+    totalsSection: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginBottom: 30,
+    },
+    totalsBox: {
+      width: 250,
+      backgroundColor: colors.background,
+      padding: 16,
+      borderRadius: 4,
+    },
+    totalRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+    totalLabel: {
+      fontSize: 10,
+      color: colors.textLight,
+    },
+    totalValue: {
+      fontSize: 10,
+      color: colors.text,
+    },
+    totalRowFinal: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingTop: 12,
+      marginTop: 8,
+      borderTopWidth: 2,
+      borderTopColor: colors.primary,
+    },
+    totalLabelFinal: {
+      fontSize: 14,
+      fontFamily: "Helvetica-Bold",
+      color: colors.text,
+    },
+    totalValueFinal: {
+      fontSize: 14,
+      fontFamily: "Helvetica-Bold",
+      color: colors.primary,
+    },
+    amountDue: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    amountDueLabel: {
+      fontSize: 12,
+      fontFamily: "Helvetica-Bold",
+      color: colors.danger,
+    },
+    amountDueValue: {
+      fontSize: 12,
+      fontFamily: "Helvetica-Bold",
+      color: colors.danger,
+    },
+    // Payments section
+    paymentsSection: {
+      marginBottom: 30,
+    },
+    sectionTitle: {
+      fontSize: 12,
+      fontFamily: "Helvetica-Bold",
+      color: colors.text,
+      marginBottom: 12,
+      paddingBottom: 6,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    paymentRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      backgroundColor: colors.background,
+      borderRadius: 4,
+      marginBottom: 4,
+    },
+    paymentInfo: {
+      flex: 1,
+    },
+    paymentMethod: {
+      fontSize: 10,
+      fontFamily: "Helvetica-Bold",
+      color: colors.text,
+      textTransform: "capitalize",
+    },
+    paymentDate: {
+      fontSize: 9,
+      color: colors.textLight,
+    },
+    paymentAmount: {
+      fontSize: 11,
+      fontFamily: "Helvetica-Bold",
+      color: colors.success,
+    },
+    // Notes section
+    notesSection: {
+      marginBottom: 30,
+    },
+    notesText: {
+      fontSize: 10,
+      color: colors.textLight,
+      lineHeight: 1.6,
+    },
+    // Footer
+    footer: {
+      position: "absolute",
+      bottom: 40,
+      left: 40,
+      right: 40,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 20,
+    },
+    footerContent: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    footerSection: {
+      flex: 1,
+    },
+    footerTitle: {
+      fontSize: 9,
+      fontFamily: "Helvetica-Bold",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    footerText: {
+      fontSize: 8,
+      color: colors.textLight,
+      marginBottom: 2,
+    },
+    footerCenter: {
+      textAlign: "center",
+    },
+    thankYou: {
+      fontSize: 11,
+      fontFamily: "Helvetica-Bold",
+      color: colors.primary,
+      textAlign: "center",
+      marginTop: 10,
+    },
+  });
+};
 
 // Status badge colors
 const getStatusStyles = (status) => {
@@ -333,27 +351,39 @@ const getStatusStyles = (status) => {
 };
 
 // Format currency
-const formatCurrency = (amount, symbol = "₹") => {
+// Note: Using "Rs." instead of "₹" symbol because Helvetica font in @react-pdf/renderer
+// doesn't support the Indian Rupee symbol (U+20B9), causing display issues
+const formatCurrency = (amount, symbol = "Rs.") => {
   const num = parseFloat(amount) || 0;
-  return `${symbol}${num.toLocaleString("en-IN", {
+  // Convert ₹ symbol to Rs. for PDF compatibility
+  const pdfSafeSymbol = symbol === "₹" ? "Rs." : symbol;
+  return `${pdfSafeSymbol} ${num.toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 };
 
-// Format date
+// Format date in IST
 const formatDate = (dateString) => {
   if (!dateString) return "-";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-IN", {
+  const IST_TIMEZONE = "Asia/Kolkata";
+  return new Date(dateString).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: IST_TIMEZONE,
   });
 };
 
 // Invoice PDF Component
 const InvoicePDF = ({ invoice, settings = {}, clinicLogo = null }) => {
+  // Get theme color from settings (remove quotes if present)
+  const themeColor =
+    settings.invoice_theme_color?.replace(/"/g, "") || "#059669";
+
+  // Generate styles with the theme color
+  const styles = createStyles(themeColor);
+
   const statusStyles = getStatusStyles(invoice.status);
   const currencySymbol = settings.currency_symbol?.replace(/"/g, "") || "₹";
   const clinicName =
@@ -453,7 +483,6 @@ const InvoicePDF = ({ invoice, settings = {}, clinicLogo = null }) => {
                     item.item_type?.slice(1)}
                   {item.hsn_code && ` • HSN: ${item.hsn_code}`}
                 </Text>
-                
               </View>
               <Text style={[styles.tableText, styles.col3]}>
                 {item.quantity} {item.unit}

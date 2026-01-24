@@ -89,10 +89,11 @@ const BlogPost = () => {
               </div>
               <div className="flex items-center">
                 <FiCalendar className="mr-1" />
-                {new Date(blog.$createdAt).toLocaleDateString("en-US", {
+                {new Date(blog.$createdAt).toLocaleDateString("en-IN", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
+                  timeZone: "Asia/Kolkata",
                 })}
               </div>
             </div>

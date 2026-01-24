@@ -124,13 +124,13 @@ const InventoryReportsPage = () => {
             batches.forEach((batch) => {
               csvContent += `"${batch.item?.name}","${batch.batch_number}",${batch.available_quantity},"${batch.expiry_date}",${batch.days_until_expiry},"${category}"\n`;
             });
-          }
+          },
         );
         break;
       case "movements":
         csvContent = "Date,Item,Type,Quantity,Before,After,Reason\n";
         reportData.movements?.forEach((m) => {
-          csvContent += `"${new Date(m.created_at).toLocaleString()}","${
+          csvContent += `"${new Date(m.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}","${
             m.item?.name
           }","${m.movement_type}",${m.quantity},${m.quantity_before},${
             m.quantity_after
@@ -560,7 +560,9 @@ const InventoryReportsPage = () => {
                   className="border-b border-slate-700/50 hover:bg-slate-700/20"
                 >
                   <td className="p-3 text-slate-300 text-sm">
-                    {new Date(movement.created_at).toLocaleString()}
+                    {new Date(movement.created_at).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                    })}
                   </td>
                   <td className="p-3 text-white">{movement.item?.name}</td>
                   <td className="p-3">

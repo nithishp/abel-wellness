@@ -89,7 +89,7 @@ const InventoryAlertsPage = () => {
       const data = await res.json();
       if (res.ok) {
         toast.success(
-          `Expiry check complete. ${data.alertsCreated} new alerts created.`
+          `Expiry check complete. ${data.alertsCreated} new alerts created.`,
         );
         fetchAlerts();
       } else {
@@ -164,10 +164,10 @@ const InventoryAlertsPage = () => {
     low_stock: alerts.filter((a) => a.alert_type === "low_stock" && !a.resolved)
       .length,
     out_of_stock: alerts.filter(
-      (a) => a.alert_type === "out_of_stock" && !a.resolved
+      (a) => a.alert_type === "out_of_stock" && !a.resolved,
     ).length,
     expiring_soon: alerts.filter(
-      (a) => a.alert_type === "expiring_soon" && !a.resolved
+      (a) => a.alert_type === "expiring_soon" && !a.resolved,
     ).length,
     expired: alerts.filter((a) => a.alert_type === "expired" && !a.resolved)
       .length,
@@ -320,7 +320,7 @@ const InventoryAlertsPage = () => {
                   <div
                     className={`p-3 rounded-lg border ${getAlertColor(
                       alert.alert_type,
-                      alert.resolved
+                      alert.resolved,
                     )}`}
                   >
                     {getAlertIcon(alert.alert_type)}
@@ -336,7 +336,7 @@ const InventoryAlertsPage = () => {
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getAlertColor(
                           alert.alert_type,
-                          alert.resolved
+                          alert.resolved,
                         )}`}
                       >
                         {getAlertLabel(alert.alert_type)}
@@ -349,7 +349,9 @@ const InventoryAlertsPage = () => {
                     </div>
                     <p className="text-slate-400 text-sm">{alert.message}</p>
                     <p className="text-slate-500 text-xs mt-2">
-                      {new Date(alert.created_at).toLocaleString()}
+                      {new Date(alert.created_at).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -363,9 +365,9 @@ const InventoryAlertsPage = () => {
                           alert.item.current_stock === 0
                             ? "text-red-400"
                             : alert.item.current_stock <=
-                              alert.item.minimum_stock
-                            ? "text-yellow-400"
-                            : "text-white"
+                                alert.item.minimum_stock
+                              ? "text-yellow-400"
+                              : "text-white"
                         }`}
                       >
                         {alert.item.current_stock} {alert.item.unit_of_measure}

@@ -117,7 +117,7 @@ export default function CreateInvoicePage() {
           ? parseFloat(data.settings.default_tax_rate) || 0
           : 0;
         setItems((prev) =>
-          prev.map((item) => ({ ...item, tax_rate: defaultTaxRate }))
+          prev.map((item) => ({ ...item, tax_rate: defaultTaxRate })),
         );
       }
     } catch (error) {
@@ -128,7 +128,7 @@ export default function CreateInvoicePage() {
   const searchPatients = async (query) => {
     try {
       const res = await fetch(
-        `/api/admin/patients?search=${encodeURIComponent(query)}&limit=10`
+        `/api/admin/patients?search=${encodeURIComponent(query)}&limit=10`,
       );
       const data = await res.json();
       if (res.ok && data.patients) {
@@ -143,7 +143,7 @@ export default function CreateInvoicePage() {
   const fetchPatientAppointments = async (patientId) => {
     try {
       const res = await fetch(
-        `/api/admin/appointments?patientId=${patientId}&status=completed&limit=10`
+        `/api/admin/appointments?patientId=${patientId}&status=completed&limit=10`,
       );
       const data = await res.json();
       if (data.success) {
@@ -188,7 +188,7 @@ export default function CreateInvoicePage() {
       const hasConsultation = items.some(
         (item) =>
           item.item_type === "consultation" &&
-          item.description.includes("Consultation")
+          item.description.includes("Consultation"),
       );
 
       if (!hasConsultation && consultationFee > 0) {
@@ -239,7 +239,7 @@ export default function CreateInvoicePage() {
 
   const updateItem = (id, field, value) => {
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
@@ -264,12 +264,12 @@ export default function CreateInvoicePage() {
   const calculateTotals = () => {
     const subtotal = items.reduce(
       (sum, item) => sum + item.quantity * item.unit_price,
-      0
+      0,
     );
     const taxAmount = items.reduce(
       (sum, item) =>
         sum + item.quantity * item.unit_price * (item.tax_rate / 100),
-      0
+      0,
     );
     const discount = parseFloat(formData.discount_amount) || 0;
     const total = subtotal + taxAmount - discount;
@@ -294,7 +294,7 @@ export default function CreateInvoicePage() {
     }
 
     const validItems = items.filter(
-      (item) => item.description && item.unit_price > 0
+      (item) => item.description && item.unit_price > 0,
     );
     if (validItems.length === 0) {
       toast.error("Please add at least one valid item");
@@ -324,7 +324,7 @@ export default function CreateInvoicePage() {
 
       if (data.success) {
         toast.success(
-          isDraft ? "Invoice saved as draft" : "Invoice created successfully"
+          isDraft ? "Invoice saved as draft" : "Invoice created successfully",
         );
         router.push(`/admin/billing/invoices/${data.invoice.id}`);
       } else {
@@ -471,8 +471,10 @@ export default function CreateInvoicePage() {
                       <option value="">Select an appointment</option>
                       {appointments.map((apt) => (
                         <option key={apt.id} value={apt.id}>
-                          {new Date(apt.date).toLocaleDateString()} -{" "}
-                          {apt.doctor?.user?.full_name || "Unknown Doctor"}
+                          {new Date(apt.date).toLocaleDateString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                          })}{" "}
+                          - {apt.doctor?.user?.full_name || "Unknown Doctor"}
                         </option>
                       ))}
                     </select>
@@ -563,7 +565,7 @@ export default function CreateInvoicePage() {
                                 "quantity",
                                 e.target.value === ""
                                   ? ""
-                                  : parseInt(e.target.value) || 1
+                                  : parseInt(e.target.value) || 1,
                               )
                             }
                             onBlur={(e) => {
@@ -592,7 +594,7 @@ export default function CreateInvoicePage() {
                                 "unit_price",
                                 e.target.value === ""
                                   ? ""
-                                  : parseFloat(e.target.value) || 0
+                                  : parseFloat(e.target.value) || 0,
                               )
                             }
                             onBlur={(e) => {
@@ -622,7 +624,7 @@ export default function CreateInvoicePage() {
                                 "tax_rate",
                                 e.target.value === ""
                                   ? ""
-                                  : parseFloat(e.target.value) || 0
+                                  : parseFloat(e.target.value) || 0,
                               )
                             }
                             onBlur={(e) => {

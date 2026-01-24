@@ -21,8 +21,10 @@ import {
   FiBriefcase,
   FiX,
   FiFolder,
+  FiDollarSign,
 } from "react-icons/fi";
 import { toast } from "sonner";
+import MedicationSearch from "../../components/MedicationSearch";
 
 const ConsultationPage = () => {
   const router = useRouter();
@@ -96,6 +98,9 @@ const ConsultationPage = () => {
       duration: "",
       quantity: "",
       instructions: "",
+      inventory_item_id: null, // Link to inventory
+      unit_price: null, // Price from inventory
+      is_billable: true, // Whether to include in invoice
     },
   ]);
   const [prescriptionNotes, setPrescriptionNotes] = useState("");
@@ -228,8 +233,24 @@ const ConsultationPage = () => {
         duration: "",
         quantity: "",
         instructions: "",
+        inventory_item_id: null,
+        unit_price: null,
+        is_billable: true,
       },
     ]);
+  };
+
+  // Handle inventory item selection from MedicationSearch
+  const handleInventoryItemSelect = (index, inventoryItem) => {
+    const newItems = [...prescriptionItems];
+    newItems[index] = {
+      ...newItems[index],
+      inventory_item_id: inventoryItem.id,
+      unit_price: inventoryItem.selling_price,
+      // Auto-fill medication name if empty
+      medication_name: newItems[index].medication_name || inventoryItem.name,
+    };
+    setPrescriptionItems(newItems);
   };
 
   const removePrescriptionItem = (index) => {
@@ -1166,20 +1187,26 @@ const ConsultationPage = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                           <div className="sm:col-span-2">
                             <label className="block text-sm text-slate-400 mb-1">
-                              Medication Name *
+                              Medication Name * (Search inventory)
                             </label>
-                            <input
-                              type="text"
+                            <MedicationSearch
                               value={item.medication_name}
-                              onChange={(e) =>
+                              onChange={(value) =>
                                 handlePrescriptionItemChange(
                                   index,
                                   "medication_name",
-                                  e.target.value,
+                                  value,
                                 )
                               }
-                              className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder="e.g., Arnica Montana 200C"
+                              onSelect={(inventoryItem) =>
+                                handleInventoryItemSelect(index, inventoryItem)
+                              }
+                              selectedInventoryItem={
+                                item.inventory_item_id
+                                  ? { id: item.inventory_item_id }
+                                  : null
+                              }
+                              placeholder="Search medication from inventory..."
                             />
                           </div>
                           <div>
@@ -1254,7 +1281,7 @@ const ConsultationPage = () => {
                               placeholder="e.g., 1 bottle"
                             />
                           </div>
-                          <div className="sm:col-span-2 md:col-span-3">
+                          <div className="sm:col-span-2 md:col-span-2">
                             <label className="block text-sm text-slate-400 mb-1">
                               Special Instructions
                             </label>
@@ -1271,6 +1298,29 @@ const ConsultationPage = () => {
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="e.g., Take on empty stomach, avoid coffee..."
                             />
+                          </div>
+                          <div>
+                            <label className="flex items-center gap-2 text-sm text-slate-400 mb-1">
+                              <input
+                                type="checkbox"
+                                checked={item.is_billable !== false}
+                                onChange={(e) =>
+                                  handlePrescriptionItemChange(
+                                    index,
+                                    "is_billable",
+                                    e.target.checked,
+                                  )
+                                }
+                                className="rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500"
+                              />
+                              Billable Item
+                            </label>
+                            {item.unit_price && (
+                              <div className="flex items-center gap-1 text-xs text-emerald-400 mt-1">
+                                <FiDollarSign className="w-3 h-3" />₹
+                                {item.unit_price}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1376,7 +1426,9 @@ const ConsultationPage = () => {
                                 <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 {new Date(
                                   record.appointment?.date || record.created_at,
-                                ).toLocaleDateString()}
+                                ).toLocaleDateString("en-IN", {
+                                  timeZone: "Asia/Kolkata",
+                                })}
                               </span>
                               <span className="text-xs text-blue-400 truncate max-w-[120px]">
                                 Dr.{" "}
@@ -1438,7 +1490,9 @@ const ConsultationPage = () => {
                                 {new Date(
                                   prescription.appointment?.date ||
                                     prescription.created_at,
-                                ).toLocaleDateString()}
+                                ).toLocaleDateString("en-IN", {
+                                  timeZone: "Asia/Kolkata",
+                                })}
                               </span>
                               <span className="text-xs text-emerald-400 truncate max-w-[120px]">
                                 Dr.{" "}

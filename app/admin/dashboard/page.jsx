@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
       if (blogsData.documents && Array.isArray(blogsData.documents)) {
         const publishedCount = blogsData.documents.filter(
-          (blog) => blog.published
+          (blog) => blog.published,
         ).length;
         setStats((prev) => ({
           ...prev,
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
       }
 
       const appointmentsResponse = await fetch(
-        "/api/admin/appointments?limit=100"
+        "/api/admin/appointments?limit=100",
       );
       const appointmentsData = await appointmentsResponse.json();
 
@@ -84,20 +84,20 @@ const AdminDashboard = () => {
           ...prev,
           totalAppointments: appointments.length || 0,
           pendingAppointments: appointments.filter(
-            (a) => a.status === "pending"
+            (a) => a.status === "pending",
           ).length,
           confirmedAppointments: appointments.filter(
-            (a) => a.status === "confirmed"
+            (a) => a.status === "confirmed",
           ).length,
           completedAppointments: appointments.filter(
-            (a) => a.status === "completed"
+            (a) => a.status === "completed",
           ).length,
         }));
       }
 
       await fetchRecentActivity(
         blogsData.documents || [],
-        appointmentsData.appointments || []
+        appointmentsData.appointments || [],
       );
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -135,7 +135,9 @@ const AdminDashboard = () => {
         .slice(0, 3)
         .map((appointment) => {
           const appointmentDate = appointment.date
-            ? new Date(appointment.date).toLocaleDateString()
+            ? new Date(appointment.date).toLocaleDateString("en-IN", {
+                timeZone: "Asia/Kolkata",
+              })
             : "No date";
           const doctorName =
             appointment.doctor?.user?.full_name || "Not assigned";
@@ -530,7 +532,7 @@ const AdminDashboard = () => {
                                       day: "numeric",
                                       hour: "2-digit",
                                       minute: "2-digit",
-                                    }
+                                    },
                                   )}
                                 </span>
                               </div>

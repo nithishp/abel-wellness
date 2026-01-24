@@ -328,7 +328,7 @@ const PharmacistItemDetailPage = ({ params }) => {
                                 Expires:{" "}
                                 {new Date(
                                   batch.expiry_date
-                                ).toLocaleDateString()}
+                                ).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                                 {daysUntilExpiry <= 30 &&
                                   ` (${daysUntilExpiry} days)`}
                               </p>
@@ -408,7 +408,7 @@ const PharmacistItemDetailPage = ({ params }) => {
                             {movement.movement_type.replace("_", " ")}
                           </p>
                           <p className="text-slate-500 text-xs">
-                            {new Date(movement.created_at).toLocaleDateString()}
+                            {new Date(movement.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                           </p>
                         </div>
                         <span

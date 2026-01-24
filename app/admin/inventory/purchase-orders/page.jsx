@@ -195,7 +195,7 @@ const PurchaseOrdersPage = () => {
                 </p>
                 <p className="text-xl font-bold">{statusCounts[status] || 0}</p>
               </button>
-            )
+            ),
           )}
         </div>
 
@@ -251,13 +251,15 @@ const PurchaseOrdersPage = () => {
                   <div className="text-right">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        order.status
+                        order.status,
                       )}`}
                     >
                       {order.status}
                     </span>
                     <p className="text-slate-400 text-xs mt-1">
-                      {new Date(order.created_at).toLocaleDateString()}
+                      {new Date(order.created_at).toLocaleDateString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                      })}
                     </p>
                   </div>
 

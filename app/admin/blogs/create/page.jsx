@@ -466,7 +466,7 @@ const CreateBlog = () => {
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
                     <span>By {blogForm.author || "Unknown"}</span>
                     <span>•</span>
-                    <span>{new Date().toLocaleDateString()}</span>
+                    <span>{new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
                     {blogForm.featured && (
                       <>
                         <span>•</span>

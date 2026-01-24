@@ -695,7 +695,7 @@ const InventoryDashboardPage = () => {
                     <PieChart>
                       <Pie
                         data={analytics.expiryDistribution.filter(
-                          (item) => item.value > 0
+                          (item) => item.value > 0,
                         )}
                         cx="50%"
                         cy="50%"
@@ -848,14 +848,17 @@ const InventoryDashboardPage = () => {
                   <div
                     key={alert.id}
                     className={`p-3 rounded-lg border ${getAlertSeverityColor(
-                      alert.severity
+                      alert.severity,
                     )}`}
                   >
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium text-sm">{alert.message}</p>
                         <p className="text-xs opacity-70 mt-1">
-                          {new Date(alert.created_at).toLocaleDateString()}
+                          {new Date(alert.created_at).toLocaleDateString(
+                            "en-IN",
+                            { timeZone: "Asia/Kolkata" },
+                          )}
                         </p>
                       </div>
                       <span className="text-xs uppercase font-semibold px-2 py-1 rounded bg-black/20">

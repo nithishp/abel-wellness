@@ -7,6 +7,7 @@ import {
   PRESCRIPTION_STATUS,
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
+import { createInvoiceFromPrescription } from "@/lib/actions/prescription-billing.actions";
 
 // Helper to verify doctor session
 async function verifyDoctorSession() {
@@ -54,7 +55,7 @@ export async function POST(request, { params }) {
     if (!doctorProfile) {
       return NextResponse.json(
         { error: "Doctor profile not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -65,7 +66,7 @@ export async function POST(request, { params }) {
         `
         *,
         patient:patient_id(id, full_name, email)
-      `
+      `,
       )
       .eq("id", id)
       .eq("doctor_id", doctorProfile.id)
@@ -74,7 +75,7 @@ export async function POST(request, { params }) {
     if (appointmentError || !appointment) {
       return NextResponse.json(
         { error: "Appointment not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -176,7 +177,7 @@ export async function POST(request, { params }) {
           .delete()
           .eq("prescription_id", existingPrescription.id);
 
-        // Insert new items
+        // Insert new items with inventory linking
         const itemsToInsert = prescription.items.map((item) => ({
           prescription_id: existingPrescription.id,
           medication_name: item.medication_name,
@@ -185,6 +186,9 @@ export async function POST(request, { params }) {
           duration: item.duration,
           quantity: item.quantity,
           instructions: item.instructions,
+          inventory_item_id: item.inventory_item_id || null,
+          unit_price: item.unit_price || null,
+          is_billable: item.is_billable !== false, // Default true
         }));
 
         await supabaseAdmin
@@ -200,12 +204,13 @@ export async function POST(request, { params }) {
             doctor_id: doctorProfile.id,
             notes: prescription.notes,
             status: PRESCRIPTION_STATUS.PENDING,
+            billing_status: "unbilled",
           })
           .select()
           .single();
 
         if (newPrescription) {
-          // Insert prescription items
+          // Insert prescription items with inventory linking
           const itemsToInsert = prescription.items.map((item) => ({
             prescription_id: newPrescription.id,
             medication_name: item.medication_name,
@@ -214,6 +219,9 @@ export async function POST(request, { params }) {
             duration: item.duration,
             quantity: item.quantity,
             instructions: item.instructions,
+            inventory_item_id: item.inventory_item_id || null,
+            unit_price: item.unit_price || null,
+            is_billable: item.is_billable !== false, // Default true
           }));
 
           await supabaseAdmin
@@ -240,13 +248,15 @@ export async function POST(request, { params }) {
         try {
           await sendEmail({
             to: appointment.patient?.email || appointment.email,
-            ...emailTemplates.consultationCompleteAdmin({
-              patientName: appointment.patient?.full_name || appointment.name,
-              doctorName: doctor.full_name,
-              date: appointment.date,
-              diagnosis: medicalRecord.final_diagnosis,
-              hasPrescription: prescription?.items?.length > 0,
-            }),
+            ...emailTemplates.consultationCompleteAdmin(
+              doctor.full_name,
+              appointment.patient?.full_name || appointment.name,
+              {
+                date: appointment.date,
+                diagnosis: medicalRecord.final_diagnosis,
+                hasPrescription: prescription?.items?.length > 0,
+              },
+            ),
           });
         } catch (emailError) {
           console.error("Error sending consultation email:", emailError);
@@ -262,6 +272,31 @@ export async function POST(request, { params }) {
           .eq("appointment_id", id)
           .single();
 
+        // Auto-create invoice for prescription if setting enabled or requested
+        // This creates a pending invoice that needs payment before dispensing
+        if (prescriptionData?.id) {
+          try {
+            const invoiceResult = await createInvoiceFromPrescription(
+              prescriptionData.id,
+              doctor.id,
+              {
+                includeConsultation: true, // Include consultation fee
+                notes: `Auto-generated invoice for consultation on ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`,
+              },
+            );
+
+            if (invoiceResult.success) {
+              console.log(
+                "Auto-created invoice:",
+                invoiceResult.invoice?.invoice_number,
+              );
+            }
+          } catch (invoiceError) {
+            // Don't fail the consultation if invoice creation fails
+            console.error("Error auto-creating invoice:", invoiceError);
+          }
+        }
+
         // Create notification for pharmacists
         const { data: pharmacists } = await supabaseAdmin
           .from(TABLES.USERS)
@@ -276,7 +311,7 @@ export async function POST(request, { params }) {
             title: "New Prescription Ready",
             message: `New prescription for ${
               appointment.patient?.full_name || appointment.name
-            } is ready for dispensing`,
+            } is ready for billing and dispensing`,
             related_id: prescriptionData?.id,
             related_type: "prescription",
           }));
@@ -318,7 +353,7 @@ export async function POST(request, { params }) {
     console.error("Error saving consultation:", error);
     return NextResponse.json(
       { error: "Failed to save consultation" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

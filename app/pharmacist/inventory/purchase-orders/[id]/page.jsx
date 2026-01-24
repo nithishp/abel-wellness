@@ -62,7 +62,7 @@ const PurchaseOrderDetailPage = ({ params }) => {
               received_quantity: item.quantity,
               batch_number: "",
               expiry_date: "",
-            }))
+            })),
           );
         }
       } else {
@@ -223,14 +223,17 @@ const PurchaseOrderDetailPage = ({ params }) => {
                 </h1>
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                    order.status
+                    order.status,
                   )}`}
                 >
                   {order.status}
                 </span>
               </div>
               <p className="text-slate-400 mt-1">
-                Created {new Date(order.created_at).toLocaleDateString()}
+                Created{" "}
+                {new Date(order.created_at).toLocaleDateString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                })}
               </p>
             </div>
           </div>
@@ -432,7 +435,10 @@ const PurchaseOrderDetailPage = ({ params }) => {
                   <div className="flex items-center justify-between text-slate-300">
                     <span>Expected Date</span>
                     <span>
-                      {new Date(order.expected_date).toLocaleDateString()}
+                      {new Date(order.expected_date).toLocaleDateString(
+                        "en-IN",
+                        { timeZone: "Asia/Kolkata" },
+                      )}
                     </span>
                   </div>
                 )}
@@ -480,8 +486,8 @@ const PurchaseOrderDetailPage = ({ params }) => {
                             isCurrent
                               ? getStatusColor(status)
                               : isCompleted
-                              ? "bg-purple-500/20 text-purple-500"
-                              : "bg-slate-700 text-slate-500"
+                                ? "bg-purple-500/20 text-purple-500"
+                                : "bg-slate-700 text-slate-500"
                           }`}
                         >
                           {isCompleted ? (
@@ -495,15 +501,15 @@ const PurchaseOrderDetailPage = ({ params }) => {
                             isCurrent
                               ? "text-white font-medium"
                               : isCompleted
-                              ? "text-slate-300"
-                              : "text-slate-500"
+                                ? "text-slate-300"
+                                : "text-slate-500"
                           }`}
                         >
                           {status}
                         </span>
                       </div>
                     );
-                  }
+                  },
                 )}
               </div>
             </div>
@@ -564,7 +570,7 @@ const PurchaseOrderDetailPage = ({ params }) => {
                               "received_quantity",
                               e.target.value === ""
                                 ? ""
-                                : parseInt(e.target.value)
+                                : parseInt(e.target.value),
                             )
                           }
                           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
@@ -583,7 +589,7 @@ const PurchaseOrderDetailPage = ({ params }) => {
                             updateReceivedItem(
                               index,
                               "batch_number",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
@@ -601,7 +607,7 @@ const PurchaseOrderDetailPage = ({ params }) => {
                             updateReceivedItem(
                               index,
                               "expiry_date",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"

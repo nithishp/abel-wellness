@@ -180,9 +180,10 @@ const BlogsPage = () => {
                     <span className="bg-white bg-opacity-90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700">
                       {new Date(
                         blog.created_at || blog.$createdAt
-                      ).toLocaleDateString("en-US", {
+                      ).toLocaleDateString("en-IN", {
                         month: "short",
                         day: "numeric",
+                        timeZone: "Asia/Kolkata",
                       })}
                     </span>
                   </div>
@@ -215,7 +216,7 @@ const BlogsPage = () => {
                       <span>
                         {new Date(
                           blog.created_at || blog.$createdAt
-                        ).toLocaleDateString()}
+                        ).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                       </span>
                     </div>
                     <div className="flex items-center text-blue-600 font-medium text-sm group-hover:text-blue-700 transition-colors">

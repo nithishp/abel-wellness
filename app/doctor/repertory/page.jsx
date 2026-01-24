@@ -318,7 +318,7 @@ export default function DoctorRepertoryPage() {
     const lines = [
       "REPERTORY SHEET ANALYSIS",
       "========================",
-      `Date: ${new Date().toLocaleDateString()}`,
+      `Date: ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`,
       `Repertory: ${REPERTORIES.find((r) => r.value === selectedRepertory)?.label || selectedRepertory}`,
       "",
       "SELECTED RUBRICS:",
@@ -342,7 +342,7 @@ export default function DoctorRepertoryPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `repertory-sheet-${new Date().toISOString().split("T")[0]}.txt`;
+    a.download = `repertory-sheet-${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Repertory sheet exported");

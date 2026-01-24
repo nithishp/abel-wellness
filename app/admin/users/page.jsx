@@ -105,7 +105,7 @@ const UserManagement = () => {
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [filterRole, debouncedSearch]
+    [filterRole, debouncedSearch],
   );
 
   const {
@@ -151,7 +151,7 @@ const UserManagement = () => {
     e.preventDefault();
 
     const loadingToast = toast.loading(
-      editingUser ? "Updating user..." : "Creating user..."
+      editingUser ? "Updating user..." : "Creating user...",
     );
 
     try {
@@ -179,7 +179,7 @@ const UserManagement = () => {
       toast.success(
         editingUser
           ? "User updated successfully!"
-          : "User created successfully!"
+          : "User created successfully!",
       );
 
       setShowModal(false);
@@ -547,7 +547,7 @@ const UserManagement = () => {
                                       <span>
                                         Consultation: ₹
                                         {parseFloat(
-                                          staffUser.roleData.consultation_fee
+                                          staffUser.roleData.consultation_fee,
                                         ).toLocaleString()}
                                       </span>
                                     </div>
@@ -569,11 +569,12 @@ const UserManagement = () => {
                             <span className="text-xs text-slate-500">
                               Added{" "}
                               {new Date(
-                                staffUser.created_at
-                              ).toLocaleDateString("en-US", {
+                                staffUser.created_at,
+                              ).toLocaleDateString("en-IN", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
+                                timeZone: "Asia/Kolkata",
                               })}
                             </span>
                           </div>

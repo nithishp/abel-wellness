@@ -230,7 +230,7 @@ const PurchaseOrderDetailPage = ({ params }) => {
                 </span>
               </div>
               <p className="text-slate-400 mt-1">
-                Created {new Date(order.created_at).toLocaleDateString()}
+                Created {new Date(order.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
               </p>
             </div>
           </div>
@@ -432,7 +432,7 @@ const PurchaseOrderDetailPage = ({ params }) => {
                   <div className="flex items-center justify-between text-slate-300">
                     <span>Expected Date</span>
                     <span>
-                      {new Date(order.expected_date).toLocaleDateString()}
+                      {new Date(order.expected_date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
                     </span>
                   </div>
                 )}

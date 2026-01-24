@@ -14,6 +14,7 @@ import {
   FiCreditCard,
   FiFileText,
   FiDollarSign,
+  FiDroplet,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -42,7 +43,20 @@ export default function BillingSettingsPage() {
     invoice_notes: "",
     invoice_terms: "",
     auto_add_consultation_fee: true,
+    invoice_theme_color: "#059669",
   });
+
+  // Preset theme colors for invoice
+  const THEME_COLORS = [
+    { value: "#059669", label: "Emerald", className: "bg-emerald-600" },
+    { value: "#3b82f6", label: "Blue", className: "bg-blue-500" },
+    { value: "#8b5cf6", label: "Purple", className: "bg-purple-500" },
+    { value: "#ef4444", label: "Red", className: "bg-red-500" },
+    { value: "#f59e0b", label: "Amber", className: "bg-amber-500" },
+    { value: "#06b6d4", label: "Cyan", className: "bg-cyan-500" },
+    { value: "#ec4899", label: "Pink", className: "bg-pink-500" },
+    { value: "#64748b", label: "Slate", className: "bg-slate-500" },
+  ];
 
   const PAYMENT_METHODS = [
     { value: "cash", label: "Cash" },
@@ -108,6 +122,7 @@ export default function BillingSettingsPage() {
           invoice_terms: settingsObj.invoice_terms || "",
           auto_add_consultation_fee:
             settingsObj.auto_add_consultation_fee !== false,
+          invoice_theme_color: settingsObj.invoice_theme_color || "#059669",
         });
       }
     } catch (error) {
@@ -157,11 +172,12 @@ export default function BillingSettingsPage() {
             tax_enabled: formData.tax_enabled,
             payment_due_days: formData.payment_due_days,
             enabled_payment_methods: JSON.stringify(
-              formData.enabled_payment_methods
+              formData.enabled_payment_methods,
             ),
             invoice_notes: formData.invoice_notes,
             invoice_terms: formData.invoice_terms,
             auto_add_consultation_fee: formData.auto_add_consultation_fee,
+            invoice_theme_color: formData.invoice_theme_color,
           },
         }),
       });
@@ -378,7 +394,7 @@ export default function BillingSettingsPage() {
                       onClick={() =>
                         handleInputChange(
                           "auto_add_consultation_fee",
-                          !formData.auto_add_consultation_fee
+                          !formData.auto_add_consultation_fee,
                         )
                       }
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -395,6 +411,111 @@ export default function BillingSettingsPage() {
                         }`}
                       />
                     </button>
+                  </div>
+                </div>
+
+                {/* Invoice Theme Color */}
+                <div className="pt-4 border-t border-slate-700/50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-pink-500/10 rounded-lg">
+                      <FiDroplet className="w-5 h-5 text-pink-400" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300">
+                        Invoice Theme Color
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Primary color used in invoice PDF headers and accents
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Preset Colors */}
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    {THEME_COLORS.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() =>
+                          handleInputChange("invoice_theme_color", color.value)
+                        }
+                        className={`relative group h-12 rounded-lg transition-all ${color.className} ${
+                          formData.invoice_theme_color === color.value
+                            ? "ring-2 ring-offset-2 ring-offset-slate-800 ring-white scale-105"
+                            : "hover:scale-105"
+                        }`}
+                        title={color.label}
+                      >
+                        {formData.invoice_theme_color === color.value && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <svg
+                              className="w-5 h-5 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                        <span className="sr-only">{color.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom Color Input */}
+                  <div className="flex items-center gap-3">
+                    <label className="text-sm text-slate-400">Custom:</label>
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="color"
+                        value={formData.invoice_theme_color}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "invoice_theme_color",
+                            e.target.value,
+                          )
+                        }
+                        className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
+                      />
+                      <input
+                        type="text"
+                        value={formData.invoice_theme_color}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "invoice_theme_color",
+                            e.target.value,
+                          )
+                        }
+                        className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500"
+                        placeholder="#059669"
+                        pattern="^#[0-9A-Fa-f]{6}$"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Color Preview */}
+                  <div className="mt-4 p-3 rounded-lg bg-slate-700/30">
+                    <p className="text-xs text-slate-400 mb-2">Preview:</p>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="h-8 w-24 rounded"
+                        style={{
+                          backgroundColor: formData.invoice_theme_color,
+                        }}
+                      />
+                      <span
+                        className="text-sm font-semibold"
+                        style={{ color: formData.invoice_theme_color }}
+                      >
+                        Invoice Header
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -503,7 +624,7 @@ export default function BillingSettingsPage() {
                     <input
                       type="checkbox"
                       checked={formData.enabled_payment_methods.includes(
-                        method.value
+                        method.value,
                       )}
                       onChange={() => handlePaymentMethodToggle(method.value)}
                       className="w-4 h-4 text-emerald-600 bg-slate-700 border-slate-600 rounded focus:ring-emerald-500"
