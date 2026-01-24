@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import DoctorSidebar from "../../components/DoctorSidebar";
+import OOREPWidget from "../../components/OOREPWidget";
 import {
   FiUser,
   FiCalendar,
@@ -34,7 +35,7 @@ const ConsultationPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "patient_info"
+    searchParams.get("tab") || "patient_info",
   );
 
   // Medical Record Form State
@@ -184,7 +185,7 @@ const ConsultationPage = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "get_patient_history" }),
-        }
+        },
       );
       if (response.ok) {
         const data = await response.json();
@@ -255,7 +256,7 @@ const ConsultationPage = () => {
             patientDemographics,
             complete,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -267,7 +268,7 @@ const ConsultationPage = () => {
       toast.success(
         complete
           ? "Consultation completed successfully!"
-          : "Progress saved successfully!"
+          : "Progress saved successfully!",
       );
 
       if (complete) {
@@ -601,7 +602,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "chief_complaints",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -693,7 +694,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "associated_symptoms",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -731,7 +732,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "history_present_illness",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -749,7 +750,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "past_history",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -767,7 +768,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "family_history",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -790,7 +791,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "physical_generals",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -808,7 +809,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "physical_particulars",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -831,7 +832,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "mental_emotional_state",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={6}
@@ -874,7 +875,7 @@ const ConsultationPage = () => {
                           onChange={(e) =>
                             handleVitalSignChange(
                               "blood_pressure",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -905,7 +906,7 @@ const ConsultationPage = () => {
                           onChange={(e) =>
                             handleVitalSignChange(
                               "respiratory_rate",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -952,7 +953,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "general_exam_findings",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -970,7 +971,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "tongue_pulse",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={2}
@@ -1003,7 +1004,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "imaging_results",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -1026,7 +1027,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "provisional_diagnosis",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -1044,7 +1045,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "totality_analysis",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -1062,7 +1063,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "final_diagnosis",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -1080,7 +1081,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "treatment_plan",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={4}
@@ -1098,7 +1099,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "follow_up_instructions",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -1116,7 +1117,7 @@ const ConsultationPage = () => {
                       onChange={(e) =>
                         handleMedicalRecordChange(
                           "additional_notes",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       rows={3}
@@ -1174,7 +1175,7 @@ const ConsultationPage = () => {
                                 handlePrescriptionItemChange(
                                   index,
                                   "medication_name",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1192,7 +1193,7 @@ const ConsultationPage = () => {
                                 handlePrescriptionItemChange(
                                   index,
                                   "dosage",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1210,7 +1211,7 @@ const ConsultationPage = () => {
                                 handlePrescriptionItemChange(
                                   index,
                                   "frequency",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1228,7 +1229,7 @@ const ConsultationPage = () => {
                                 handlePrescriptionItemChange(
                                   index,
                                   "duration",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1246,7 +1247,7 @@ const ConsultationPage = () => {
                                 handlePrescriptionItemChange(
                                   index,
                                   "quantity",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1264,7 +1265,7 @@ const ConsultationPage = () => {
                                 handlePrescriptionItemChange(
                                   index,
                                   "instructions",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1374,7 +1375,7 @@ const ConsultationPage = () => {
                               <span className="text-xs sm:text-sm text-slate-400 flex items-center gap-1">
                                 <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 {new Date(
-                                  record.appointment?.date || record.created_at
+                                  record.appointment?.date || record.created_at,
                                 ).toLocaleDateString()}
                               </span>
                               <span className="text-xs text-blue-400 truncate max-w-[120px]">
@@ -1436,7 +1437,7 @@ const ConsultationPage = () => {
                                 <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 {new Date(
                                   prescription.appointment?.date ||
-                                    prescription.created_at
+                                    prescription.created_at,
                                 ).toLocaleDateString()}
                               </span>
                               <span className="text-xs text-emerald-400 truncate max-w-[120px]">
@@ -1489,6 +1490,18 @@ const ConsultationPage = () => {
             </div>
           </div>
         )}
+
+        {/* OOREP Widget - Floating Repertory Search */}
+        <OOREPWidget
+          onAddToAnalysis={(text) => {
+            setMedicalRecord((prev) => ({
+              ...prev,
+              totality_analysis: prev.totality_analysis
+                ? `${prev.totality_analysis}\n\n${text}`
+                : text,
+            }));
+          }}
+        />
       </main>
     </div>
   );

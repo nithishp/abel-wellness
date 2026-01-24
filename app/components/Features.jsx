@@ -1,96 +1,194 @@
 "use client";
-import Image from "next/image";
 import React from "react";
 import { motion } from "framer-motion";
-const Features = () => {
-  return (
-    <div className="min-h-screen min-w-screen text-[#ededed]">
-      <div className="w-[95vw] h-auto ">
-        <div className="w-full flex flex-col lg:flex-row justify-start items-start lg:justify-between p-6 lg:p-10">
-          <h1 className="text-3xl lg:text-5xl font-semibold max-w-[90vw] text-neutral-950 lg:max-w-[40vw] text-center lg:text-left">
-            Why Patients Trust AWHCC
-          </h1>
-          <p className="text-center lg:text-right mt-5 text-neutral-900 lg:mt-0 lg:max-w-[40vw] text-lg font-light">
-            Your Healing Journey with ABEL – Book your consultation, share your
-            health details securely, meet your doctor via video/audio
-            consultation, and receive your treatment plan & follow-up guidance.
-          </p>
-        </div>
+import {
+  CalendarCheck,
+  UserCheck,
+  Video,
+  Stethoscope,
+  FileText,
+  CreditCard,
+  Package,
+} from "lucide-react";
 
-        <div className="flex flex-col lg:flex-row w-full gap-6 p-10">
-          <motion.div
-            initial={{ x: -100, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="bg-neutral-950 h-auto lg:h-[30vh] flex justify-center flex-col  w-full  py-5 px-10 rounded-3xl"
-          >
-            <h1 className="text-3xl font-semibold mb-5">
-              ✔ Experienced Doctors
-            </h1>
-            <p className="mt-3 max-w-[90%]">
-              Our team includes experienced Homoeopathic Doctors and
-              psychologists who provide comprehensive care tailored to your
-              individual needs.
-            </p>
-          </motion.div>
-          <motion.div
-            initial={{ x: 100, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className='bg-neutral-950 h-[30vh]  w-full bg-[url("/feature-image-1.png")] bg-cover py-5 px-10 rounded-3xl'
-          >
-            {/* <Image src='/feature-image-1.png' alt='feature-image-1' width={500} height={500} /> */}
-          </motion.div>
-        </div>
-        <div className="flex flex-col lg:flex-row gap-5 p-10 -my-5">
-          <motion.div
-            initial={{ x: -100, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className=" bg-transparent border-[1px] border-neutral-950 rounded-2xl h-fit p-5  "
-          >
-            <h1 className="text-neutral-900 font-semibold text-2xl mb-8 ">
-              ✔ Safe & Natural Remedies
-            </h1>
-            <p className="text-neutral-700 text-sm">
-              All our treatments are based on safe and natural remedies without
-              any side effects, helping you heal gently and effectively.
-            </p>
-          </motion.div>
-          <motion.div
+const Features = () => {
+  const steps = [
+    {
+      icon: CalendarCheck,
+      step: "01",
+      title: "Book an Appointment",
+      description:
+        "Patients book an appointment through our website or with assistance from our care team.",
+      color: "bg-emerald-500",
+    },
+    {
+      icon: UserCheck,
+      step: "02",
+      title: "Doctor Assignment",
+      description:
+        "A suitable doctor is assigned, and a confirmation email is sent with consultation details.",
+      color: "bg-blue-500",
+    },
+    {
+      icon: Video,
+      step: "03",
+      title: "Join Consultation",
+      description:
+        "Join the consultation 10–15 minutes before. Keep previous medical records and prescriptions ready.",
+      color: "bg-violet-500",
+    },
+    {
+      icon: Stethoscope,
+      step: "04",
+      title: "Doctor Consultation",
+      description:
+        "The doctor conducts a detailed consultation and reviews all relevant medical information.",
+      color: "bg-rose-500",
+    },
+    {
+      icon: FileText,
+      step: "05",
+      title: "Treatment Plan",
+      description:
+        "The treatment approach, expectations, and follow-up plan are clearly discussed.",
+      color: "bg-amber-500",
+    },
+    {
+      icon: CreditCard,
+      step: "06",
+      title: "Payment",
+      description:
+        "Payment is completed after the consultation and treatment discussion.",
+      color: "bg-cyan-500",
+    },
+    {
+      icon: Package,
+      step: "07",
+      title: "Medicine Dispatch",
+      description:
+        "Prescribed medicines are securely packed and dispatched with clear usage instructions.",
+      color: "bg-green-500",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen min-w-screen text-[#ededed] py-16">
+      <div className="w-[95vw] h-auto">
+        {/* Header Section */}
+        <div className="w-full flex flex-col lg:flex-row justify-start items-start lg:justify-between p-6 lg:p-10 mb-8">
+          <div>
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-emerald-600 font-semibold text-sm uppercase tracking-wider mb-2"
+            >
+              How It Works
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: -10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-3xl lg:text-5xl font-semibold text-neutral-950 max-w-[90vw] lg:max-w-[40vw]"
+            >
+              From Appointment to Medicine Dispatch
+            </motion.h1>
+          </div>
+          <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            transition={{ duration: 2 }}
-            viewport={{ once: true }}
-            className=' bg-transparent  bg-[url("/feature-image-2.png")] bg-cover bg-top rounded-2xl h-fit p-5  '
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-center lg:text-right mt-5 text-neutral-700 lg:mt-0 lg:max-w-[35vw] text-base lg:text-lg"
           >
-            <h1 className="text-neutral-900 font-semibold text-2xl invisible mb-8 ">
-              Natural Healing
-            </h1>
-            <p className="text-neutral-700 text-sm invisible">
-              Placeholder text for image section
-            </p>
-          </motion.div>
-          <motion.div
-            initial={{ x: 100, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className=" bg-violet-300  rounded-2xl h-fit p-5  "
-          >
-            <h1 className="text-neutral-900 font-semibold text-2xl mb-8 ">
-              ✔ 100% Confidential
-            </h1>
-            <p className="text-neutral-700 text-sm">
-              Your privacy matters to us. All online consultations are 100%
-              confidential, and we offer convenient care accessible anywhere in
-              the world.
-            </p>
-          </motion.div>
+            Your healing journey with AWHCC is structured, transparent, and
+            patient-centred. Here's what to expect.
+          </motion.p>
         </div>
+
+        {/* Steps Timeline */}
+        <div className="px-6 lg:px-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {steps.slice(0, 4).map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 relative overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="relative z-10">
+                  <div
+                    className={`${item.color} w-12 h-12 rounded-xl flex items-center justify-center mb-4`}
+                  >
+                    <item.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-neutral-500 text-xs font-mono">
+                    STEP {item.step}
+                  </span>
+                  <h3 className="text-neutral-900 font-semibold text-lg mt-2 mb-3">
+                    {item.title}
+                  </h3>
+                  <p className="text-neutral-600 text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+                {/* Decorative number */}
+                <span className="absolute -right-2 -bottom-4 text-[80px] font-bold text-neutral-100 select-none z-0">
+                  {item.step}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Second Row - 3 items centered */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 max-w-5xl mx-auto">
+            {steps.slice(4).map((item, index) => (
+              <motion.div
+                key={index + 4}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: (index + 4) * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 relative overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="relative z-10">
+                  <div
+                    className={`${item.color} w-12 h-12 rounded-xl flex items-center justify-center mb-4`}
+                  >
+                    <item.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-neutral-500 text-xs font-mono">
+                    STEP {item.step}
+                  </span>
+                  <h3 className="text-neutral-900 font-semibold text-lg mt-2 mb-3">
+                    {item.title}
+                  </h3>
+                  <p className="text-neutral-600 text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+                {/* Decorative number */}
+                <span className="absolute -right-2 -bottom-4 text-[80px] font-bold text-neutral-100 select-none z-0">
+                  {item.step}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Note */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="text-center mt-10 px-6"
+        >
+          <p className="text-neutral-600 text-sm italic max-w-2xl mx-auto">
+            Timelines and response vary based on individual health conditions
+            and follow-up consistency.
+          </p>
+        </motion.div>
       </div>
     </div>
   );
