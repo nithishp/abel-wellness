@@ -23,30 +23,98 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 
-// Available repertories (common ones)
+// Available repertories - combines local Docker instance and oorep.com
+// Local repertories (Docker): publicum, kent-de - these work offline
+// Remote repertories (oorep.com): all others - require internet connection
 const REPERTORIES = [
+  // === LOCAL REPERTORIES (Docker instance) ===
   {
     value: "publicum",
-    label: "Publicum (Free)",
-    description: "Free public repertory",
+    label: "Publicum (English)",
+    description: "Free public repertory derived from Kent",
+    language: "en",
+    source: "local",
   },
-  { value: "kent", label: "Kent", description: "Kent's Repertory" },
-  { value: "boger", label: "Boger", description: "Boger's Repertory" },
+  {
+    value: "kent-de",
+    label: "Kent (Deutsch)",
+    description: "German translation - use German terms (e.g., Kopfschmerz)",
+    language: "de",
+    source: "local",
+  },
+  // === REMOTE REPERTORIES (oorep.com) ===
+  {
+    value: "kent",
+    label: "Kent (English)",
+    description: "Kent's Repertory of the Homeopathic Materia Medica (1897)",
+    language: "en",
+    source: "remote",
+  },
+  {
+    value: "boger",
+    label: "Boger",
+    description: "Boger's General Analysis",
+    language: "en",
+    source: "remote",
+  },
   {
     value: "bogboen",
-    label: "Boger-Bönninghausen",
-    description: "Boger-Bönninghausen Repertory",
+    label: "Boenninghausen (Boger)",
+    description: "Boenninghausen's Characteristics and Repertory",
+    language: "en",
+    source: "remote",
+  },
+  {
+    value: "hering",
+    label: "Hering",
+    description: "Repertory of Hering's Guiding Symptoms",
+    language: "en",
+    source: "remote",
+  },
+  {
+    value: "robasif",
+    label: "Roberts - Sensations As If",
+    description: "Repertory of Subjective Symptoms",
+    language: "en",
+    source: "remote",
+  },
+  {
+    value: "tylercold",
+    label: "Tyler - Common Cold",
+    description: "Miniature Repertory of the Common Cold",
+    language: "en",
+    source: "remote",
+  },
+  {
+    value: "bogsk",
+    label: "Boger Synoptic Key",
+    description: "A Synoptic Key of the Materia Medica",
+    language: "en",
+    source: "remote",
+  },
+  {
+    value: "bogsk-de",
+    label: "Boger Synoptic Key (Deutsch)",
+    description: "German translation - use German terms",
+    language: "de",
+    source: "remote",
+  },
+  {
+    value: "dorcsi-de",
+    label: "Dorcsi (Deutsch)",
+    description: "Symptomenverzeichnis - German only",
+    language: "de",
+    source: "remote",
   },
 ];
 
+// Available materia medicas in the Docker OOREP instance
 const MATERIA_MEDICAS = [
   {
     value: "boericke",
     label: "Boericke",
-    description: "Boericke's Materia Medica",
+    description: "Pocket Manual of Homoeopathic Materia Medica",
   },
-  { value: "allen", label: "Allen", description: "Allen's Encyclopedia" },
-  { value: "clarke", label: "Clarke", description: "Clarke's Dictionary" },
 ];
 
 const MIN_WEIGHTS = [
@@ -460,6 +528,7 @@ export default function OOREPPage() {
                         </code>
                       </li>
                     </ul>
+                   
                   </div>
                 </div>
               </div>

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { 
+  fetchFromOOREP, 
+  isLocalRepertory,
+  LOCAL_REPERTORIES 
+} from "@/lib/oorep-session";
 
-const OOREP_API_URL = process.env.OOREP_API_URL || "http://localhost:9000";
+const OOREP_LOCAL_URL = process.env.OOREP_API_URL || "http://localhost:9000";
 
 export async function GET(request) {
   try {
@@ -21,30 +26,76 @@ export async function GET(request) {
       );
     }
 
-    // Build OOREP API URL
-    const oorepUrl = new URL(`${OOREP_API_URL}/api/lookup_rep`);
-    oorepUrl.searchParams.set("repertory", repertory);
-    oorepUrl.searchParams.set("symptom", symptom);
-    oorepUrl.searchParams.set("page", page);
-    oorepUrl.searchParams.set("remedyString", remedyString);
-    oorepUrl.searchParams.set("minWeight", minWeight);
-    oorepUrl.searchParams.set("getRemedies", getRemedies);
+    // Determine if we should use local or remote OOREP
+    const useLocal = isLocalRepertory(repertory);
+    const source = useLocal ? "local" : "remote";
+    
+    console.log(`[OOREP Search] Repertory: ${repertory}, Source: ${source}`);
 
-    // Fetch from OOREP
-    const response = await fetch(oorepUrl.toString(), {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      // Set timeout
-      signal: AbortSignal.timeout(30000),
+    // Build query string
+    const queryParams = new URLSearchParams({
+      repertory,
+      symptom,
+      page,
+      remedyString,
+      minWeight,
+      getRemedies,
     });
+
+    let response;
+    
+    if (useLocal) {
+      // Query local Docker instance
+      const localUrl = `${OOREP_LOCAL_URL}/api/lookup_rep?${queryParams}`;
+      response = await fetch(localUrl, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(30000),
+      });
+    } else {
+      // Query oorep.com with session cookies
+      response = await fetchFromOOREP(`/api/lookup_rep?${queryParams}`, {
+        method: "GET",
+        signal: AbortSignal.timeout(30000),
+      });
+    }
 
     if (!response.ok) {
       throw new Error(`OOREP API error: ${response.status}`);
     }
 
-    const rawData = await response.json();
+    // Get raw text first to handle empty responses
+    const rawText = await response.text();
+    
+    // Handle empty response (repertory not found or no results)
+    if (!rawText || rawText.trim() === "") {
+      return NextResponse.json({
+        success: true,
+        data: {
+          results: [],
+          totalResults: 0,
+          totalPages: 0,
+          currentPage: parseInt(page),
+          hasMore: false,
+          remedyStats: [],
+        },
+        meta: {
+          repertory,
+          searchTerm: symptom,
+          page: parseInt(page),
+          message: `No results found. The repertory "${repertory}" may not be available.`,
+        },
+      });
+    }
+
+    // Parse JSON
+    let rawData;
+    try {
+      rawData = JSON.parse(rawText);
+    } catch (parseError) {
+      console.error("OOREP JSON Parse Error:", parseError, "Raw text:", rawText.substring(0, 200));
+      throw new Error(`Invalid response from OOREP API for repertory "${repertory}"`);
+    }
 
     // OOREP returns an array: [searchResults, remedyStats]
     // searchResults contains: totalNumberOfRepertoryRubrics, totalNumberOfResults, totalNumberOfPages, currPage, results
@@ -70,6 +121,7 @@ export async function GET(request) {
         repertory,
         searchTerm: symptom,
         page: parseInt(page),
+        source, // 'local' or 'remote'
       },
     });
   } catch (error) {

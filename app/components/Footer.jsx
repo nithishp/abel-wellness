@@ -122,22 +122,36 @@ const Footer = () => {
           <h2 className="font-semibold text-lg mb-3 text-white">Follow Us</h2>
           <div className="flex flex-row gap-4 text-sm">
             <a
-              href="#"
+              href="https://www.instagram.com/abelwhcc?igsh=MTJiZHJkZzQ2eDE1eQ%3D%3D&utm_source=qr"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-neutral-300 hover:text-white transition-colors"
             >
               Instagram
             </a>
             <a
-              href="#"
+              href="https://www.facebook.com/share/16oNekfwaT/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-neutral-300 hover:text-white transition-colors"
             >
               Facebook
             </a>
             <a
-              href="#"
+              href="https://www.linkedin.com/company/awhcc-abel-wellness-and-homoeopathic-care-centre/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-neutral-300 hover:text-white transition-colors"
             >
               LinkedIn
+            </a>
+            <a
+              href="https://youtube.com/@awhcc?si=U2j4nsgs99QTgn3F"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-300 hover:text-white transition-colors"
+            >
+              YouTube
             </a>
           </div>
         </div>

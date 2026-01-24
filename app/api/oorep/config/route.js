@@ -16,7 +16,7 @@ export async function GET() {
 
     // Fetch available materia medicas
     const mmsResponse = await fetch(
-      `${OOREP_API_URL}/api/available_mms_and_reps`,
+      `${OOREP_API_URL}/api/available_rems_and_mms`,
       {
         method: "GET",
         headers: { Accept: "application/json" },

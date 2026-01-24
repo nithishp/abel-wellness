@@ -10,6 +10,7 @@ import {
   FiX,
   FiChevronRight,
   FiActivity,
+  FiBook,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -17,7 +18,6 @@ const DoctorSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useRoleAuth();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
@@ -32,6 +32,12 @@ const DoctorSidebar = () => {
       icon: FiCalendar,
       href: "/doctor/appointments",
       description: "Manage consultations",
+    },
+    {
+      name: "Repertory",
+      icon: FiBook,
+      href: "/doctor/repertory",
+      description: "Search & case analysis",
     },
   ];
 
@@ -55,25 +61,19 @@ const DoctorSidebar = () => {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <FiActivity className="w-5 h-5 text-white" />
           </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
-              <h1 className="text-white font-bold text-lg tracking-tight">
-                AWHCC
-              </h1>
-              <p className="text-slate-400 text-xs">Doctor Portal</p>
-            </div>
-          )}
+          <div className="overflow-hidden">
+            <h1 className="text-white font-bold text-lg tracking-tight">
+              AWHCC
+            </h1>
+            <p className="text-slate-400 text-xs">Doctor Portal</p>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        <p
-          className={`text-slate-500 text-xs font-semibold uppercase tracking-wider mb-4 ${
-            collapsed ? "text-center" : "px-3"
-          }`}
-        >
-          {collapsed ? "•••" : "Main Menu"}
+        <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-4 px-3">
+          Main Menu
         </p>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -100,21 +100,17 @@ const DoctorSidebar = () => {
                   active ? "text-blue-400" : "group-hover:text-blue-400"
                 } transition-colors`}
               />
-              {!collapsed && (
-                <>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-sm">{item.name}</p>
-                    <p className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">
-                      {item.description}
-                    </p>
-                  </div>
-                  <FiChevronRight
-                    className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition-all ${
-                      active ? "opacity-100 text-blue-400" : ""
-                    }`}
-                  />
-                </>
-              )}
+              <div className="flex-1 text-left">
+                <p className="font-medium text-sm">{item.name}</p>
+                <p className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">
+                  {item.description}
+                </p>
+              </div>
+              <FiChevronRight
+                className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition-all ${
+                  active ? "opacity-100 text-blue-400" : ""
+                }`}
+              />
             </Link>
           );
         })}
@@ -122,38 +118,27 @@ const DoctorSidebar = () => {
 
       {/* User Section */}
       <div className="p-4 border-t border-slate-700/50">
-        <div
-          className={`flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
               {user?.name?.charAt(0) || user?.email?.charAt(0) || "D"}
             </span>
           </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-medium text-sm truncate">
-                Dr. {user?.name || "Doctor"}
-              </p>
-              <p className="text-slate-400 text-xs truncate">
-                {user?.roleData?.specialization || "General Practice"}
-              </p>
-            </div>
-          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-medium text-sm truncate">
+              Dr. {user?.name || "Doctor"}
+            </p>
+            <p className="text-slate-400 text-xs truncate">
+              {user?.roleData?.specialization || "General Practice"}
+            </p>
+          </div>
         </div>
         <button
           onClick={handleLogout}
-          className={`
-            mt-3 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl
-            text-red-400 hover:text-red-300 hover:bg-red-500/10
-            transition-all duration-200 group
-            ${collapsed ? "justify-center" : ""}
-          `}
+          className="mt-3 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group"
         >
           <FiLogOut className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-          {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
+          <span className="text-sm font-medium">Sign Out</span>
         </button>
       </div>
     </div>
@@ -194,23 +179,7 @@ const DoctorSidebar = () => {
       </aside>
 
       {/* Desktop Sidebar */}
-      <aside
-        className={`
-          hidden lg:flex flex-col fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800
-          transition-all duration-300 z-30
-          ${collapsed ? "w-20" : "w-72"}
-        `}
-      >
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-8 w-6 h-6 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-        >
-          <FiChevronRight
-            className={`w-4 h-4 transition-transform ${
-              collapsed ? "" : "rotate-180"
-            }`}
-          />
-        </button>
+      <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 z-30">
         <SidebarContent />
       </aside>
     </>
