@@ -6,7 +6,7 @@ import { ArrowDown, Phone, Sparkles } from "lucide-react";
 
 const Hero = () => {
   return (
-    <div className="relative w-[calc(100%+2rem)] -mx-4 -mt-4 -mb-10 h-[calc(100vh+2.5rem)] pb-10 bg-[url('/small-hero-bg.png')] lg:bg-[url('/hero-bg-image-pink.webp')] bg-cover bg-center overflow-hidden">
+    <div className="relative w-[calc(100%+2rem)] -mx-4 -mt-4 -mb-10 h-[calc(100vh+2.5rem)] pb-10 bg-[url('/hero-bg-image-pink.webp')] bg-cover bg-center overflow-hidden">
       {/* Gradient overlay for text readability */}
       <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/50 to-transparent" />
 
