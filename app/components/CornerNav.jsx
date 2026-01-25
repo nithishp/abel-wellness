@@ -74,7 +74,7 @@ const NavLink = ({ children, href, idx, setActive }) => {
       exit={{ opacity: 0, y: -8 }}
       href={href}
       onClick={handleClick}
-      className="block text-5xl font-semibold text-violet-400 transition-colors hover:text-violet-50 md:text-7xl"
+      className="block text-5xl font-semibold text-rose-300 transition-colors hover:text-white md:text-7xl"
     >
       {children}.
     </motion.a>
@@ -93,7 +93,7 @@ const Logo = () => {
       }}
       exit={{ opacity: 0, y: -12 }}
       href="#"
-      className="grid h-20 w-20 place-content-center p-5 rounded-br-xl rounded-tl-xl bg-white transition-colors hover:bg-violet-50"
+      className="grid h-20 w-20 place-content-center p-5 rounded-br-xl rounded-tl-xl bg-white transition-colors hover:bg-rose-50"
     >
       <Image
         src="/abel-wellness-main.webp"
@@ -113,7 +113,7 @@ const HamburgerButton = ({ active, setActive }) => {
         animate={active ? "open" : "closed"}
         variants={UNDERLAY_VARIANTS}
         style={{ top: 16, right: 16 }}
-        className="fixed z-10 rounded-xl bg-gradient-to-br from-violet-600 to-violet-500 shadow-lg shadow-violet-800/20"
+        className="fixed z-40 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 shadow-lg shadow-rose-800/20"
       />
 
       <motion.button
@@ -164,7 +164,7 @@ const FooterCTAs = ({ setActive }) => {
         },
       }}
       exit={{ opacity: 0, y: 8 }}
-      className="absolute bottom-2 right-2 flex items-center gap-2 rounded-full bg-violet-700 px-3 py-3 text-xl lg:text-4xl uppercase text-violet-200 transition-colors hover:bg-white hover:text-violet-600 md:bottom-4 md:right-4 md:px-6 md:text-2xl"
+      className="absolute bottom-2 right-2 flex items-center gap-2 rounded-full bg-rose-600 px-3 py-3 text-xl lg:text-4xl uppercase text-rose-100 transition-colors hover:bg-white hover:text-rose-600 md:bottom-4 md:right-4 md:px-6 md:text-2xl"
     >
       <span className="block">Book appointment</span> <FiArrowRight />
     </motion.button>
