@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
 import bcrypt from "bcryptjs";
+import { createUserSchema, validateRequest } from "@/lib/validation/schemas";
 
 // Helper function to verify admin session
 async function verifyAdminSession() {
@@ -62,14 +63,18 @@ export async function GET(request) {
 
     if (search) {
       countQuery = countQuery.or(
-        `full_name.ilike.%${search}%,email.ilike.%${search}%`
+        `full_name.ilike.%${search}%,email.ilike.%${search}%`,
       );
     }
 
     const { count: totalCount } = await countQuery;
 
-    // Then get paginated data
-    let query = supabaseAdmin.from(TABLES.USERS).select("*");
+    // Then get paginated data with JOINs for role-specific data
+    let query = supabaseAdmin.from(TABLES.USERS).select(`
+      *,
+      doctor:doctors(*),
+      pharmacist:pharmacists(*)
+    `);
 
     if (role) {
       query = query.eq("role", role);
@@ -93,36 +98,19 @@ export async function GET(request) {
       console.error("Error fetching users:", error);
       return NextResponse.json(
         { error: "Failed to fetch users" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    // Get additional role data for doctors and pharmacists
-    const usersWithRoleData = await Promise.all(
-      users.map(async (user) => {
-        let roleData = null;
-
-        if (user.role === ROLES.DOCTOR) {
-          const { data } = await supabaseAdmin
-            .from(TABLES.DOCTORS)
-            .select("*")
-            .eq("user_id", user.id)
-            .single();
-          roleData = data;
-        } else if (user.role === ROLES.PHARMACIST) {
-          const { data } = await supabaseAdmin
-            .from(TABLES.PHARMACISTS)
-            .select("*")
-            .eq("user_id", user.id)
-            .single();
-          roleData = data;
-        }
-
-        // Remove password hash from response
-        const { password_hash, ...safeUser } = user;
-        return { ...safeUser, roleData };
-      })
-    );
+    // Get users with role data using JOINs (no N+1 queries)
+    const usersWithRoleData = users.map((user) => {
+      // Remove password hash from response
+      const { password_hash, ...safeUser } = user;
+      return {
+        ...safeUser,
+        roleData: user.doctor || user.pharmacist || null,
+      };
+    });
 
     const hasMore = offset + users.length < totalCount;
 
@@ -140,7 +128,7 @@ export async function GET(request) {
     console.error("Error in GET users:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -154,21 +142,28 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    const { email, password, name, phone, role, ...roleSpecificData } = data;
 
-    // Validate required fields
-    if (!email || !password || !name || !role) {
+    // Validate with Zod schema (includes strong password validation)
+    const { data: validatedData, error: validationError } = validateRequest(
+      createUserSchema,
+      data,
+    );
+
+    if (validationError) {
       return NextResponse.json(
-        { error: "Email, password, name, and role are required" },
-        { status: 400 }
+        { error: validationError.message },
+        { status: 400 },
       );
     }
+
+    const { email, password, name, phone, role, ...roleSpecificData } =
+      validatedData;
 
     // Validate role
     if (![ROLES.DOCTOR, ROLES.PHARMACIST].includes(role)) {
       return NextResponse.json(
         { error: "Invalid role. Must be doctor or pharmacist" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -203,7 +198,7 @@ export async function POST(request) {
           console.error("Error reactivating user:", updateError);
           return NextResponse.json(
             { error: "Failed to reactivate user" },
-            { status: 500 }
+            { status: 500 },
           );
         }
 
@@ -293,7 +288,7 @@ export async function POST(request) {
       // If user is active, return error
       return NextResponse.json(
         { error: "A user with this email already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -318,7 +313,7 @@ export async function POST(request) {
       console.error("Error creating user:", userError);
       return NextResponse.json(
         { error: "Failed to create user" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -370,7 +365,7 @@ export async function POST(request) {
     console.error("Error in POST user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -389,7 +384,7 @@ export async function PUT(request) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -440,7 +435,7 @@ export async function PUT(request) {
         console.error("Error updating user:", userError);
         return NextResponse.json(
           { error: "Failed to update user" },
-          { status: 500 }
+          { status: 500 },
         );
       }
       updatedUser = userData;
@@ -498,7 +493,7 @@ export async function PUT(request) {
     console.error("Error in PUT user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -517,7 +512,7 @@ export async function DELETE(request) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -545,7 +540,7 @@ export async function DELETE(request) {
           {
             error: `Cannot delete doctor with ${activeAppointments.length} active appointment(s). Please complete or reassign them first.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -614,7 +609,7 @@ export async function DELETE(request) {
       console.error("Error deleting user:", deleteError);
       return NextResponse.json(
         { error: "Failed to delete user" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -623,7 +618,7 @@ export async function DELETE(request) {
     console.error("Error in DELETE user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

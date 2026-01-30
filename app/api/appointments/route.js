@@ -6,30 +6,42 @@ import {
   APPOINTMENT_STATUS,
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
+import {
+  publicAppointmentSchema,
+  validateRequest,
+} from "@/lib/validation/schemas";
 
 export async function POST(request) {
   try {
     const data = await request.json();
 
-    // Validate required fields
-    const requiredFields = [
-      "firstName",
-      "lastName",
-      "email",
-      "phoneNumber",
-      "schedule",
-    ];
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        return NextResponse.json(
-          { error: `${field} is required` },
-          { status: 400 }
-        );
-      }
+    // Validate request body with Zod schema
+    const validation = validateRequest(publicAppointmentSchema, data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 },
+      );
     }
 
-    const normalizedEmail = data.email.toLowerCase().trim();
-    const patientName = `${data.firstName} ${data.lastName}`;
+    const validatedData = validation.data;
+    const normalizedEmail = validatedData.email;
+    const patientName = `${validatedData.firstName} ${validatedData.lastName}`;
+
+    // Validate that appointment date is not too far in the future (e.g., max 6 months)
+    const appointmentDate = new Date(validatedData.schedule);
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 6);
+
+    if (appointmentDate > maxDate) {
+      return NextResponse.json(
+        {
+          error:
+            "Appointment cannot be scheduled more than 6 months in advance",
+        },
+        { status: 400 },
+      );
+    }
 
     // Check if user already exists
     let { data: existingUser } = await supabaseAdmin
@@ -48,8 +60,9 @@ export async function POST(request) {
         .insert({
           email: normalizedEmail,
           full_name: patientName,
-          phone: data.phoneNumber,
-          age: data.age ? parseInt(data.age) : null,
+          phone: validatedData.phoneNumber,
+          age: validatedData.age || null,
+          sex: validatedData.sex || null,
           role: ROLES.PATIENT,
           is_active: true,
         })
@@ -60,7 +73,7 @@ export async function POST(request) {
         console.error("Error creating patient user:", userError);
         return NextResponse.json(
           { error: "Failed to create patient account" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -69,16 +82,19 @@ export async function POST(request) {
       // Send welcome email to new patient
       await sendEmail(
         normalizedEmail,
-        emailTemplates.welcomePatient(patientName)
+        emailTemplates.welcomePatient(patientName),
       );
     } else {
       // Update existing patient info if provided
       const updateData = {};
-      if (data.phoneNumber && data.phoneNumber !== existingUser.phone) {
-        updateData.phone = data.phoneNumber;
+      if (
+        validatedData.phoneNumber &&
+        validatedData.phoneNumber !== existingUser.phone
+      ) {
+        updateData.phone = validatedData.phoneNumber;
       }
-      if (data.age && parseInt(data.age) !== existingUser.age) {
-        updateData.age = parseInt(data.age);
+      if (validatedData.age && validatedData.age !== existingUser.age) {
+        updateData.age = validatedData.age;
       }
 
       if (Object.keys(updateData).length > 0) {
@@ -94,10 +110,11 @@ export async function POST(request) {
       patient_id: patientId,
       name: patientName,
       email: normalizedEmail,
-      phone: data.phoneNumber,
-      date: data.schedule,
-      reason_for_visit: data.message || data.reasonForVisit || null,
-      message: data.message || "",
+      phone: validatedData.phoneNumber,
+      date: validatedData.schedule,
+      reason_for_visit:
+        validatedData.message || validatedData.reasonForVisit || null,
+      message: validatedData.message || "",
       status: APPOINTMENT_STATUS.PENDING,
       consultation_status: "pending",
     };
@@ -111,20 +128,20 @@ export async function POST(request) {
     if (error) {
       console.error("Supabase error creating appointment:", error);
       return NextResponse.json(
-        { error: "Failed to create appointment", message: error.message },
-        { status: 500 }
+        { error: "Failed to create appointment" },
+        { status: 500 },
       );
     }
 
     // Format date for emails
-    const appointmentDate = new Date(data.schedule);
-    const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+    const appointmentDateForEmail = new Date(validatedData.schedule);
+    const formattedDate = appointmentDateForEmail.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
     });
-    const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
+    const formattedTime = appointmentDateForEmail.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -135,8 +152,8 @@ export async function POST(request) {
       emailTemplates.appointmentConfirmation(patientName, {
         date: formattedDate,
         time: formattedTime,
-        reason: data.message || "General Consultation",
-      })
+        reason: validatedData.message || "General Consultation",
+      }),
     );
 
     // Notify admins about new appointment
@@ -154,11 +171,11 @@ export async function POST(request) {
           emailTemplates.newAppointmentAdmin({
             patientName,
             email: normalizedEmail,
-            phone: data.phoneNumber,
+            phone: validatedData.phoneNumber,
             date: formattedDate,
             time: formattedTime,
-            reason: data.message || "General Consultation",
-          })
+            reason: validatedData.message || "General Consultation",
+          }),
         );
 
         // Create notification
@@ -190,11 +207,8 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating appointment:", error);
     return NextResponse.json(
-      {
-        error: "Failed to create appointment",
-        message: error.message,
-      },
-      { status: 500 }
+      { error: "Failed to create appointment" },
+      { status: 500 },
     );
   }
 }

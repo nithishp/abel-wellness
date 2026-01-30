@@ -23,7 +23,10 @@ export async function GET(request, { params }) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching treatment case:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch treatment case" },
+      { status: 500 },
+    );
   }
 }
 
@@ -38,7 +41,7 @@ export async function PATCH(request, { params }) {
       const result = await updateTreatmentCaseStatus(
         id,
         data.status,
-        data.updated_by
+        data.updated_by,
       );
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 400 });
@@ -74,6 +77,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error updating treatment case:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update treatment case" },
+      { status: 500 },
+    );
   }
 }

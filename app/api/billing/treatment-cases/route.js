@@ -21,7 +21,10 @@ export async function POST(request) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Error creating treatment case:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create treatment case" },
+      { status: 500 },
+    );
   }
 }
 
@@ -50,6 +53,9 @@ export async function GET(request) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching treatment cases:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch treatment cases" },
+      { status: 500 },
+    );
   }
 }

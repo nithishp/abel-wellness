@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getBlogBySlug } from "@/lib/actions/blog.actions";
 import { FiArrowLeft, FiCalendar, FiUser } from "react-icons/fi";
+import DOMPurify from "isomorphic-dompurify";
 
 const BlogPost = () => {
   const params = useParams();
@@ -28,6 +29,64 @@ const BlogPost = () => {
       setLoading(false);
     }
   };
+
+  // Sanitize blog content to prevent XSS attacks
+  const sanitizedContent = useMemo(() => {
+    if (!blog?.content) return "";
+    return DOMPurify.sanitize(blog.content, {
+      ALLOWED_TAGS: [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "br",
+        "hr",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "pre",
+        "code",
+        "strong",
+        "em",
+        "b",
+        "i",
+        "u",
+        "s",
+        "a",
+        "img",
+        "table",
+        "thead",
+        "tbody",
+        "tr",
+        "th",
+        "td",
+        "div",
+        "span",
+        "figure",
+        "figcaption",
+      ],
+      ALLOWED_ATTR: [
+        "href",
+        "src",
+        "alt",
+        "title",
+        "class",
+        "id",
+        "target",
+        "rel",
+        "width",
+        "height",
+      ],
+      ALLOW_DATA_ATTR: false,
+      ADD_ATTR: ["target"],
+      FORBID_TAGS: ["script", "style", "iframe", "form", "input", "button"],
+      FORBID_ATTR: ["onerror", "onclick", "onload", "onmouseover"],
+    });
+  }, [blog?.content]);
 
   if (loading) {
     return (
@@ -106,7 +165,7 @@ const BlogPost = () => {
 
             <div
               className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-l-blue-500 prose-blockquote:text-gray-600 prose-code:text-blue-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded"
-              dangerouslySetInnerHTML={{ __html: blog.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             />
           </div>
         </article>

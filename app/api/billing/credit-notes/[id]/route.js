@@ -20,7 +20,10 @@ export async function GET(request, { params }) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching credit note:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch credit note" },
+      { status: 500 },
+    );
   }
 }
 
@@ -40,6 +43,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error updating credit note:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update credit note" },
+      { status: 500 },
+    );
   }
 }

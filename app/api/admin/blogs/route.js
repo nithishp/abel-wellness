@@ -7,6 +7,35 @@ import {
   getBlogById,
 } from "@/lib/actions/blog.actions";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
+
+// Helper function to verify admin session
+async function verifyAdminSession() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token")?.value;
+
+  if (!sessionToken) {
+    return null;
+  }
+
+  const { data: session } = await supabaseAdmin
+    .from(TABLES.USER_SESSIONS)
+    .select("*, user:users(*)")
+    .eq("session_token", sessionToken)
+    .eq("is_active", true)
+    .single();
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return null;
+  }
+
+  if (session.user?.role !== ROLES.ADMIN) {
+    return null;
+  }
+
+  return session.user;
+}
 
 export async function GET(request) {
   try {
@@ -34,13 +63,19 @@ export async function GET(request) {
     console.error("API Error fetching blogs:", error);
     return NextResponse.json(
       { error: "Failed to fetch blogs" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(request) {
   try {
+    // Verify admin authentication
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const data = await request.json();
     const newBlog = await createBlog(data);
     return NextResponse.json(newBlog);
@@ -48,13 +83,19 @@ export async function POST(request) {
     console.error("API Error creating blog:", error);
     return NextResponse.json(
       { error: "Failed to create blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(request) {
   try {
+    // Verify admin authentication
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const blogId = searchParams.get("id");
     const action = searchParams.get("action");
@@ -63,7 +104,7 @@ export async function PUT(request) {
     if (!blogId) {
       return NextResponse.json(
         { error: "Blog ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,20 +120,26 @@ export async function PUT(request) {
     console.error("API Error updating blog:", error);
     return NextResponse.json(
       { error: "Failed to update blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(request) {
   try {
+    // Verify admin authentication
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const blogId = searchParams.get("id");
 
     if (!blogId) {
       return NextResponse.json(
         { error: "Blog ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -102,7 +149,7 @@ export async function DELETE(request) {
     console.error("API Error deleting blog:", error);
     return NextResponse.json(
       { error: "Failed to delete blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

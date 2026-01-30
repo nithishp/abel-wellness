@@ -21,7 +21,10 @@ export async function POST(request) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Error creating credit note:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create credit note" },
+      { status: 500 },
+    );
   }
 }
 
@@ -50,6 +53,9 @@ export async function GET(request) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching credit notes:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch credit notes" },
+      { status: 500 },
+    );
   }
 }

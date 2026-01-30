@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { loginSchema, validateRequest } from "@/lib/validation/schemas";
 
 // Generate session token
 function generateSessionToken() {
@@ -11,16 +12,22 @@ function generateSessionToken() {
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    const data = await request.json();
 
-    if (!email || !password) {
+    // Validate input with Zod
+    const { data: validatedData, error: validationError } = validateRequest(
+      loginSchema,
+      data,
+    );
+
+    if (validationError) {
       return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
+        { error: validationError.message },
+        { status: 400 },
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = validatedData.email.toLowerCase().trim();
 
     // Find user
     const { data: user, error: userError } = await supabaseAdmin
@@ -32,7 +39,7 @@ export async function POST(request) {
     if (userError || !user) {
       return NextResponse.json(
         { error: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -40,7 +47,7 @@ export async function POST(request) {
     if (user.role === ROLES.PATIENT) {
       return NextResponse.json(
         { error: "Please use OTP login for patient accounts" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +55,7 @@ export async function POST(request) {
     if (!user.is_active) {
       return NextResponse.json(
         { error: "Your account has been deactivated. Please contact support." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -56,16 +63,19 @@ export async function POST(request) {
     if (!user.password_hash) {
       return NextResponse.json(
         { error: "Password not set. Please contact administrator." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    const isValidPassword = await bcrypt.compare(
+      validatedData.password,
+      user.password_hash,
+    );
 
     if (!isValidPassword) {
       return NextResponse.json(
         { error: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -74,6 +84,13 @@ export async function POST(request) {
       .from(TABLES.USERS)
       .update({ last_login: new Date().toISOString() })
       .eq("id", user.id);
+
+    // Invalidate any existing sessions to prevent session fixation attacks
+    await supabaseAdmin
+      .from(TABLES.USER_SESSIONS)
+      .update({ is_active: false })
+      .eq("user_id", user.id)
+      .eq("is_active", true);
 
     // Create session
     const sessionToken = generateSessionToken();
@@ -92,7 +109,7 @@ export async function POST(request) {
       console.error("Error creating session:", sessionError);
       return NextResponse.json(
         { error: "Failed to create session" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 

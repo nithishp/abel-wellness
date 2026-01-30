@@ -28,14 +28,17 @@ export async function POST(request) {
     if (!result.success) {
       return NextResponse.json(
         { error: result.error, conflict: result.conflict },
-        { status: result.conflict ? 409 : 400 }
+        { status: result.conflict ? 409 : 400 },
       );
     }
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Error syncing offline bills:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to sync offline bills" },
+      { status: 500 },
+    );
   }
 }
 
@@ -63,6 +66,9 @@ export async function GET(request) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching offline bills:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch offline bills" },
+      { status: 500 },
+    );
   }
 }

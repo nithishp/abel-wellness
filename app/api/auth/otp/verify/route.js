@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin, TABLES } from "@/lib/supabase.config";
 import crypto from "crypto";
+import { otpVerifySchema, validateRequest } from "@/lib/validation/schemas";
 
 // Generate session token
 function generateSessionToken() {
@@ -10,30 +11,36 @@ function generateSessionToken() {
 
 export async function POST(request) {
   try {
-    const { email, code } = await request.json();
+    const data = await request.json();
 
-    if (!email || !code) {
+    // Validate input with Zod
+    const { data: validatedData, error: validationError } = validateRequest(
+      otpVerifySchema,
+      data,
+    );
+
+    if (validationError) {
       return NextResponse.json(
-        { error: "Email and code are required" },
-        { status: 400 }
+        { error: validationError.message },
+        { status: 400 },
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = validatedData.email.toLowerCase().trim();
 
     // Find the OTP
     const { data: otpRecord, error: otpError } = await supabaseAdmin
       .from(TABLES.OTP_CODES)
       .select("*")
       .eq("email", normalizedEmail)
-      .eq("code", code)
+      .eq("code", validatedData.code)
       .eq("is_used", false)
       .single();
 
     if (otpError || !otpRecord) {
       return NextResponse.json(
         { error: "Invalid or expired OTP" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,7 +48,7 @@ export async function POST(request) {
     if (new Date(otpRecord.expires_at) < new Date()) {
       return NextResponse.json(
         { error: "OTP has expired. Please request a new one." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +71,7 @@ export async function POST(request) {
           error:
             "No account found with this email. Please book an appointment first to create your account.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -72,7 +79,7 @@ export async function POST(request) {
     if (!user.is_active) {
       return NextResponse.json(
         { error: "Your account has been deactivated. Please contact support." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -99,7 +106,7 @@ export async function POST(request) {
       console.error("Error creating session:", sessionError);
       return NextResponse.json(
         { error: "Failed to create session" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -140,7 +147,7 @@ export async function POST(request) {
     console.error("Error in OTP verification:", error);
     return NextResponse.json(
       { error: "Failed to verify OTP" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
