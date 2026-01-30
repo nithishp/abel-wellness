@@ -35,13 +35,20 @@ export default function InvoiceDetailPage({ params }) {
   const [invoice, setInvoice] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [paymentData, setPaymentData] = useState({
     amount: "",
     payment_method: "cash",
     transaction_reference: "",
     notes: "",
   });
+  const [refundData, setRefundData] = useState({
+    amount: "",
+    reason: "",
+    payment_id: "",
+  });
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [processingRefund, setProcessingRefund] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -237,6 +244,67 @@ export default function InvoiceDetailPage({ params }) {
     }
   };
 
+  const handleProcessRefund = async (e) => {
+    e.preventDefault();
+
+    if (!refundData.amount || parseFloat(refundData.amount) <= 0) {
+      toast.error("Please enter a valid refund amount");
+      return;
+    }
+
+    if (!refundData.payment_id) {
+      toast.error("Please select a payment to refund");
+      return;
+    }
+
+    if (!refundData.reason) {
+      toast.error("Please provide a reason for the refund");
+      return;
+    }
+
+    setProcessingRefund(true);
+    try {
+      const res = await fetch("/api/billing/refunds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_id: refundData.payment_id,
+          amount: parseFloat(refundData.amount),
+          reason: refundData.reason,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Refund processed successfully");
+        setShowRefundModal(false);
+        setRefundData({ amount: "", reason: "", payment_id: "" });
+        fetchInvoice();
+      } else {
+        toast.error(data.error || "Failed to process refund");
+      }
+    } catch (error) {
+      toast.error("Failed to process refund");
+    } finally {
+      setProcessingRefund(false);
+    }
+  };
+
+  const openRefundModal = () => {
+    // Set default payment if only one payment exists
+    if (invoice.payments && invoice.payments.length === 1) {
+      setRefundData({
+        amount: invoice.payments[0].amount.toString(),
+        reason: "",
+        payment_id: invoice.payments[0].id,
+      });
+    } else {
+      setRefundData({ amount: "", reason: "", payment_id: "" });
+    }
+    setShowRefundModal(true);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-900">
@@ -325,6 +393,29 @@ export default function InvoiceDetailPage({ params }) {
               <span className="hidden sm:inline">Download PDF</span>
               <span className="sm:hidden">PDF</span>
             </button>
+            {/* Edit button for draft invoices */}
+            {invoice.status === "draft" && (
+              <Link
+                href={`/admin/billing/invoices/${id}/edit`}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              >
+                <FiEdit className="w-4 h-4" />
+                <span className="hidden sm:inline">Edit Invoice</span>
+                <span className="sm:hidden">Edit</span>
+              </Link>
+            )}
+            {/* Refund button for paid invoices */}
+            {invoice.status === "paid" &&
+              parseFloat(invoice.amount_paid) > 0 && (
+                <button
+                  onClick={openRefundModal}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-600/20 text-orange-400 rounded-lg hover:bg-orange-600/30 transition-colors text-sm sm:text-base"
+                >
+                  <FiRefreshCw className="w-4 h-4" />
+                  <span className="hidden sm:inline">Process Refund</span>
+                  <span className="sm:hidden">Refund</span>
+                </button>
+              )}
             {invoice.status !== "paid" && invoice.status !== "cancelled" && (
               <>
                 <button
@@ -673,6 +764,106 @@ export default function InvoiceDetailPage({ params }) {
         confirmText="Cancel Invoice"
         confirmVariant="danger"
       />
+
+      {/* Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Process Refund
+            </h3>
+            <form onSubmit={handleProcessRefund} className="space-y-4">
+              {invoice.payments && invoice.payments.length > 1 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Select Payment
+                  </label>
+                  <select
+                    value={refundData.payment_id}
+                    onChange={(e) => {
+                      const payment = invoice.payments.find(
+                        (p) => p.id === e.target.value
+                      );
+                      setRefundData((prev) => ({
+                        ...prev,
+                        payment_id: e.target.value,
+                        amount: payment ? payment.amount.toString() : "",
+                      }));
+                    }}
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-orange-500"
+                    required
+                  >
+                    <option value="">Select a payment</option>
+                    {invoice.payments.map((payment) => (
+                      <option key={payment.id} value={payment.id}>
+                        {formatCurrency(payment.amount)} -{" "}
+                        {payment.payment_method} (
+                        {formatDate(payment.payment_date)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Refund Amount
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={refundData.amount}
+                  onChange={(e) =>
+                    setRefundData((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-orange-500"
+                  placeholder="Enter refund amount"
+                  required
+                />
+                <p className="text-sm text-slate-400 mt-1">
+                  Amount paid: {formatCurrency(invoice.amount_paid)}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Reason for Refund
+                </label>
+                <textarea
+                  value={refundData.reason}
+                  onChange={(e) =>
+                    setRefundData((prev) => ({
+                      ...prev,
+                      reason: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-orange-500"
+                  placeholder="Please provide a reason for this refund..."
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRefundModal(false)}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={processingRefund}
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {processingRefund ? "Processing..." : "Process Refund"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

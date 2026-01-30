@@ -1,15 +1,23 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiArrowRight, FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 
 const Nav = () => {
   const [active, setActive] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   return (
     <>
-      <HamburgerButton active={active} setActive={setActive} />
+      <HamburgerButton active={active} setActive={setActive} isMobile={isMobile} />
       <AnimatePresence>
         {active && <LinksOverlay setActive={setActive} />}
       </AnimatePresence>
@@ -105,7 +113,28 @@ const Logo = () => {
   );
 };
 
-const HamburgerButton = ({ active, setActive }) => {
+const HamburgerButton = ({ active, setActive, isMobile }) => {
+  const buttonSize = isMobile ? "56px" : "80px";
+  
+  const UNDERLAY_VARIANTS = {
+    open: {
+      width: "calc(100% - 32px)",
+      height: "calc(100vh - 32px)",
+      transition: { type: "spring", mass: 3, stiffness: 400, damping: 50 },
+    },
+    closed: {
+      width: buttonSize,
+      height: buttonSize,
+      transition: {
+        delay: 0.75,
+        type: "spring",
+        mass: 3,
+        stiffness: 400,
+        damping: 50,
+      },
+    },
+  };
+
   return (
     <>
       <motion.div
@@ -120,23 +149,23 @@ const HamburgerButton = ({ active, setActive }) => {
         initial={false}
         animate={active ? "open" : "closed"}
         onClick={() => setActive((pv) => !pv)}
-        className={`group fixed right-4 top-4 z-50 h-20 w-20 bg-white/0 transition-all hover:bg-white/20 ${
+        className={`group fixed right-4 top-4 z-50 h-14 w-14 md:h-20 md:w-20 bg-white/0 transition-all hover:bg-white/20 ${
           active ? "rounded-bl-xl rounded-tr-xl" : "rounded-xl"
         }`}
       >
         <motion.span
           variants={HAMBURGER_VARIANTS.top}
-          className="absolute block h-1 w-10 bg-white"
+          className="absolute block h-1 w-7 md:w-10 bg-white"
           style={{ y: "-50%", left: "50%", x: "-50%" }}
         />
         <motion.span
           variants={HAMBURGER_VARIANTS.middle}
-          className="absolute block h-1 w-10 bg-white"
+          className="absolute block h-1 w-7 md:w-10 bg-white"
           style={{ left: "50%", x: "-50%", top: "50%", y: "-50%" }}
         />
         <motion.span
           variants={HAMBURGER_VARIANTS.bottom}
-          className="absolute block h-1 w-5 bg-white"
+          className="absolute block h-1 w-4 md:w-5 bg-white"
           style={{ x: "-50%", y: "50%" }}
         />
       </motion.button>
@@ -197,25 +226,6 @@ const LINKS = [
     href: "/login",
   },
 ];
-
-const UNDERLAY_VARIANTS = {
-  open: {
-    width: "calc(100% - 32px)",
-    height: "calc(100vh - 32px)",
-    transition: { type: "spring", mass: 3, stiffness: 400, damping: 50 },
-  },
-  closed: {
-    width: "80px",
-    height: "80px",
-    transition: {
-      delay: 0.75,
-      type: "spring",
-      mass: 3,
-      stiffness: 400,
-      damping: 50,
-    },
-  },
-};
 
 const HAMBURGER_VARIANTS = {
   top: {

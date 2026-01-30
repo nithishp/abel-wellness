@@ -61,11 +61,18 @@ export default function LedgerPage() {
 
       if (entriesData.success) {
         setEntries(entriesData.entries || []);
-        setTotalPages(Math.ceil((entriesData.total || 0) / 30));
+        setTotalPages(Math.ceil((entriesData.pagination?.total || 0) / 30));
       }
 
-      if (summaryData.success) {
-        setSummary(summaryData.summary);
+      if (summaryData.success && summaryData.summary) {
+        // Flatten the summary structure for UI consumption
+        setSummary({
+          totalDebits: summaryData.summary.totals?.totalDebits || 0,
+          totalCredits: summaryData.summary.totals?.totalCredits || 0,
+          netBalance: summaryData.summary.totals?.netBalance || 0,
+          entryCount: summaryData.summary.entryCount || 0,
+          byType: summaryData.summary.byType || {},
+        });
       }
     } catch (error) {
       console.error("Error fetching ledger data:", error);

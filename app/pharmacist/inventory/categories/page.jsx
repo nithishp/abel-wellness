@@ -30,6 +30,7 @@ const CategoriesPage = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    type: "medication",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -92,7 +93,7 @@ const CategoriesPage = () => {
         );
         setShowModal(false);
         setEditingCategory(null);
-        setFormData({ name: "", description: "" });
+        setFormData({ name: "", description: "", type: "medication" });
         fetchCategories();
       } else {
         toast.error(data.error || "Operation failed");
@@ -110,6 +111,7 @@ const CategoriesPage = () => {
     setFormData({
       name: category.name,
       description: category.description || "",
+      type: category.type || "medication",
     });
     setShowModal(true);
   };
@@ -142,7 +144,7 @@ const CategoriesPage = () => {
 
   const openNewModal = () => {
     setEditingCategory(null);
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "", description: "", type: "medication" });
     setShowModal(true);
   };
 
@@ -304,6 +306,24 @@ const CategoriesPage = () => {
                   placeholder="Brief description of this category"
                   rows={3}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Category Type *
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, type: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                  required
+                >
+                  <option value="medication">Medication</option>
+                  <option value="supply">Supply</option>
+                  <option value="equipment">Equipment</option>
+                </select>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4">

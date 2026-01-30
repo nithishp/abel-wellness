@@ -65,8 +65,8 @@ export default function AuditLogsPage() {
       const data = await res.json();
 
       if (data.success) {
-        setLogs(data.logs || []);
-        setTotalPages(Math.ceil((data.total || 0) / 30));
+        setLogs(data.auditLogs || []);
+        setTotalPages(Math.ceil((data.pagination?.total || 0) / 30));
       }
     } catch (error) {
       console.error("Error fetching audit logs:", error);

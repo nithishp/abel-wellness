@@ -268,7 +268,8 @@ export default function QuickBillPage() {
                   <option value="">Select Doctor</option>
                   {doctors.map((doctor) => (
                     <option key={doctor.id} value={doctor.id}>
-                      {doctor.name} - {doctor.specialization}
+                      {doctor.user?.full_name || doctor.name} -{" "}
+                      {doctor.specialization}
                     </option>
                   ))}
                 </select>

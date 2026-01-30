@@ -57,7 +57,7 @@ const InventoryItemDetailPage = ({ params }) => {
     try {
       const [itemRes, batchesRes, movementsRes] = await Promise.all([
         fetch(`/api/inventory/items/${resolvedParams.id}`),
-        fetch(`/api/inventory/batches/${resolvedParams.id}?byItem=true`),
+        fetch(`/api/inventory/batches?itemId=${resolvedParams.id}`),
         fetch(`/api/inventory/movements?itemId=${resolvedParams.id}&limit=10`),
       ]);
 
@@ -103,7 +103,7 @@ const InventoryItemDetailPage = ({ params }) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(adjustmentData),
-        },
+        }
       );
 
       const data = await res.json();
@@ -378,13 +378,13 @@ const InventoryItemDetailPage = ({ params }) => {
                       item.current_stock <= item.minimum_stock
                         ? "bg-red-500"
                         : item.current_stock <= item.reorder_level
-                          ? "bg-orange-500"
-                          : "bg-emerald-500"
+                        ? "bg-orange-500"
+                        : "bg-emerald-500"
                     }`}
                     style={{
                       width: `${Math.min(
                         (item.current_stock / item.maximum_stock) * 100,
-                        100,
+                        100
                       )}%`,
                     }}
                   />
@@ -431,7 +431,7 @@ const InventoryItemDetailPage = ({ params }) => {
                           <p className="text-slate-400 text-xs">
                             {new Date(movement.created_at).toLocaleString(
                               "en-IN",
-                              { timeZone: "Asia/Kolkata" },
+                              { timeZone: "Asia/Kolkata" }
                             )}
                           </p>
                         </div>
@@ -439,7 +439,7 @@ const InventoryItemDetailPage = ({ params }) => {
                       <div className="text-right">
                         <p
                           className={`font-bold ${getMovementTypeColor(
-                            movement.movement_type,
+                            movement.movement_type
                           )}`}
                         >
                           {getMovementTypeColor(movement.movement_type) ===
@@ -476,7 +476,7 @@ const InventoryItemDetailPage = ({ params }) => {
                     const daysUntilExpiry = batch.expiry_date
                       ? Math.ceil(
                           (new Date(batch.expiry_date) - new Date()) /
-                            (1000 * 60 * 60 * 24),
+                            (1000 * 60 * 60 * 24)
                         )
                       : null;
                     const isExpiringSoon =
@@ -491,8 +491,8 @@ const InventoryItemDetailPage = ({ params }) => {
                           isExpired
                             ? "bg-red-500/10 border-red-500/30"
                             : isExpiringSoon
-                              ? "bg-orange-500/10 border-orange-500/30"
-                              : "bg-slate-700/30 border-slate-600/30"
+                            ? "bg-orange-500/10 border-orange-500/30"
+                            : "bg-slate-700/30 border-slate-600/30"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -504,8 +504,8 @@ const InventoryItemDetailPage = ({ params }) => {
                               isExpired
                                 ? "text-red-400"
                                 : isExpiringSoon
-                                  ? "text-orange-400"
-                                  : "text-slate-400"
+                                ? "text-orange-400"
+                                : "text-slate-400"
                             }`}
                           >
                             {batch.available_quantity} units
@@ -517,21 +517,21 @@ const InventoryItemDetailPage = ({ params }) => {
                               isExpired
                                 ? "text-red-400"
                                 : isExpiringSoon
-                                  ? "text-orange-400"
-                                  : "text-slate-400"
+                                ? "text-orange-400"
+                                : "text-slate-400"
                             }`}
                           >
                             <FiClock className="inline w-3 h-3 mr-1" />
                             Expires:{" "}
                             {new Date(batch.expiry_date).toLocaleDateString(
                               "en-IN",
-                              { timeZone: "Asia/Kolkata" },
+                              { timeZone: "Asia/Kolkata" }
                             )}
                             {isExpired
                               ? " (Expired)"
                               : isExpiringSoon
-                                ? ` (${daysUntilExpiry} days)`
-                                : ""}
+                              ? ` (${daysUntilExpiry} days)`
+                              : ""}
                           </p>
                         )}
                       </div>
@@ -671,7 +671,7 @@ const InventoryItemDetailPage = ({ params }) => {
                       >
                         {Math.max(
                           0,
-                          item.current_stock + adjustmentData.quantity,
+                          item.current_stock + adjustmentData.quantity
                         )}{" "}
                         {item.unit_of_measure}
                       </span>

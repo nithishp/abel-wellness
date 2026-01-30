@@ -10,7 +10,7 @@ const Doctors = ({ id }) => {
       name: "Dr. Dinesh",
       role: "Founder & Managing Director",
       title: "Consultant Homoeopathic Physician",
-      image: "/profile/doctor-1.jpg",
+      image: "/dinesh.webp",
       qualifications: [
         "BHMS",
         "Diploma in Diet and Nutrition",
@@ -30,7 +30,7 @@ const Doctors = ({ id }) => {
       name: "Dr. Preethi James",
       role: "Chief Consultant – Homoeopathy",
       title: "MD (Hom.)",
-      image: "/profile/doctor-2.jpg",
+      image: "/preethi-james.webp",
       qualifications: [
         "BHMS",
         "MD (Hom.)",
@@ -51,7 +51,7 @@ const Doctors = ({ id }) => {
     name: "Ms. Ablin Jebisha",
     role: "Consultant Psychologist",
     title: "B.Sc. Psychology",
-    image: "/profile/psychologist-1.jpg",
+    image: "/jebisha.webp",
     focus: [
       "Stress management",
       "Emotional well-being",
@@ -119,8 +119,14 @@ const Doctors = ({ id }) => {
                   className={`bg-gradient-to-r ${doctor.color} p-6 text-white`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
-                      {doctor.name.split(" ")[1]?.[0] || doctor.name[0]}
+                    <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-lg">
+                      <Image
+                        src={doctor.image}
+                        alt={doctor.name}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <h3 className="text-xl lg:text-2xl font-bold">
@@ -202,8 +208,14 @@ const Doctors = ({ id }) => {
               className={`bg-gradient-to-r ${psychologist.color} p-6 text-white`}
             >
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
-                  A
+                <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white/30 shadow-lg">
+                  <Image
+                    src={psychologist.image}
+                    alt={psychologist.name}
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div>
                   <h3 className="text-xl lg:text-2xl font-bold">

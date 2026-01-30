@@ -58,8 +58,8 @@ const PharmacistItemDetailPage = ({ params }) => {
     try {
       const [itemRes, batchesRes, movementsRes] = await Promise.all([
         fetch(`/api/inventory/items/${id}`),
-        fetch(`/api/inventory/batches?item_id=${id}`),
-        fetch(`/api/inventory/movements?item_id=${id}&limit=10`),
+        fetch(`/api/inventory/batches?itemId=${id}`),
+        fetch(`/api/inventory/movements?itemId=${id}&limit=10`),
       ]);
 
       const itemData = await itemRes.json();
@@ -326,9 +326,10 @@ const PharmacistItemDetailPage = ({ params }) => {
                                 }`}
                               >
                                 Expires:{" "}
-                                {new Date(
-                                  batch.expiry_date
-                                ).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                                {new Date(batch.expiry_date).toLocaleDateString(
+                                  "en-IN",
+                                  { timeZone: "Asia/Kolkata" }
+                                )}
                                 {daysUntilExpiry <= 30 &&
                                   ` (${daysUntilExpiry} days)`}
                               </p>
@@ -408,7 +409,10 @@ const PharmacistItemDetailPage = ({ params }) => {
                             {movement.movement_type.replace("_", " ")}
                           </p>
                           <p className="text-slate-500 text-xs">
-                            {new Date(movement.created_at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                            {new Date(movement.created_at).toLocaleDateString(
+                              "en-IN",
+                              { timeZone: "Asia/Kolkata" }
+                            )}
                           </p>
                         </div>
                         <span
