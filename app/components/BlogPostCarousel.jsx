@@ -22,7 +22,7 @@ const BlogPostCarousel = () => {
     const fetchBlogs = async () => {
       try {
         const response = await getPublishedBlogs(10);
-        setPosts(response.documents || []);
+        setPosts(response.blogs || response.documents || []);
       } catch (error) {
         console.error("Error fetching blogs:", error);
         setPosts(fallbackPosts);
