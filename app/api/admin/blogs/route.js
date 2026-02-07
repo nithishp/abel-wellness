@@ -34,7 +34,7 @@ export async function GET(request) {
     console.error("API Error fetching blogs:", error);
     return NextResponse.json(
       { error: "Failed to fetch blogs" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -48,7 +48,7 @@ export async function POST(request) {
     console.error("API Error creating blog:", error);
     return NextResponse.json(
       { error: "Failed to create blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -63,7 +63,7 @@ export async function PUT(request) {
     if (!blogId) {
       return NextResponse.json(
         { error: "Blog ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,7 +79,7 @@ export async function PUT(request) {
     console.error("API Error updating blog:", error);
     return NextResponse.json(
       { error: "Failed to update blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -92,7 +92,7 @@ export async function DELETE(request) {
     if (!blogId) {
       return NextResponse.json(
         { error: "Blog ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -102,7 +102,7 @@ export async function DELETE(request) {
     console.error("API Error deleting blog:", error);
     return NextResponse.json(
       { error: "Failed to delete blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

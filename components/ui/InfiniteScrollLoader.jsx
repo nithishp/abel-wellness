@@ -23,10 +23,11 @@ export const InfiniteScrollLoader = forwardRef(
       errorMessage = "Failed to load items",
       onRetry,
       showCount = true,
+      showEndMessage = true,
       className = "",
       loaderColor = "purple",
     },
-    ref
+    ref,
   ) => {
     // Color variants for the loader
     const colorVariants = {
@@ -126,7 +127,7 @@ export const InfiniteScrollLoader = forwardRef(
         )}
 
         {/* End of list message */}
-        {!hasMore && !loadingMore && itemCount > 0 && (
+        {showEndMessage && !hasMore && !loadingMore && itemCount > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -147,7 +148,7 @@ export const InfiniteScrollLoader = forwardRef(
         {hasMore && !loadingMore && <div className="h-1" />}
       </div>
     );
-  }
+  },
 );
 
 InfiniteScrollLoader.displayName = "InfiniteScrollLoader";

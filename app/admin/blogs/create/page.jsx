@@ -97,7 +97,7 @@ const CreateBlog = () => {
       shouldPublish ? "Publishing blog post..." : "Creating blog post...",
       {
         description: "Please wait while we save your blog post.",
-      }
+      },
     );
 
     try {
@@ -130,7 +130,7 @@ const CreateBlog = () => {
           description: shouldPublish
             ? "Your blog post is now live and visible to the public."
             : "Your blog post has been saved as a draft.",
-        }
+        },
       );
 
       router.push("/admin/blogs");
@@ -426,7 +426,7 @@ const CreateBlog = () => {
                   Content <span className="text-red-400">*</span>
                 </h2>
               </div>
-              <div className="bg-slate-900/50 rounded-xl border border-slate-600/50 overflow-hidden">
+              <div className="rounded-xl border border-slate-600/50 overflow-hidden">
                 <RichTextEditor
                   content={blogForm.content}
                   onChange={(content) => {
@@ -466,7 +466,11 @@ const CreateBlog = () => {
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
                     <span>By {blogForm.author || "Unknown"}</span>
                     <span>•</span>
-                    <span>{new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
+                    <span>
+                      {new Date().toLocaleDateString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                      })}
+                    </span>
                     {blogForm.featured && (
                       <>
                         <span>•</span>

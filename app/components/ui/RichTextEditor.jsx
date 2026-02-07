@@ -59,7 +59,7 @@ const RichTextEditor = ({
   }
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
+    <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
       {/* Toolbar */}
       <div className="border-b border-gray-200 bg-gray-50 p-2 flex flex-wrap gap-1">
         <button
@@ -200,7 +200,7 @@ const RichTextEditor = ({
       </div>
 
       {/* Editor Content */}
-      <div className="min-h-[200px] relative">
+      <div className="min-h-[200px] relative bg-white text-neutral-900">
         <EditorContent editor={editor} />
         {(!content || content === "" || content === "<p></p>") && (
           <div className="absolute top-4 left-4 text-gray-400 pointer-events-none">

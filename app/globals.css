@@ -79,6 +79,35 @@ body {
   overflow: hidden;
 }
 
+/* Blog content - preserve all whitespace and spacing as entered */
+.blog-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.blog-content p:empty,
+.blog-content p:has(> br:only-child) {
+  min-height: 1em;
+}
+
+.blog-content ul,
+.blog-content ol {
+  white-space: normal;
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+/* TipTap editor - preserve spacing while editing */
+.ProseMirror {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.ProseMirror p:empty,
+.ProseMirror p:has(> br:only-child) {
+  min-height: 1em;
+}
+
 /* Toast Notification Styles - Matches Dashboard Theme */
 [data-sonner-toaster] {
   --normal-bg: rgba(30, 41, 59, 0.95);
@@ -207,5 +236,3 @@ body {
   height: 3px !important;
   border-radius: 2px !important;
 }
-
-

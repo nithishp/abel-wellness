@@ -350,7 +350,7 @@ const EditBlog = () => {
                   Content <span className="text-red-400">*</span>
                 </h2>
               </div>
-              <div className="bg-slate-900/50 rounded-xl border border-slate-600/50 overflow-hidden">
+              <div className="rounded-xl border border-slate-600/50 overflow-hidden">
                 <RichTextEditor
                   content={blog.content}
                   onChange={(content) =>

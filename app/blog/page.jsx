@@ -9,13 +9,16 @@ import {
   FiUser,
   FiArrowRight,
   FiSearch,
+  FiArrowUpRight,
+  FiX,
 } from "react-icons/fi";
+import { BookOpen } from "lucide-react";
 
 const BlogsPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Debounce search term
   useEffect(() => {
@@ -32,19 +35,21 @@ const BlogsPage = () => {
         published: "true",
       });
       if (debouncedSearch) params.append("search", debouncedSearch);
-      if (selectedCategory && selectedCategory !== "All")
-        params.append("category", selectedCategory);
 
       const response = await fetch(`/api/admin/blogs?${params}`);
       if (!response.ok) throw new Error("Failed to fetch blogs");
       const data = await response.json();
+
+      // Mark initial load as complete after first successful fetch
+      if (isInitialLoad) setIsInitialLoad(false);
+
       return {
         items: data.blogs || [],
         total: data.pagination?.total || 0,
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [debouncedSearch, selectedCategory]
+    [debouncedSearch, isInitialLoad],
   );
 
   // Use infinite scroll hook
@@ -60,168 +65,216 @@ const BlogsPage = () => {
   } = useInfiniteScroll(fetchBlogs, {
     limit: 9,
     enabled: true,
-    dependencies: [debouncedSearch, selectedCategory],
+    dependencies: [debouncedSearch],
   });
 
-  // Categories for filtering
-  const categories = useMemo(
-    () => ["All", "Health Tips", "Treatments", "Wellness", "Lifestyle", "News"],
-    []
-  );
+  // Categories for filtering - disabled until category column is added to database
+  // const categories = useMemo(
+  //   () => ["All", "Health Tips", "Treatments", "Wellness", "Lifestyle", "News"],
+  //   [],
+  // );
 
-  if (loading && blogs.length === 0) {
+  // Only show skeleton on initial page load, not during search
+  if (isInitialLoad && loading && blogs.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading blog posts...</div>
+      <div className="min-h-screen bg-[#f1f1f1]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="h-6 bg-neutral-200 rounded w-24 mb-4 animate-pulse" />
+          <div className="text-center mb-16">
+            <div className="h-12 bg-neutral-200 rounded w-1/3 mx-auto mb-4 animate-pulse" />
+            <div className="h-6 bg-neutral-200 rounded w-2/3 mx-auto animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-neutral-200 overflow-hidden animate-pulse"
+              >
+                <div className="h-52 bg-neutral-200" />
+                <div className="p-6 space-y-3">
+                  <div className="h-4 bg-neutral-200 rounded w-1/4" />
+                  <div className="h-5 bg-neutral-200 rounded w-3/4" />
+                  <div className="h-4 bg-neutral-200 rounded w-full" />
+                  <div className="h-4 bg-neutral-200 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-[#f1f1f1]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        {/* Back Button */}
         <button
           onClick={() => router.push("/")}
-          className="flex items-center text-blue-600 hover:text-blue-800 mb-8 transition-colors"
+          className="flex items-center gap-2 text-neutral-600 hover:text-emerald-700 mb-10 transition-colors font-medium text-sm"
         >
-          <FiArrowLeft className="mr-2" />
+          <FiArrowLeft className="w-4 h-4" />
           Back to Home
         </button>
 
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+        {/* Header */}
+        <div className="text-center mb-12 lg:mb-16">
+          <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4">
+            <BookOpen className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
             Our Blog
-            <span className="block text-2xl font-normal text-gray-600 mt-2">
-              Expert Insights & Homoeopathic Health Tips
-            </span>
+          </span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-neutral-800 mb-4">
+            Health Insights & Tips
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Stay updated with the latest Homoeopathic health tips, treatments,
-            and news from our expert team of Homoeopathy professionals.
+          <p className="text-neutral-600 text-lg max-w-2xl mx-auto leading-relaxed">
+            Stay updated with the latest homoeopathic health tips, treatments,
+            and wellness advice from our expert team.
           </p>
         </div>
 
         {/* Search and Filter Section */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="mb-10 space-y-4">
+          {/* Search Bar */}
+          <div className="relative max-w-xl mx-auto">
+            <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Search blog posts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-12 pr-10 py-3.5 bg-white border border-neutral-200 rounded-full text-neutral-800 placeholder:text-neutral-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm transition-all text-sm"
             />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
+            {searchTerm && (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === category
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                onClick={() => setSearchTerm("")}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
               >
-                {category}
+                <FiX className="w-4 h-4" />
               </button>
-            ))}
+            )}
           </div>
         </div>
 
         {/* Results count */}
         {totalCount > 0 && (
-          <div className="mb-4 text-gray-600">
+          <div className="mb-6 text-neutral-500 text-sm">
             Showing {blogs.length} of {totalCount} posts
           </div>
         )}
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-sm">
             {error}
           </div>
         )}
 
         {blogs.length === 0 && !loading ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              No Blog Posts Yet
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="w-8 h-8 text-neutral-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-neutral-800 mb-3">
+              No Posts Found
             </h2>
-            <p className="text-gray-600">
-              Check back soon for the latest updates!
+            <p className="text-neutral-600 mb-6">
+              {searchTerm
+                ? "Try adjusting your search."
+                : "Check back soon for the latest updates!"}
             </p>
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                }}
+                className="px-6 py-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 font-medium text-sm transition-colors duration-300"
+              >
+                Clear Search
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {blogs.map((blog) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {blogs.map((blog, index) => (
               <article
                 key={blog.id || blog.$id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
+                className="group bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
                 onClick={() => router.push(`/blog/${blog.slug}`)}
               >
-                <div className="relative">
+                {/* Image */}
+                <div className="relative overflow-hidden h-52">
                   {blog.imageUrl || blog.image_url ? (
                     <img
                       src={blog.imageUrl || blog.image_url}
                       alt={blog.title}
-                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
                         e.target.src =
-                          "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=200&fit=crop&crop=center";
+                          "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=260&fit=crop&crop=center";
                       }}
                     />
                   ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
-                      <div className="text-white text-4xl">📝</div>
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                      <BookOpen className="w-12 h-12 text-white/80" />
                     </div>
                   )}
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-white bg-opacity-90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700">
-                      {new Date(
-                        blog.created_at || blog.$createdAt
-                      ).toLocaleDateString("en-IN", {
-                        month: "short",
-                        day: "numeric",
-                        timeZone: "Asia/Kolkata",
-                      })}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Date Badge */}
+                  <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-neutral-700">
+                    {new Date(
+                      blog.created_at || blog.$createdAt,
+                    ).toLocaleDateString("en-IN", {
+                      month: "short",
+                      day: "numeric",
+                      timeZone: "Asia/Kolkata",
+                    })}
+                  </span>
+
+                  {/* Category Badge */}
+                  {blog.category && (
+                    <span className="absolute top-3 left-3 bg-emerald-600/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
+                      {blog.category}
                     </span>
-                  </div>
+                  )}
                 </div>
 
-                <div className="p-6">
-                  <div className="flex items-center space-x-3 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center bg-gray-100 px-2 py-1 rounded-full">
-                      <FiUser className="mr-1 text-xs" />
-                      <span className="font-medium">{blog.author}</span>
+                {/* Content */}
+                <div className="p-5">
+                  {/* Author */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                      <FiUser className="w-3.5 h-3.5 text-white" />
                     </div>
-                    {blog.category && (
-                      <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
-                        {blog.category}
-                      </span>
-                    )}
+                    <span className="text-xs font-medium text-neutral-500">
+                      {blog.author}
+                    </span>
                   </div>
 
-                  <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                  {/* Title */}
+                  <h2 className="text-lg font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition-colors duration-200">
                     {blog.title}
                   </h2>
 
-                  <p className="text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                  {/* Description */}
+                  <p className="text-sm text-neutral-600 mb-4 line-clamp-2 leading-relaxed">
                     {blog.description || blog.excerpt}
                   </p>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FiCalendar className="mr-1 text-xs" />
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
+                    <div className="flex items-center gap-1.5 text-neutral-400 text-xs">
+                      <FiCalendar className="w-3.5 h-3.5" />
                       <span>
                         {new Date(
-                          blog.created_at || blog.$createdAt
-                        ).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}
+                          blog.created_at || blog.$createdAt,
+                        ).toLocaleDateString("en-IN", {
+                          timeZone: "Asia/Kolkata",
+                        })}
                       </span>
                     </div>
-                    <div className="flex items-center text-blue-600 font-medium text-sm group-hover:text-blue-700 transition-colors">
+                    <div className="flex items-center text-emerald-600 font-medium text-sm group-hover:text-emerald-700 transition-colors">
                       <span>Read more</span>
-                      <FiArrowRight className="ml-1 text-xs group-hover:translate-x-1 transition-transform" />
+                      <FiArrowUpRight className="ml-1 w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                     </div>
                   </div>
                 </div>
@@ -230,12 +283,17 @@ const BlogsPage = () => {
           </div>
         )}
 
-        {/* Infinite Scroll Loader */}
-        <InfiniteScrollLoader
-          loading={loadingMore}
-          hasMore={hasMore}
-          sentinelRef={sentinelRef}
-        />
+        {/* Infinite Scroll Loader - only show when there are items */}
+        {blogs.length > 0 && (
+          <InfiniteScrollLoader
+            loading={loadingMore}
+            hasMore={hasMore}
+            sentinelRef={sentinelRef}
+            itemCount={blogs.length}
+            totalCount={totalCount}
+            showEndMessage={false}
+          />
+        )}
       </div>
     </div>
   );
