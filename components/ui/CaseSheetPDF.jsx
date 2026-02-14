@@ -113,6 +113,11 @@ const createStyles = (themeColor = "#059669") => {
         fontSize: 10,
         color: C.textLight,
       },
+      clinicContact: {
+        fontSize: 8,
+        color: C.textLight,
+        marginTop: 2,
+      },
       headerRight: {
         alignItems: "flex-end",
         justifyContent: "center",
@@ -381,6 +386,10 @@ const CaseSheetPDF = ({
   patientInfo,
   clinicLogo = null,
   themeColor,
+  clinicName = "Abel Wellness",
+  clinicAddress = "",
+  clinicPhone = "",
+  clinicEmail = "",
 }) => {
   const { C, s } = createStyles(themeColor);
 
@@ -406,8 +415,15 @@ const CaseSheetPDF = ({
           <View style={s.logoSection}>
             {clinicLogo && <Image src={clinicLogo} style={s.clinicLogo} />}
             <View style={s.clinicInfo}>
-              <Text style={s.clinicName}>Abel Wellness</Text>
+              <Text style={s.clinicName}>{clinicName}</Text>
               <Text style={s.clinicTagline}>Your Health, Our Priority</Text>
+              {(clinicAddress || clinicPhone || clinicEmail) && (
+                <Text style={s.clinicContact}>
+                  {[clinicAddress, clinicPhone, clinicEmail]
+                    .filter(Boolean)
+                    .join("  |  ")}
+                </Text>
+              )}
             </View>
           </View>
           <View style={s.headerRight}>
@@ -791,7 +807,7 @@ const CaseSheetPDF = ({
         {/*  FOOTER  */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            Abel Wellness - Confidential Patient Record
+            {clinicName} - Confidential Patient Record
           </Text>
           <Text
             style={s.footerText}

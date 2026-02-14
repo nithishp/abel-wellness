@@ -49,25 +49,69 @@ export async function GET() {
       // No logo found - continue
     }
 
-    // Fetch theme color from billing settings (key-value table)
+    // Fetch clinic settings from billing_settings (key-value table)
+    let clinicName = "Abel Wellness";
+    let clinicAddress = "";
+    let clinicPhone = "";
+    let clinicEmail = "";
+
     try {
-      const { data: setting } = await supabaseAdmin
+      const { data: settings } = await supabaseAdmin
         .from("billing_settings")
-        .select("setting_value")
-        .eq("setting_key", "invoice_theme_color")
-        .single();
-      if (setting?.setting_value) {
-        themeColor = String(setting.setting_value).replace(/"/g, "");
+        .select("setting_key, setting_value")
+        .in("setting_key", [
+          "invoice_theme_color",
+          "clinic_name",
+          "clinic_address",
+          "clinic_phone",
+          "clinic_email",
+        ]);
+
+      if (settings) {
+        for (const row of settings) {
+          const val = String(row.setting_value || "").replace(/"/g, "");
+          switch (row.setting_key) {
+            case "invoice_theme_color":
+              themeColor = val || themeColor;
+              break;
+            case "clinic_name":
+              clinicName = val || clinicName;
+              break;
+            case "clinic_address":
+              clinicAddress = val;
+              break;
+            case "clinic_phone":
+              clinicPhone = val;
+              break;
+            case "clinic_email":
+              clinicEmail = val;
+              break;
+          }
+        }
       }
     } catch {
-      // Use default theme color
+      // Use defaults
     }
 
-    return NextResponse.json({ clinicLogo, themeColor });
+    return NextResponse.json({
+      clinicLogo,
+      themeColor,
+      clinicName,
+      clinicAddress,
+      clinicPhone,
+      clinicEmail,
+    });
   } catch (error) {
     console.error("Error fetching clinic branding:", error);
     return NextResponse.json(
-      { clinicLogo: null, themeColor: "#059669" },
+      {
+        clinicLogo: null,
+        themeColor: "#059669",
+        clinicName: "Abel Wellness",
+        clinicAddress: "",
+        clinicPhone: "",
+        clinicEmail: "",
+      },
       { status: 200 },
     );
   }

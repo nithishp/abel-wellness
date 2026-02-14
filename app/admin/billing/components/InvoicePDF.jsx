@@ -88,6 +88,11 @@ const createStyles = (themeColor = "#059669") => {
       fontSize: 10,
       color: colors.textLight,
     },
+    clinicContact: {
+      fontSize: 8,
+      color: colors.textLight,
+      marginTop: 2,
+    },
     invoiceTitle: {
       textAlign: "right",
     },
@@ -408,6 +413,13 @@ const InvoicePDF = ({ invoice, settings = {}, clinicLogo = null }) => {
               <Text style={styles.clinicTagline}>
                 Your Health, Our Priority
               </Text>
+              {(clinicAddress || clinicPhone || clinicEmail) && (
+                <Text style={styles.clinicContact}>
+                  {[clinicAddress, clinicPhone, clinicEmail]
+                    .filter(Boolean)
+                    .join("  |  ")}
+                </Text>
+              )}
             </View>
           </View>
           <View style={styles.invoiceTitle}>

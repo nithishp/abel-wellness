@@ -532,7 +532,7 @@ export default function InvoiceDetailPage({ params }) {
                           {item.tax_rate}%
                         </td>
                         <td className="py-3 px-4 text-right text-white font-medium">
-                          {formatCurrency(item.total_amount)}
+                          {formatCurrency(item.total)}
                         </td>
                       </tr>
                     ))}
@@ -782,7 +782,7 @@ export default function InvoiceDetailPage({ params }) {
                     value={refundData.payment_id}
                     onChange={(e) => {
                       const payment = invoice.payments.find(
-                        (p) => p.id === e.target.value
+                        (p) => p.id === e.target.value,
                       );
                       setRefundData((prev) => ({
                         ...prev,

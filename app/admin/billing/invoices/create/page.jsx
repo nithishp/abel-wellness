@@ -303,11 +303,15 @@ export default function CreateInvoicePage() {
 
     setSubmitting(true);
     try {
+      // Ensure discount_amount is a valid number
+      const discountAmount = parseFloat(formData.discount_amount) || 0;
+
       const res = await fetch("/api/billing/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          discount_amount: discountAmount,
           status: isDraft ? "draft" : "pending",
           items: validItems.map((item) => ({
             item_type: item.item_type,

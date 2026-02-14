@@ -117,6 +117,10 @@ const ExportCaseSheetDialog = ({
   const [exporting, setExporting] = useState(false);
   const [clinicLogo, setClinicLogo] = useState(null);
   const [themeColor, setThemeColor] = useState("#059669");
+  const [clinicName, setClinicName] = useState("Abel Wellness");
+  const [clinicAddress, setClinicAddress] = useState("");
+  const [clinicPhone, setClinicPhone] = useState("");
+  const [clinicEmail, setClinicEmail] = useState("");
   const brandingFetched = useRef(false);
 
   // Fetch clinic branding (logo + theme color) once when dialog opens
@@ -129,6 +133,10 @@ const ExportCaseSheetDialog = ({
           const data = await res.json();
           if (data.clinicLogo) setClinicLogo(data.clinicLogo);
           if (data.themeColor) setThemeColor(data.themeColor);
+          if (data.clinicName) setClinicName(data.clinicName);
+          if (data.clinicAddress) setClinicAddress(data.clinicAddress);
+          if (data.clinicPhone) setClinicPhone(data.clinicPhone);
+          if (data.clinicEmail) setClinicEmail(data.clinicEmail);
         }
       } catch {
         // Continue with defaults
@@ -181,6 +189,10 @@ const ExportCaseSheetDialog = ({
           patientInfo={patientInfo}
           clinicLogo={clinicLogo}
           themeColor={themeColor}
+          clinicName={clinicName}
+          clinicAddress={clinicAddress}
+          clinicPhone={clinicPhone}
+          clinicEmail={clinicEmail}
         />,
       ).toBlob();
 
@@ -214,6 +226,10 @@ const ExportCaseSheetDialog = ({
     fetchPrescriptionUrl,
     clinicLogo,
     themeColor,
+    clinicName,
+    clinicAddress,
+    clinicPhone,
+    clinicEmail,
   ]);
 
   if (!isOpen) return null;

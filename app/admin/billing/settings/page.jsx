@@ -5,16 +5,12 @@ import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../../components/AdminSidebar";
 import {
-  FiArrowLeft,
   FiSave,
-  FiRefreshCw,
   FiSettings,
-  FiHome,
   FiPercent,
   FiCreditCard,
   FiFileText,
   FiDollarSign,
-  FiDroplet,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -29,11 +25,6 @@ export default function BillingSettingsPage() {
   const [settings, setSettings] = useState({});
 
   const [formData, setFormData] = useState({
-    clinic_name: "Abel Wellness Healthcare Center",
-    clinic_address: "",
-    clinic_phone: "",
-    clinic_email: "",
-    clinic_gstin: "",
     invoice_prefix: "INV",
     default_tax_rate: "18",
     tax_name: "GST",
@@ -43,20 +34,7 @@ export default function BillingSettingsPage() {
     invoice_notes: "",
     invoice_terms: "",
     auto_add_consultation_fee: true,
-    invoice_theme_color: "#059669",
   });
-
-  // Preset theme colors for invoice
-  const THEME_COLORS = [
-    { value: "#059669", label: "Emerald", className: "bg-emerald-600" },
-    { value: "#3b82f6", label: "Blue", className: "bg-blue-500" },
-    { value: "#8b5cf6", label: "Purple", className: "bg-purple-500" },
-    { value: "#ef4444", label: "Red", className: "bg-red-500" },
-    { value: "#f59e0b", label: "Amber", className: "bg-amber-500" },
-    { value: "#06b6d4", label: "Cyan", className: "bg-cyan-500" },
-    { value: "#ec4899", label: "Pink", className: "bg-pink-500" },
-    { value: "#64748b", label: "Slate", className: "bg-slate-500" },
-  ];
 
   const PAYMENT_METHODS = [
     { value: "cash", label: "Cash" },
@@ -101,12 +79,6 @@ export default function BillingSettingsPage() {
         }
 
         setFormData({
-          clinic_name:
-            settingsObj.clinic_name || "Abel Wellness Healthcare Center",
-          clinic_address: settingsObj.clinic_address || "",
-          clinic_phone: settingsObj.clinic_phone || "",
-          clinic_email: settingsObj.clinic_email || "",
-          clinic_gstin: settingsObj.clinic_gstin || "",
           invoice_prefix: settingsObj.invoice_prefix || "INV",
           default_tax_rate: settingsObj.default_tax_rate || "18",
           tax_name: settingsObj.tax_name || "GST",
@@ -122,7 +94,6 @@ export default function BillingSettingsPage() {
           invoice_terms: settingsObj.invoice_terms || "",
           auto_add_consultation_fee:
             settingsObj.auto_add_consultation_fee !== false,
-          invoice_theme_color: settingsObj.invoice_theme_color || "#059669",
         });
       }
     } catch (error) {
@@ -161,11 +132,6 @@ export default function BillingSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           settings: {
-            clinic_name: formData.clinic_name,
-            clinic_address: formData.clinic_address,
-            clinic_phone: formData.clinic_phone,
-            clinic_email: formData.clinic_email,
-            clinic_gstin: formData.clinic_gstin,
             invoice_prefix: formData.invoice_prefix,
             default_tax_rate: formData.default_tax_rate,
             tax_name: formData.tax_name,
@@ -177,7 +143,6 @@ export default function BillingSettingsPage() {
             invoice_notes: formData.invoice_notes,
             invoice_terms: formData.invoice_terms,
             auto_add_consultation_fee: formData.auto_add_consultation_fee,
-            invoice_theme_color: formData.invoice_theme_color,
           },
         }),
       });
@@ -241,95 +206,6 @@ export default function BillingSettingsPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Clinic Information */}
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <FiHome className="w-5 h-5 text-blue-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white">
-                  Clinic Information
-                </h3>
-              </div>
-              <p className="text-sm text-slate-400 mb-4">
-                This information will appear on invoices
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Clinic Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.clinic_name}
-                    onChange={(e) =>
-                      handleInputChange("clinic_name", e.target.value)
-                    }
-                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Address
-                  </label>
-                  <textarea
-                    value={formData.clinic_address}
-                    onChange={(e) =>
-                      handleInputChange("clinic_address", e.target.value)
-                    }
-                    rows={3}
-                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Full clinic address"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">
-                      Phone
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.clinic_phone}
-                      onChange={(e) =>
-                        handleInputChange("clinic_phone", e.target.value)
-                      }
-                      className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                      placeholder="+91 XXXXXXXXXX"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.clinic_email}
-                      onChange={(e) =>
-                        handleInputChange("clinic_email", e.target.value)
-                      }
-                      className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                      placeholder="clinic@example.com"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
-                    GSTIN
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.clinic_gstin}
-                    onChange={(e) =>
-                      handleInputChange("clinic_gstin", e.target.value)
-                    }
-                    className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                    placeholder="GST Identification Number"
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Invoice Settings */}
             <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -411,111 +287,6 @@ export default function BillingSettingsPage() {
                         }`}
                       />
                     </button>
-                  </div>
-                </div>
-
-                {/* Invoice Theme Color */}
-                <div className="pt-4 border-t border-slate-700/50">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-pink-500/10 rounded-lg">
-                      <FiDroplet className="w-5 h-5 text-pink-400" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300">
-                        Invoice Theme Color
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Primary color used in invoice PDF headers and accents
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Preset Colors */}
-                  <div className="grid grid-cols-4 gap-2 mb-4">
-                    {THEME_COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() =>
-                          handleInputChange("invoice_theme_color", color.value)
-                        }
-                        className={`relative group h-12 rounded-lg transition-all ${color.className} ${
-                          formData.invoice_theme_color === color.value
-                            ? "ring-2 ring-offset-2 ring-offset-slate-800 ring-white scale-105"
-                            : "hover:scale-105"
-                        }`}
-                        title={color.label}
-                      >
-                        {formData.invoice_theme_color === color.value && (
-                          <span className="absolute inset-0 flex items-center justify-center">
-                            <svg
-                              className="w-5 h-5 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </span>
-                        )}
-                        <span className="sr-only">{color.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Custom Color Input */}
-                  <div className="flex items-center gap-3">
-                    <label className="text-sm text-slate-400">Custom:</label>
-                    <div className="flex items-center gap-2 flex-1">
-                      <input
-                        type="color"
-                        value={formData.invoice_theme_color}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "invoice_theme_color",
-                            e.target.value,
-                          )
-                        }
-                        className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
-                      />
-                      <input
-                        type="text"
-                        value={formData.invoice_theme_color}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "invoice_theme_color",
-                            e.target.value,
-                          )
-                        }
-                        className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500"
-                        placeholder="#059669"
-                        pattern="^#[0-9A-Fa-f]{6}$"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Color Preview */}
-                  <div className="mt-4 p-3 rounded-lg bg-slate-700/30">
-                    <p className="text-xs text-slate-400 mb-2">Preview:</p>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-8 w-24 rounded"
-                        style={{
-                          backgroundColor: formData.invoice_theme_color,
-                        }}
-                      />
-                      <span
-                        className="text-sm font-semibold"
-                        style={{ color: formData.invoice_theme_color }}
-                      >
-                        Invoice Header
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>

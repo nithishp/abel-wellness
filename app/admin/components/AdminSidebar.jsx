@@ -68,6 +68,12 @@ const AdminSidebar = () => {
       href: "/admin/users",
       description: "Manage doctors & staff",
     },
+    {
+      name: "Settings",
+      icon: FiSettings,
+      href: "/admin/settings",
+      description: "Clinic info & branding",
+    },
   ];
 
   const handleLogout = async () => {
