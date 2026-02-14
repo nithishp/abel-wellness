@@ -6,6 +6,7 @@ import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
 import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import PatientSidebar from "../components/PatientSidebar";
+import ExportCaseSheetDialog from "../components/ExportCaseSheetDialog";
 import {
   FiFileText,
   FiCalendar,
@@ -17,6 +18,7 @@ import {
   FiRefreshCw,
   FiHeart,
   FiThermometer,
+  FiDownload,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { formatAppointmentDateTime } from "@/lib/utils";
@@ -27,6 +29,8 @@ const PatientRecordsPage = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [expandedRecord, setExpandedRecord] = useState(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportRecord, setExportRecord] = useState(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -221,6 +225,21 @@ const PatientRecordsPage = () => {
                     {/* Expanded Content */}
                     {isExpanded && (
                       <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-slate-700/50 pt-3 sm:pt-4 space-y-4 sm:space-y-6">
+                        {/* Export Button */}
+                        <div className="flex justify-end">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExportRecord(record);
+                              setExportDialogOpen(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
+                          >
+                            <FiDownload className="w-4 h-4" />
+                            Export Case Sheet
+                          </button>
+                        </div>
+
                         {/* Chief Complaints */}
                         {record.chief_complaints && (
                           <div>
@@ -409,6 +428,29 @@ const PatientRecordsPage = () => {
           )}
         </div>
       </main>
+
+      {/* Export Case Sheet Dialog */}
+      <ExportCaseSheetDialog
+        isOpen={exportDialogOpen}
+        onClose={() => {
+          setExportDialogOpen(false);
+          setExportRecord(null);
+        }}
+        record={exportRecord}
+        patientInfo={
+          user
+            ? {
+                full_name: user.full_name,
+                email: user.email,
+                phone: user.phone,
+                age: user.age,
+                sex: user.sex,
+                occupation: user.occupation,
+                address: user.address,
+              }
+            : null
+        }
+      />
     </div>
   );
 };

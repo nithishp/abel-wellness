@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import DoctorSidebar from "../../components/DoctorSidebar";
 import OOREPWidget from "../../components/OOREPWidget";
+import ExportCaseSheetDialog from "@/components/ui/ExportCaseSheetDialog";
 import {
   FiUser,
   FiCalendar,
@@ -22,6 +23,7 @@ import {
   FiX,
   FiFolder,
   FiDollarSign,
+  FiDownload,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import MedicationSearch from "../../components/MedicationSearch";
@@ -112,6 +114,7 @@ const ConsultationPage = () => {
   });
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Patient Demographics State (for doctor to update)
   const [patientDemographics, setPatientDemographics] = useState({
@@ -383,6 +386,14 @@ const ConsultationPage = () => {
                 </p>
               </div>
               <div className="flex gap-2 sm:gap-3 ml-12 lg:ml-0">
+                <button
+                  onClick={() => setShowExportDialog(true)}
+                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-700/50 border border-slate-600/50 text-white rounded-xl hover:bg-slate-700 transition-colors text-sm sm:text-base"
+                  title="Export Case Sheet"
+                >
+                  <FiDownload className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export</span>
+                </button>
                 <button
                   onClick={() => handleSave(false)}
                   disabled={saving}
@@ -1557,6 +1568,39 @@ const ConsultationPage = () => {
           }}
         />
       </main>
+
+      {/* Export Case Sheet Dialog */}
+      <ExportCaseSheetDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        record={{
+          ...medicalRecord,
+          created_at: appointment?.created_at,
+          prescription: {
+            items: prescriptionItems.filter((item) => item.medication_name),
+            notes: prescriptionNotes,
+          },
+          doctorName: user?.full_name,
+          appointment: {
+            date: appointment?.date,
+            service: appointment?.service || appointment?.reason_for_visit,
+          },
+        }}
+        patientInfo={{
+          full_name: appointment?.name,
+          age: appointment?.patient?.age,
+          sex: appointment?.patient?.sex || patientDemographics.sex,
+          phone: appointment?.phone,
+          email: appointment?.email,
+          occupation:
+            appointment?.patient?.occupation || patientDemographics.occupation,
+          address: appointment?.patient?.address || patientDemographics.address,
+        }}
+        prescriptionData={{
+          items: prescriptionItems.filter((item) => item.medication_name),
+          notes: prescriptionNotes,
+        }}
+      />
     </div>
   );
 };

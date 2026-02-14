@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import ExportCaseSheetDialog from "@/components/ui/ExportCaseSheetDialog";
 import { useInfiniteScroll } from "@/lib/hooks/useInfiniteScroll";
 import { InfiniteScrollLoader } from "@/components/ui/InfiniteScrollLoader";
 import {
@@ -25,6 +26,7 @@ import {
   FiBriefcase,
   FiArrowUp,
   FiArrowDown,
+  FiDownload,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { formatAppointmentDateTime } from "@/lib/utils";
@@ -47,6 +49,7 @@ const AppointmentsManagement = () => {
   const [showCaseSheetModal, setShowCaseSheetModal] = useState(false);
   const [selectedCaseSheet, setSelectedCaseSheet] = useState(null);
   const [loadingCaseSheet, setLoadingCaseSheet] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellingAppointment, setCancellingAppointment] = useState(null);
   const [cancellationReason, setCancellationReason] = useState("");
@@ -101,7 +104,7 @@ const AppointmentsManagement = () => {
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [filterStatus, debouncedSearch]
+    [filterStatus, debouncedSearch],
   );
 
   // Use infinite scroll hook
@@ -196,7 +199,7 @@ const AppointmentsManagement = () => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ doctorId: selectedDoctorId }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -221,7 +224,7 @@ const AppointmentsManagement = () => {
   const handleStatusUpdate = async (
     appointmentId,
     newStatus,
-    reason = null
+    reason = null,
   ) => {
     const loadingToast = toast.loading(`Updating appointment status...`);
 
@@ -237,7 +240,7 @@ const AppointmentsManagement = () => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -270,7 +273,7 @@ const AppointmentsManagement = () => {
     await handleStatusUpdate(
       cancellingAppointment.$id,
       "cancelled",
-      cancellationReason
+      cancellationReason,
     );
     setProcessing(false);
     setShowCancelModal(false);
@@ -282,7 +285,7 @@ const AppointmentsManagement = () => {
     setLoadingCaseSheet(true);
     try {
       const response = await fetch(
-        `/api/admin/appointments/${appointmentId}/casesheet`
+        `/api/admin/appointments/${appointmentId}/casesheet`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -310,7 +313,7 @@ const AppointmentsManagement = () => {
     try {
       const response = await fetch(
         `/api/admin/appointments?id=${appointmentId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       if (!response.ok) {
@@ -652,7 +655,7 @@ const AppointmentsManagement = () => {
                                 {
                                   formatAppointmentDateTime(
                                     appointment.date,
-                                    appointment.time
+                                    appointment.time,
                                   ).date
                                 }
                               </span>
@@ -662,7 +665,7 @@ const AppointmentsManagement = () => {
                                 {
                                   formatAppointmentDateTime(
                                     appointment.date,
-                                    appointment.time
+                                    appointment.time,
                                   ).time
                                 }
                               </span>
@@ -814,7 +817,7 @@ const AppointmentsManagement = () => {
                   {
                     formatAppointmentDateTime(
                       selectedAppointment.date,
-                      selectedAppointment.time
+                      selectedAppointment.time,
                     ).datetime
                   }
                 </p>
@@ -857,7 +860,7 @@ const AppointmentsManagement = () => {
                 <div className="mt-2">
                   {(() => {
                     const statusConfig = getStatusColor(
-                      selectedAppointment.status
+                      selectedAppointment.status,
                     );
                     return (
                       <span
@@ -949,7 +952,7 @@ const AppointmentsManagement = () => {
                 {
                   formatAppointmentDateTime(
                     assigningAppointment.date,
-                    assigningAppointment.time
+                    assigningAppointment.time,
                   ).datetime
                 }
               </p>
@@ -1208,7 +1211,7 @@ const AppointmentsManagement = () => {
                 {
                   formatAppointmentDateTime(
                     cancellingAppointment.date,
-                    cancellingAppointment.time
+                    cancellingAppointment.time,
                   ).datetime
                 }
               </p>
@@ -1418,7 +1421,7 @@ const AppointmentsManagement = () => {
                 {/* Vital Signs */}
                 {selectedCaseSheet.medicalRecord.vital_signs &&
                   Object.values(
-                    selectedCaseSheet.medicalRecord.vital_signs
+                    selectedCaseSheet.medicalRecord.vital_signs,
                   ).some((v) => v) && (
                     <div className="p-4 bg-slate-700/30 rounded-xl">
                       <h4 className="text-sm font-semibold text-emerald-400 mb-2">
@@ -1647,19 +1650,51 @@ const AppointmentsManagement = () => {
               </div>
             )}
 
-            <div className="mt-6">
+            <div className="mt-6 flex gap-3">
               <button
                 onClick={() => {
                   setShowCaseSheetModal(false);
                   setSelectedCaseSheet(null);
                 }}
-                className="w-full py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
+                className="flex-1 py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
               >
                 Close
               </button>
+              {selectedCaseSheet.medicalRecord && (
+                <button
+                  onClick={() => setShowExportDialog(true)}
+                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <FiDownload className="w-4 h-4" />
+                  Export PDF
+                </button>
+              )}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Export Case Sheet Dialog */}
+      {selectedCaseSheet && (
+        <ExportCaseSheetDialog
+          isOpen={showExportDialog}
+          onClose={() => setShowExportDialog(false)}
+          record={{
+            ...selectedCaseSheet.medicalRecord,
+            prescription: selectedCaseSheet.prescription,
+            doctorName: selectedCaseSheet.doctor?.user?.full_name,
+          }}
+          patientInfo={{
+            full_name: selectedCaseSheet.appointment?.name,
+            age: selectedCaseSheet.patient?.age,
+            sex: selectedCaseSheet.patient?.sex,
+            phone: selectedCaseSheet.appointment?.phone,
+            email: selectedCaseSheet.appointment?.email,
+            occupation: selectedCaseSheet.patient?.occupation,
+            address: selectedCaseSheet.patient?.address,
+          }}
+          prescriptionData={selectedCaseSheet.prescription}
+        />
       )}
 
       {/* Delete Confirm Modal */}
