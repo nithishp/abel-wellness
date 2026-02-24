@@ -19,7 +19,10 @@ export async function GET(request) {
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("WhatsApp webhook verified");
-    return new Response(challenge, { status: 200 });
+    return new Response(challenge, {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
