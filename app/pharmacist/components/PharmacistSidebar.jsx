@@ -58,18 +58,20 @@ const PharmacistSidebar = () => {
     <div className="flex flex-col h-full">
       {/* Logo Section */}
       <div className="p-6 border-b border-slate-700/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <FiActivity className="w-5 h-5 text-white" />
-          </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
-              <h1 className="text-white font-bold text-lg tracking-tight">
-                AWHCC
-              </h1>
-              <p className="text-slate-400 text-xs">Pharmacy Portal</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <FiActivity className="w-5 h-5 text-white" />
             </div>
-          )}
+            {!collapsed && (
+              <div className="overflow-hidden">
+                <h1 className="text-white font-bold text-lg tracking-tight">
+                  AWHCC
+                </h1>
+                <p className="text-slate-400 text-xs">Pharmacy Portal</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -136,16 +138,13 @@ const PharmacistSidebar = () => {
         >
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
-              {user?.name?.charAt(0) ||
-                user?.full_name?.charAt(0) ||
-                user?.email?.charAt(0) ||
-                "P"}
+              {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "P"}
             </span>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-white font-medium text-sm truncate">
-                {user?.name || user?.full_name || "Pharmacist"}
+                {user?.full_name || "Pharmacist"}
               </p>
               <p className="text-slate-400 text-xs truncate">
                 {user?.email || "Pharmacy Staff"}

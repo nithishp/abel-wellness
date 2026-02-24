@@ -7,6 +7,8 @@ import {
   APPOINTMENT_STATUS,
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
+import { sendWhatsAppNotification, scheduleAppointmentReminders } from "@/lib/whatsapp/notifications";
+import { NOTIFICATION_TYPES } from "@/lib/whatsapp/constants";
 
 // Helper function to verify admin session
 async function verifyAdminSession() {
@@ -534,6 +536,26 @@ export async function PUT(request) {
           related_id: appointmentId,
         });
 
+        // Send WhatsApp notification to patient
+        if (currentAppointment.phone) {
+          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_CONFIRMED, {
+            patientName: currentAppointment.name,
+            date: formattedDate,
+            time: formattedTime,
+            doctorName: doctor.user.full_name,
+          }).catch(err => console.error("WhatsApp notify error (assign):", err));
+
+          // Schedule appointment reminders
+          await scheduleAppointmentReminders(
+            currentAppointment.phone,
+            currentAppointment.patient_id,
+            appointmentId,
+            new Date(currentAppointment.date),
+            currentAppointment.name,
+            doctor.user.full_name
+          ).catch(err => console.error("WhatsApp reminder schedule error:", err));
+        }
+
         return NextResponse.json({
           success: true,
           appointment: transformAppointment(updatedAppointment),
@@ -580,6 +602,15 @@ export async function PUT(request) {
               reason
             )
           );
+        }
+
+        // Send WhatsApp notification to patient
+        if (currentAppointment.phone) {
+          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_REJECTED, {
+            patientName: currentAppointment.name,
+            date: formattedDate,
+            reason: reason || null,
+          }).catch(err => console.error("WhatsApp notify error (reject):", err));
         }
 
         return NextResponse.json({
@@ -667,6 +698,32 @@ export async function PUT(request) {
           );
         }
 
+        // Send WhatsApp notification to patient
+        if (currentAppointment.phone) {
+          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_RESCHEDULED, {
+            patientName: currentAppointment.name,
+            oldDate: `${oldFormattedDate} at ${oldFormattedTime}`,
+            newDate: newFormattedDate,
+            newTime: newFormattedTime,
+          }).catch(err => console.error("WhatsApp notify error (reschedule):", err));
+
+          // Cancel old reminders and schedule new ones
+          await supabaseAdmin
+            .from("whatsapp_scheduled_messages")
+            .update({ status: "cancelled" })
+            .eq("related_id", appointmentId)
+            .eq("status", "pending")
+            .catch(() => {});
+
+          await scheduleAppointmentReminders(
+            currentAppointment.phone,
+            currentAppointment.patient_id,
+            appointmentId,
+            new Date(newDate),
+            currentAppointment.name
+          ).catch(err => console.error("WhatsApp reminder schedule error:", err));
+        }
+
         return NextResponse.json({
           success: true,
           appointment: transformAppointment(updatedAppointment),
@@ -722,6 +779,25 @@ export async function PUT(request) {
               cancellation_reason || "No specific reason provided."
             )
           );
+        }
+
+        // Send WhatsApp cancellation notification
+        if (status === "cancelled" && currentAppointment.phone) {
+          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_CANCELLED, {
+            patientName: currentAppointment.name,
+            date: (() => {
+              const d = new Date(currentAppointment.date);
+              return d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+            })(),
+          }).catch(err => console.error("WhatsApp notify error (cancel):", err));
+
+          // Cancel scheduled reminders
+          await supabaseAdmin
+            .from("whatsapp_scheduled_messages")
+            .update({ status: "cancelled" })
+            .eq("related_id", appointmentId)
+            .eq("status", "pending")
+            .catch(() => {});
         }
 
         return NextResponse.json({

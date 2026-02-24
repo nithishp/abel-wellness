@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import PharmacistSidebar from "../components/PharmacistSidebar";
+import NotificationBell from "@/components/ui/NotificationBell";
 import {
   FiPackage,
   FiClock,
@@ -209,6 +210,7 @@ const PharmacistDashboardPage = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <NotificationBell />
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}

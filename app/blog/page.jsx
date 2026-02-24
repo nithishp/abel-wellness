@@ -19,6 +19,20 @@ const BlogsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const categories = [
+    { value: "all", label: "All" },
+    { value: "homeopathy", label: "Homeopathy" },
+    { value: "wellness", label: "Wellness" },
+    { value: "nutrition", label: "Nutrition" },
+    { value: "mental-health", label: "Mental Health" },
+    { value: "chronic-conditions", label: "Chronic Conditions" },
+    { value: "womens-health", label: "Women's Health" },
+    { value: "lifestyle", label: "Lifestyle" },
+    { value: "case-studies", label: "Case Studies" },
+    { value: "general", label: "General" },
+  ];
 
   // Debounce search term
   useEffect(() => {
@@ -35,6 +49,8 @@ const BlogsPage = () => {
         published: "true",
       });
       if (debouncedSearch) params.append("search", debouncedSearch);
+      if (selectedCategory && selectedCategory !== "all")
+        params.append("category", selectedCategory);
 
       const response = await fetch(`/api/admin/blogs?${params}`);
       if (!response.ok) throw new Error("Failed to fetch blogs");
@@ -49,7 +65,7 @@ const BlogsPage = () => {
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [debouncedSearch, isInitialLoad],
+    [debouncedSearch, selectedCategory, isInitialLoad],
   );
 
   // Use infinite scroll hook
@@ -65,14 +81,8 @@ const BlogsPage = () => {
   } = useInfiniteScroll(fetchBlogs, {
     limit: 9,
     enabled: true,
-    dependencies: [debouncedSearch],
+    dependencies: [debouncedSearch, selectedCategory],
   });
-
-  // Categories for filtering - disabled until category column is added to database
-  // const categories = useMemo(
-  //   () => ["All", "Health Tips", "Treatments", "Wellness", "Lifestyle", "News"],
-  //   [],
-  // );
 
   // Only show skeleton on initial page load, not during search
   if (isInitialLoad && loading && blogs.length === 0) {
@@ -153,9 +163,24 @@ const BlogsPage = () => {
               </button>
             )}
           </div>
-        </div>
 
-        {/* Results count */}
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap justify-center gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  selectedCategory === cat.value
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-white text-neutral-600 border border-neutral-200 hover:border-emerald-300 hover:text-emerald-700"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
         {totalCount > 0 && (
           <div className="mb-6 text-neutral-500 text-sm">
             Showing {blogs.length} of {totalCount} posts
@@ -177,18 +202,19 @@ const BlogsPage = () => {
               No Posts Found
             </h2>
             <p className="text-neutral-600 mb-6">
-              {searchTerm
-                ? "Try adjusting your search."
+              {searchTerm || selectedCategory !== "all"
+                ? "Try adjusting your search or filter."
                 : "Check back soon for the latest updates!"}
             </p>
-            {searchTerm && (
+            {(searchTerm || selectedCategory !== "all") && (
               <button
                 onClick={() => {
                   setSearchTerm("");
+                  setSelectedCategory("all");
                 }}
                 className="px-6 py-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 font-medium text-sm transition-colors duration-300"
               >
-                Clear Search
+                Clear Filters
               </button>
             )}
           </div>
@@ -232,8 +258,8 @@ const BlogsPage = () => {
 
                   {/* Category Badge */}
                   {blog.category && (
-                    <span className="absolute top-3 left-3 bg-emerald-600/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
-                      {blog.category}
+                    <span className="absolute top-3 left-3 bg-emerald-600/90 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full capitalize">
+                      {blog.category.replace(/-/g, " ")}
                     </span>
                   )}
                 </div>

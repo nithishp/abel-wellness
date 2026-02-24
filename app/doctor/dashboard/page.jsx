@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import DoctorSidebar from "../components/DoctorSidebar";
+import NotificationBell from "@/components/ui/NotificationBell";
 import {
   FiCalendar,
   FiUsers,
@@ -195,10 +196,11 @@ const DoctorDashboard = () => {
                   Dashboard
                 </h1>
                 <p className="text-slate-400 text-xs sm:text-sm mt-0.5 truncate">
-                  Welcome back, Dr. {user?.name || "Doctor"}
+                  Welcome back, Dr. {user?.full_name || "Doctor"}
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <NotificationBell />
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
@@ -358,18 +360,18 @@ const DoctorDashboard = () => {
                     <div className="space-y-2 sm:space-y-3">
                       {upcomingAppointments.slice(0, 5).map((appointment) => {
                         const statusConfig = getStatusConfig(
-                          appointment.consultation_status || "pending"
+                          appointment.consultation_status || "pending",
                         );
                         const formattedDateTime = formatAppointmentDateTime(
                           appointment.date,
-                          appointment.time
+                          appointment.time,
                         );
                         return (
                           <div
                             key={appointment.id}
                             onClick={() =>
                               router.push(
-                                `/doctor/consultation/${appointment.id}`
+                                `/doctor/consultation/${appointment.id}`,
                               )
                             }
                             className="group flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"
@@ -416,7 +418,7 @@ const DoctorDashboard = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(
-                                  `/doctor/consultation/${appointment.id}`
+                                  `/doctor/consultation/${appointment.id}`,
                                 );
                               }}
                               className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white text-xs sm:text-sm rounded-xl hover:bg-blue-700 transition-colors sm:opacity-0 sm:group-hover:opacity-100 w-full sm:w-auto"

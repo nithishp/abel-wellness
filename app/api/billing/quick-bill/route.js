@@ -1,15 +1,41 @@
-"use server";
-
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
 import {
   createQuickBill,
   searchPatientsForBilling,
   getDoctorsForBilling,
 } from "@/lib/actions/quickbill.actions";
 
+// Helper function to verify admin/staff session
+async function verifyStaffSession() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token")?.value;
+  if (!sessionToken) return null;
+
+  const { data: session } = await supabaseAdmin
+    .from(TABLES.USER_SESSIONS)
+    .select("*, user:users(*)")
+    .eq("session_token", sessionToken)
+    .single();
+
+  if (!session || new Date(session.expires_at) < new Date()) return null;
+  if (
+    ![ROLES.ADMIN, ROLES.DOCTOR, ROLES.PHARMACIST].includes(session.user?.role)
+  )
+    return null;
+
+  return session.user;
+}
+
 // POST /api/billing/quick-bill - Create a quick bill
 export async function POST(request) {
   try {
+    const user = await verifyStaffSession();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const data = await request.json();
 
     const result = await createQuickBill(data);

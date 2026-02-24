@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase.config";
-import { TABLES } from "@/lib/supabase.config";
+import { TABLES, APPOINTMENT_STATUS } from "@/lib/supabase.config";
 
 // Helper to verify patient session
 async function verifyPatientSession() {
@@ -59,7 +59,7 @@ export async function GET(request) {
         rejection_reason,
         created_at,
         doctor:doctor_id(id, user:user_id(full_name))
-      `
+      `,
       )
       .eq("patient_id", patient.id)
       .order("date", { ascending: false })
@@ -99,7 +99,7 @@ export async function GET(request) {
     console.error("Error fetching patient appointments:", error);
     return NextResponse.json(
       { error: "Failed to fetch appointments" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -118,7 +118,7 @@ export async function POST(request) {
     if (!date || !time || !reasonForVisit) {
       return NextResponse.json(
         { error: "Date, time, and reason for visit are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -130,7 +130,7 @@ export async function POST(request) {
     if (appointmentDate <= today) {
       return NextResponse.json(
         { error: "Appointment date must be in the future" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -149,7 +149,7 @@ export async function POST(request) {
         {
           error: "You already have a pending appointment at this date and time",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -187,7 +187,87 @@ export async function POST(request) {
     console.error("Error creating appointment:", error);
     return NextResponse.json(
       { error: "Failed to create appointment" },
-      { status: 500 }
+      { status: 500 },
+    );
+  }
+}
+
+// PATCH - Cancel an appointment (patient can only cancel pending/approved)
+export async function PATCH(request) {
+  try {
+    const patient = await verifyPatientSession();
+    if (!patient) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { appointmentId, action } = await request.json();
+
+    if (!appointmentId || action !== "cancel") {
+      return NextResponse.json(
+        { error: "Appointment ID and action 'cancel' are required" },
+        { status: 400 },
+      );
+    }
+
+    // Fetch the appointment to verify ownership and status
+    const { data: appointment, error: fetchError } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .select("id, patient_id, status, date, time")
+      .eq("id", appointmentId)
+      .single();
+
+    if (fetchError || !appointment) {
+      return NextResponse.json(
+        { error: "Appointment not found" },
+        { status: 404 },
+      );
+    }
+
+    // Verify the patient owns this appointment
+    if (appointment.patient_id !== patient.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Only allow cancellation of pending or approved appointments
+    const cancellableStatuses = [
+      APPOINTMENT_STATUS.PENDING,
+      APPOINTMENT_STATUS.APPROVED,
+      APPOINTMENT_STATUS.RESCHEDULED,
+    ];
+
+    if (!cancellableStatuses.includes(appointment.status)) {
+      return NextResponse.json(
+        {
+          error: `Cannot cancel an appointment with status "${appointment.status}". Only pending, approved, or rescheduled appointments can be cancelled.`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Update the appointment status
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from(TABLES.APPOINTMENTS)
+      .update({
+        status: APPOINTMENT_STATUS.CANCELLED,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", appointmentId)
+      .select("id, status")
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return NextResponse.json({
+      success: true,
+      appointment: updated,
+    });
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    return NextResponse.json(
+      { error: "Failed to cancel appointment" },
+      { status: 500 },
     );
   }
 }

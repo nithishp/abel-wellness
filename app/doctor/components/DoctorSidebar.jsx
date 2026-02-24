@@ -57,15 +57,17 @@ const DoctorSidebar = () => {
     <div className="flex flex-col h-full">
       {/* Logo Section */}
       <div className="p-6 border-b border-slate-700/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <FiActivity className="w-5 h-5 text-white" />
-          </div>
-          <div className="overflow-hidden">
-            <h1 className="text-white font-bold text-lg tracking-tight">
-              AWHCC
-            </h1>
-            <p className="text-slate-400 text-xs">Doctor Portal</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <FiActivity className="w-5 h-5 text-white" />
+            </div>
+            <div className="overflow-hidden">
+              <h1 className="text-white font-bold text-lg tracking-tight">
+                AWHCC
+              </h1>
+              <p className="text-slate-400 text-xs">Doctor Portal</p>
+            </div>
           </div>
         </div>
       </div>
@@ -121,12 +123,12 @@ const DoctorSidebar = () => {
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
-              {user?.name?.charAt(0) || user?.email?.charAt(0) || "D"}
+              {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "D"}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-medium text-sm truncate">
-              Dr. {user?.name || "Doctor"}
+              Dr. {user?.full_name || "Doctor"}
             </p>
             <p className="text-slate-400 text-xs truncate">
               {user?.roleData?.specialization || "General Practice"}

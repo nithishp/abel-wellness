@@ -25,6 +25,7 @@ const CreateBlog = () => {
     description: "",
     content: "",
     author: "",
+    category: "",
     imageUrl: "",
     imageFileId: "",
     published: false,
@@ -323,6 +324,33 @@ const CreateBlog = () => {
                     className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                     placeholder="Author name"
                   />
+                </div>
+
+                {/* Category */}
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={blogForm.category}
+                    onChange={(e) =>
+                      setBlogForm({ ...blogForm, category: e.target.value })
+                    }
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                  >
+                    <option value="">Select category</option>
+                    <option value="general">General</option>
+                    <option value="homeopathy">Homeopathy</option>
+                    <option value="wellness">Wellness</option>
+                    <option value="nutrition">Nutrition</option>
+                    <option value="mental-health">Mental Health</option>
+                    <option value="chronic-conditions">
+                      Chronic Conditions
+                    </option>
+                    <option value="womens-health">Women&apos;s Health</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="case-studies">Case Studies</option>
+                  </select>
                 </div>
 
                 {/* Featured Toggle */}

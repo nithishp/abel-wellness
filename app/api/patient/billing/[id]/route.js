@@ -1,53 +1,27 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
 
-// Create admin client
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// Helper function to get user from session
-async function getUserFromSession() {
+// Helper function to verify patient session
+async function verifyPatientSession() {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session_token")?.value;
 
-    if (!sessionToken) {
-      return null;
-    }
+    if (!sessionToken) return null;
 
-    // Get session
-    const { data: session, error: sessionError } = await supabaseAdmin
-      .from("user_sessions")
-      .select("user_id, expires_at")
+    const { data: session } = await supabaseAdmin
+      .from(TABLES.USER_SESSIONS)
+      .select("*, user:users(*)")
       .eq("session_token", sessionToken)
       .single();
 
-    if (sessionError || !session) {
-      return null;
-    }
+    if (!session || new Date(session.expires_at) < new Date()) return null;
+    if (session.user?.role !== ROLES.PATIENT) return null;
 
-    // Check if session is expired
-    if (new Date(session.expires_at) < new Date()) {
-      return null;
-    }
-
-    // Get user
-    const { data: user, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("*")
-      .eq("id", session.user_id)
-      .single();
-
-    if (userError || !user) {
-      return null;
-    }
-
-    return user;
+    return session.user;
   } catch (error) {
-    console.error("Error getting user from session:", error);
+    console.error("Error verifying patient session:", error);
     return null;
   }
 }
@@ -55,39 +29,18 @@ async function getUserFromSession() {
 // GET - Get specific invoice for patient
 export async function GET(request, { params }) {
   try {
-    const user = await getUserFromSession();
+    const user = await verifyPatientSession();
 
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    if (user.role !== "patient") {
-      return NextResponse.json(
-        { success: false, error: "Access denied. Patient access only." },
-        { status: 403 }
-      );
-    }
-
-    // Get patient record
-    const { data: patient, error: patientError } = await supabaseAdmin
-      .from("patients")
-      .select("id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (patientError || !patient) {
-      return NextResponse.json(
-        { success: false, error: "Patient record not found" },
-        { status: 404 }
+        { status: 401 },
       );
     }
 
     const { id } = await params;
 
-    // Fetch invoice with related data
+    // Fetch invoice with related data - use user.id directly as patient_id
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from("invoices")
       .select(
@@ -103,13 +56,13 @@ export async function GET(request, { params }) {
           doctor:doctors(
             id,
             specialization,
-            user:users(name, email)
+            user:users(full_name, email)
           )
         )
-      `
+      `,
       )
       .eq("id", id)
-      .eq("patient_id", patient.id)
+      .eq("patient_id", user.id)
       .neq("status", "draft") // Don't show draft invoices
       .single();
 
@@ -117,21 +70,21 @@ export async function GET(request, { params }) {
       console.error("Error fetching invoice:", invoiceError);
       return NextResponse.json(
         { success: false, error: "Invoice not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Sort items by created_at
     if (invoice.items) {
       invoice.items.sort(
-        (a, b) => new Date(a.created_at) - new Date(b.created_at)
+        (a, b) => new Date(a.created_at) - new Date(b.created_at),
       );
     }
 
     // Sort payments by payment_date
     if (invoice.payments) {
       invoice.payments.sort(
-        (a, b) => new Date(b.payment_date) - new Date(a.payment_date)
+        (a, b) => new Date(b.payment_date) - new Date(a.payment_date),
       );
     }
 
@@ -143,7 +96,7 @@ export async function GET(request, { params }) {
     console.error("Error in patient billing GET:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

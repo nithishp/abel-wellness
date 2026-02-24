@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import DoctorSidebar from "../../components/DoctorSidebar";
@@ -306,6 +306,79 @@ const ConsultationPage = () => {
     }
   };
 
+  // Auto-save every 60 seconds when form has been modified
+  const hasUnsavedChanges = useRef(false);
+  const autoSaveTimerRef = useRef(null);
+  const [lastAutoSave, setLastAutoSave] = useState(null);
+
+  // Track form changes
+  useEffect(() => {
+    if (appointment) {
+      hasUnsavedChanges.current = true;
+    }
+  }, [
+    medicalRecord,
+    prescriptionItems,
+    prescriptionNotes,
+    patientDemographics,
+  ]);
+
+  // Auto-save interval
+  useEffect(() => {
+    if (!appointment || !user) return;
+
+    autoSaveTimerRef.current = setInterval(async () => {
+      if (hasUnsavedChanges.current && !saving) {
+        try {
+          const response = await fetch(
+            `/api/doctor/consultation/${appointmentId}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                medicalRecord,
+                prescription: {
+                  items: prescriptionItems.filter(
+                    (item) => item.medication_name,
+                  ),
+                  notes: prescriptionNotes,
+                },
+                patientDemographics,
+                complete: false,
+              }),
+            },
+          );
+
+          if (response.ok) {
+            hasUnsavedChanges.current = false;
+            setLastAutoSave(new Date());
+          }
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+        }
+      }
+    }, 60000); // 60 seconds
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [appointment, user, appointmentId, saving]);
+
+  // Warn on page leave with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   // Only show full-page loading for initial auth check
   if (authLoading) {
     return (
@@ -385,7 +458,16 @@ const ConsultationPage = () => {
                   Patient: {appointment.name}
                 </p>
               </div>
-              <div className="flex gap-2 sm:gap-3 ml-12 lg:ml-0">
+              <div className="flex items-center gap-2 sm:gap-3 ml-12 lg:ml-0">
+                {lastAutoSave && (
+                  <span className="hidden md:inline text-xs text-slate-500">
+                    Auto-saved{" "}
+                    {lastAutoSave.toLocaleTimeString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
                 <button
                   onClick={() => setShowExportDialog(true)}
                   className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-700/50 border border-slate-600/50 text-white rounded-xl hover:bg-slate-700 transition-colors text-sm sm:text-base"

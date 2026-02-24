@@ -15,7 +15,7 @@ export async function POST(request) {
     if (!email || !code) {
       return NextResponse.json(
         { error: "Email and code are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(request) {
     if (otpError || !otpRecord) {
       return NextResponse.json(
         { error: "Invalid or expired OTP" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(request) {
     if (new Date(otpRecord.expires_at) < new Date()) {
       return NextResponse.json(
         { error: "OTP has expired. Please request a new one." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(request) {
           error:
             "No account found with this email. Please book an appointment first to create your account.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -72,7 +72,7 @@ export async function POST(request) {
     if (!user.is_active) {
       return NextResponse.json(
         { error: "Your account has been deactivated. Please contact support." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -99,7 +99,7 @@ export async function POST(request) {
       console.error("Error creating session:", sessionError);
       return NextResponse.json(
         { error: "Failed to create session" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -140,7 +140,7 @@ export async function POST(request) {
     console.error("Error in OTP verification:", error);
     return NextResponse.json(
       { error: "Failed to verify OTP" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

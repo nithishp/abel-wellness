@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase.config";
 import { TABLES, PRESCRIPTION_STATUS } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
+import { sendWhatsAppNotification } from "@/lib/whatsapp/notifications";
+import { NOTIFICATION_TYPES } from "@/lib/whatsapp/constants";
 import {
   dispensePrescriptionItems,
   checkStockAvailability,
@@ -71,7 +73,7 @@ export async function POST(request, { params }) {
       .select(
         `
         *,
-        patient:patient_id(id, full_name, email),
+        patient:patient_id(id, full_name, email, phone),
         doctor:doctor_id(id, user:user_id(full_name)),
         items:prescription_items(*),
         invoice:invoice_id(id, invoice_number, status, total_amount, amount_paid)
@@ -272,6 +274,18 @@ export async function POST(request, { params }) {
       related_id: id,
       related_type: "prescription",
     });
+
+    // Send WhatsApp notification to patient
+    if (prescription.patient?.phone) {
+      const medicationSummary = (prescription.items || []).map(item =>
+        `• ${item.medication_name} — ${item.dosage || ""} ${item.frequency || ""}`.trim()
+      ).join("\n");
+
+      await sendWhatsAppNotification(prescription.patient.phone, NOTIFICATION_TYPES.PRESCRIPTION_DISPENSED, {
+        patientName: prescription.patient.full_name,
+        medicationSummary: medicationSummary || "Your prescribed medicines",
+      }).catch(err => console.error("WhatsApp notify error (dispensed):", err));
+    }
 
     return NextResponse.json({
       message: "Prescription marked as dispensed",

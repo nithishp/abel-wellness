@@ -8,6 +8,8 @@ import {
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
 import { createInvoiceFromPrescription } from "@/lib/actions/prescription-billing.actions";
+import { sendWhatsAppNotification, scheduleFollowUpReminder } from "@/lib/whatsapp/notifications";
+import { NOTIFICATION_TYPES } from "@/lib/whatsapp/constants";
 
 // Helper to verify doctor session
 async function verifyDoctorSession() {
@@ -65,7 +67,7 @@ export async function POST(request, { params }) {
       .select(
         `
         *,
-        patient:patient_id(id, full_name, email)
+        patient:patient_id(id, full_name, email, phone)
       `,
       )
       .eq("id", id)
@@ -172,15 +174,24 @@ export async function POST(request, { params }) {
           .eq("id", existingPrescription.id);
 
         // Delete existing items and re-insert
-        await supabaseAdmin
+        // First check if there are any existing items to delete
+        const { data: existingItems } = await supabaseAdmin
           .from(TABLES.PRESCRIPTION_ITEMS)
-          .delete()
+          .select("id")
           .eq("prescription_id", existingPrescription.id);
 
+        if (existingItems && existingItems.length > 0) {
+          await supabaseAdmin
+            .from(TABLES.PRESCRIPTION_ITEMS)
+            .delete()
+            .eq("prescription_id", existingPrescription.id);
+        }
+
         // Insert new items with inventory linking
+        // Use upsert to handle any race conditions with unique constraint
         const itemsToInsert = prescription.items.map((item) => ({
           prescription_id: existingPrescription.id,
-          medication_name: item.medication_name,
+          medication_name: item.medication_name?.trim(),
           dosage: item.dosage,
           frequency: item.frequency,
           duration: item.duration,
@@ -193,7 +204,9 @@ export async function POST(request, { params }) {
 
         await supabaseAdmin
           .from(TABLES.PRESCRIPTION_ITEMS)
-          .insert(itemsToInsert);
+          .upsert(itemsToInsert, {
+            onConflict: "prescription_id,medication_name",
+          });
       } else {
         // Create new prescription
         const { data: newPrescription } = await supabaseAdmin
@@ -211,9 +224,10 @@ export async function POST(request, { params }) {
 
         if (newPrescription) {
           // Insert prescription items with inventory linking
+          // Use upsert to handle any race conditions with unique constraint
           const itemsToInsert = prescription.items.map((item) => ({
             prescription_id: newPrescription.id,
-            medication_name: item.medication_name,
+            medication_name: item.medication_name?.trim(),
             dosage: item.dosage,
             frequency: item.frequency,
             duration: item.duration,
@@ -226,7 +240,9 @@ export async function POST(request, { params }) {
 
           await supabaseAdmin
             .from(TABLES.PRESCRIPTION_ITEMS)
-            .insert(itemsToInsert);
+            .upsert(itemsToInsert, {
+              onConflict: "prescription_id,medication_name",
+            });
         }
       }
     }
@@ -242,8 +258,18 @@ export async function POST(request, { params }) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", id);
+    } else {
+      // Mark consultation as in_progress when saving a draft
+      await supabaseAdmin
+        .from(TABLES.APPOINTMENTS)
+        .update({
+          consultation_status: CONSULTATION_STATUS.IN_PROGRESS,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+    }
 
-      // Send notification to patient
+    if (complete) {
       if (appointment.patient?.email || appointment.email) {
         try {
           await sendEmail({
@@ -340,6 +366,33 @@ export async function POST(request, { params }) {
         }));
 
         await supabaseAdmin.from(TABLES.NOTIFICATIONS).insert(notifications);
+      }
+    }
+
+    // Send WhatsApp notifications on completion
+    if (complete) {
+      const patientPhone = appointment.patient?.phone || appointment.phone;
+      const patientName = appointment.patient?.full_name || appointment.name;
+
+      if (patientPhone) {
+        // Prescription ready notification
+        if (prescription?.items?.length > 0) {
+          await sendWhatsAppNotification(patientPhone, NOTIFICATION_TYPES.PRESCRIPTION_READY, {
+            patientName,
+            doctorName: doctor.full_name,
+            medicationCount: prescription.items.length,
+          }).catch(err => console.error("WhatsApp notify error (prescription ready):", err));
+        }
+
+        // Schedule follow-up reminder (7 days after consultation)
+        await scheduleFollowUpReminder(
+          patientPhone,
+          appointment.patient_id,
+          id,
+          patientName,
+          doctor.full_name,
+          7
+        ).catch(err => console.error("WhatsApp follow-up schedule error:", err));
       }
     }
 

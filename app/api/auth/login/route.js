@@ -16,7 +16,7 @@ export async function POST(request) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,7 +32,7 @@ export async function POST(request) {
     if (userError || !user) {
       return NextResponse.json(
         { error: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -40,7 +40,7 @@ export async function POST(request) {
     if (user.role === ROLES.PATIENT) {
       return NextResponse.json(
         { error: "Please use OTP login for patient accounts" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +48,7 @@ export async function POST(request) {
     if (!user.is_active) {
       return NextResponse.json(
         { error: "Your account has been deactivated. Please contact support." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -56,7 +56,7 @@ export async function POST(request) {
     if (!user.password_hash) {
       return NextResponse.json(
         { error: "Password not set. Please contact administrator." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -65,7 +65,7 @@ export async function POST(request) {
     if (!isValidPassword) {
       return NextResponse.json(
         { error: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -92,7 +92,7 @@ export async function POST(request) {
       console.error("Error creating session:", sessionError);
       return NextResponse.json(
         { error: "Failed to create session" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 

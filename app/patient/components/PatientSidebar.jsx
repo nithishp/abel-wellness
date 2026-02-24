@@ -55,6 +55,12 @@ const PatientSidebar = () => {
       href: "/patient/billing",
       description: "Invoices & payments",
     },
+    {
+      name: "My Profile",
+      icon: FiUser,
+      href: "/patient/complete-profile",
+      description: "Update your details",
+    },
   ];
 
   const handleLogout = async () => {
@@ -73,18 +79,20 @@ const PatientSidebar = () => {
     <div className="flex flex-col h-full">
       {/* Logo Section */}
       <div className="p-6 border-b border-slate-700/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <FiHeart className="w-5 h-5 text-white" />
-          </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
-              <h1 className="text-white font-bold text-lg tracking-tight">
-                AWHCC
-              </h1>
-              <p className="text-slate-400 text-xs">Patient Portal</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <FiHeart className="w-5 h-5 text-white" />
             </div>
-          )}
+            {!collapsed && (
+              <div className="overflow-hidden">
+                <h1 className="text-white font-bold text-lg tracking-tight">
+                  AWHCC
+                </h1>
+                <p className="text-slate-400 text-xs">Patient Portal</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

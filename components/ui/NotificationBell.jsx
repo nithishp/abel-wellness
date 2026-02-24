@@ -141,11 +141,11 @@ const NotificationBell = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-lg relative transition-colors"
+        className="p-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all relative"
       >
-        <FiBell className="w-5 h-5 text-gray-600" />
+        <FiBell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center ring-2 ring-slate-900">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -158,7 +158,7 @@ const NotificationBell = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-xl shadow-lg border overflow-hidden z-50"
+            className="fixed right-4 sm:right-6 lg:right-8 top-16 sm:top-[4.5rem] w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-xl shadow-2xl border overflow-hidden z-50"
           >
             {/* Header */}
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">

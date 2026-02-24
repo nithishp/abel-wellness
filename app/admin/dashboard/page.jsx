@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRoleAuth } from "@/lib/auth/RoleAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
+import NotificationBell from "@/components/ui/NotificationBell";
 import {
   FiFileText,
   FiCalendar,
@@ -325,10 +326,11 @@ const AdminDashboard = () => {
                   Dashboard
                 </h1>
                 <p className="text-slate-400 text-sm mt-0.5">
-                  Welcome back, {user?.name || user?.email?.split("@")[0]}
+                  Welcome back, {user?.full_name || user?.email?.split("@")[0]}
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                <NotificationBell />
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}

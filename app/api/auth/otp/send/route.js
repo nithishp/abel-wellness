@@ -33,7 +33,7 @@ export async function POST(request) {
           error:
             "No account found with this email. Please book an appointment first to create your account.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(request) {
     if (!existingUser.is_active) {
       return NextResponse.json(
         { error: "Your account has been deactivated. Please contact support." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -68,14 +68,14 @@ export async function POST(request) {
       console.error("Error storing OTP:", otpError);
       return NextResponse.json(
         { error: "Failed to generate OTP" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Send OTP email
     const emailResult = await sendEmail(
       normalizedEmail,
-      emailTemplates.otp(existingUser?.full_name || "", code)
+      emailTemplates.otp(existingUser?.full_name || "", code),
     );
 
     if (!emailResult.success) {

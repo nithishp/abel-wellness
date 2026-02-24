@@ -17,6 +17,7 @@ import {
   FiArrowRight,
   FiArrowUp,
   FiArrowDown,
+  FiXCircle,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import AppointmentModal from "@/app/components/ui/AppointmentModal";
@@ -163,6 +164,37 @@ const PatientAppointmentsPage = () => {
 
   const handleAppointmentSuccess = () => {
     reset();
+  };
+
+  const [cancellingId, setCancellingId] = useState(null);
+
+  const handleCancelAppointment = async (appointmentId) => {
+    if (!confirm("Are you sure you want to cancel this appointment?")) return;
+
+    setCancellingId(appointmentId);
+    try {
+      const res = await fetch("/api/patient/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId, action: "cancel" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to cancel appointment");
+        return;
+      }
+      toast.success("Appointment cancelled successfully");
+      reset();
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const canCancel = (status) => {
+    return ["pending", "approved", "rescheduled"].includes(status);
   };
 
   const filterOptions = [
@@ -330,11 +362,11 @@ const PatientAppointmentsPage = () => {
                   {sortedAppointments.map((appointment) => {
                     const statusConfig = getStatusConfig(
                       appointment.status,
-                      appointment.consultation_status
+                      appointment.consultation_status,
                     );
                     const formattedDateTime = formatAppointmentDateTime(
                       appointment.date,
-                      appointment.time
+                      appointment.time,
                     );
 
                     return (
@@ -383,7 +415,7 @@ const PatientAppointmentsPage = () => {
                                   onClick={() =>
                                     toggleReasonExpanded(
                                       appointment.id,
-                                      "visit"
+                                      "visit",
                                     )
                                   }
                                 >
@@ -419,7 +451,7 @@ const PatientAppointmentsPage = () => {
                                   onClick={() =>
                                     toggleReasonExpanded(
                                       appointment.id,
-                                      "rejection"
+                                      "rejection",
                                     )
                                   }
                                 >
@@ -451,13 +483,28 @@ const PatientAppointmentsPage = () => {
                             </div>
                           </div>
 
-                          {/* Action Button */}
-                          {appointment.consultation_status === "completed" && (
-                            <div className="flex justify-end">
+                          {/* Action Buttons */}
+                          <div className="flex justify-end gap-2">
+                            {canCancel(appointment.status) && (
+                              <button
+                                onClick={() =>
+                                  handleCancelAppointment(appointment.id)
+                                }
+                                disabled={cancellingId === appointment.id}
+                                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-red-400 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                              >
+                                <FiXCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                {cancellingId === appointment.id
+                                  ? "Cancelling..."
+                                  : "Cancel"}
+                              </button>
+                            )}
+                            {appointment.consultation_status ===
+                              "completed" && (
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/patient/records/${appointment.id}`
+                                    `/patient/records/${appointment.id}`,
                                   )
                                 }
                                 className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-400 bg-blue-500/10 rounded-lg hover:bg-blue-500/20 transition-colors"
@@ -465,8 +512,8 @@ const PatientAppointmentsPage = () => {
                                 <FiEye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 View Record
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
