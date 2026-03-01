@@ -21,6 +21,7 @@ const AppointmentSection = ({ id }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [countryCode, setCountryCode] = useState("+91");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExistingPatientModal, setShowExistingPatientModal] =
     useState(false);
@@ -33,7 +34,8 @@ const AppointmentSection = ({ id }) => {
   };
 
   const validatePhone = (phone) => {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    // Validate local number only (country code is separate)
+    const phoneRegex = /^[0-9]{7,15}$/;
     return phoneRegex.test(phone.replace(/\s/g, ""));
   };
 
@@ -139,7 +141,10 @@ const AppointmentSection = ({ id }) => {
 
     try {
       console.log("Submitting appointment:", appointment);
-      const result = await createAppointment(appointment);
+      const result = await createAppointment({
+        ...appointment,
+        phoneNumber: countryCode + appointment.phoneNumber.replace(/\s/g, ""),
+      });
       console.log(result, "scheduled Appointment");
 
       // Check if this is an existing patient
@@ -466,28 +471,46 @@ const AppointmentSection = ({ id }) => {
                   </div>
 
                   {/* Phone Number */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col sm:col-span-2">
                     <label
                       htmlFor="phoneNumber"
                       className="text-sm font-medium text-neutral-700 mb-2"
                     >
                       Phone Number <span className="text-red-500">*</span>
                     </label>
-                    <motion.input
-                      id="phoneNumber"
-                      placeholder="+91 98765 43210"
-                      type="tel"
-                      aria-label="Phone Number"
-                      className={`border px-4 py-3 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all ${
-                        errors.phoneNumber
-                          ? "border-red-400 focus:ring-red-500"
-                          : "border-neutral-200"
-                      }`}
-                      variants={inputAnimation}
-                      value={appointment.phoneNumber}
-                      onChange={handleInputChange}
-                      viewport={{ once: true }}
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="border border-neutral-200 px-3 py-3 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm text-neutral-700 cursor-pointer flex-shrink-0"
+                        aria-label="Country code"
+                      >
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+971">🇦🇪 +971</option>
+                        <option value="+65">🇸🇬 +65</option>
+                        <option value="+60">🇲🇾 +60</option>
+                        <option value="+94">🇱🇰 +94</option>
+                        <option value="+977">🇳🇵 +977</option>
+                      </select>
+                      <motion.input
+                        id="phoneNumber"
+                        placeholder="98765 43210"
+                        type="tel"
+                        aria-label="Phone Number"
+                        className={`flex-1 border px-4 py-3 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all ${
+                          errors.phoneNumber
+                            ? "border-red-400 focus:ring-red-500"
+                            : "border-neutral-200"
+                        }`}
+                        variants={inputAnimation}
+                        value={appointment.phoneNumber}
+                        onChange={handleInputChange}
+                        viewport={{ once: true }}
+                      />
+                    </div>
                     {errors.phoneNumber && (
                       <span className="text-red-500 text-xs mt-1">
                         {errors.phoneNumber}
@@ -523,6 +546,29 @@ const AppointmentSection = ({ id }) => {
                         {errors.age}
                       </span>
                     )}
+                  </div>
+
+                  {/* Sex */}
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="sex"
+                      className="text-sm font-medium text-neutral-700 mb-2"
+                    >
+                      Sex{" "}
+                      <span className="text-neutral-400">(optional)</span>
+                    </label>
+                    <select
+                      id="sex"
+                      aria-label="Sex"
+                      className="border border-neutral-200 px-4 py-3 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm text-neutral-700 cursor-pointer h-[50px]"
+                      value={appointment.sex}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select...</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
 
                   {/* Date & Time */}

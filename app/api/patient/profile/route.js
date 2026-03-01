@@ -65,7 +65,7 @@ export async function PUT(request) {
       );
     }
 
-    if (phone && !/^[0-9+\-\s()]{7,15}$/.test(phone.trim())) {
+    if (phone && !/^[0-9+\-\s()]{7,20}$/.test(phone.trim())) {
       return NextResponse.json(
         { error: "Invalid phone number format" },
         { status: 400 },

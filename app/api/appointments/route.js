@@ -51,6 +51,7 @@ export async function POST(request) {
           full_name: patientName,
           phone: data.phoneNumber,
           age: data.age ? parseInt(data.age) : null,
+          sex: data.sex?.toLowerCase() || null,
           role: ROLES.PATIENT,
           is_active: true,
         })
@@ -80,6 +81,9 @@ export async function POST(request) {
       }
       if (data.age && parseInt(data.age) !== existingUser.age) {
         updateData.age = parseInt(data.age);
+      }
+      if (data.sex && data.sex.toLowerCase() !== existingUser.sex) {
+        updateData.sex = data.sex.toLowerCase();
       }
 
       if (Object.keys(updateData).length > 0) {
