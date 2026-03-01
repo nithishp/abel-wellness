@@ -16,15 +16,13 @@ async function verifyAdminOrPharmacist() {
     return null;
   }
 
-  const { data: session, error } = await supabaseAdmin
+  const { data: session } = await supabaseAdmin
     .from(TABLES.USER_SESSIONS)
     .select("*, user:users(*)")
     .eq("session_token", sessionToken)
-    .eq("is_active", true)
-    .gt("expires_at", new Date().toISOString())
     .single();
 
-  if (error || !session) {
+  if (!session || new Date(session.expires_at) < new Date()) {
     return null;
   }
 

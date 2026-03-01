@@ -6,6 +6,7 @@ import {
   APPOINTMENT_STATUS,
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
+import { scheduleAppointmentReminders } from "@/lib/whatsapp/notifications";
 
 export async function POST(request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request) {
       if (!data[field]) {
         return NextResponse.json(
           { error: `${field} is required` },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -60,7 +61,7 @@ export async function POST(request) {
         console.error("Error creating patient user:", userError);
         return NextResponse.json(
           { error: "Failed to create patient account" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -69,7 +70,7 @@ export async function POST(request) {
       // Send welcome email to new patient
       await sendEmail(
         normalizedEmail,
-        emailTemplates.welcomePatient(patientName)
+        emailTemplates.welcomePatient(patientName),
       );
     } else {
       // Update existing patient info if provided
@@ -112,7 +113,7 @@ export async function POST(request) {
       console.error("Supabase error creating appointment:", error);
       return NextResponse.json(
         { error: "Failed to create appointment", message: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -136,7 +137,7 @@ export async function POST(request) {
         date: formattedDate,
         time: formattedTime,
         reason: data.message || "General Consultation",
-      })
+      }),
     );
 
     // Notify admins about new appointment
@@ -158,7 +159,7 @@ export async function POST(request) {
             date: formattedDate,
             time: formattedTime,
             reason: data.message || "General Consultation",
-          })
+          }),
         );
 
         // Create notification
@@ -181,6 +182,21 @@ export async function POST(request) {
       ...newAppointment,
     };
 
+    // Schedule WhatsApp reminders if patient has a phone number
+    // Note: Immediate confirmation is NOT sent here since the appointment is still pending.
+    // The admin approval flow handles sending the confirmation notification.
+    if (data.phoneNumber) {
+      await scheduleAppointmentReminders(
+        data.phoneNumber,
+        patientId,
+        newAppointment.id,
+        new Date(data.schedule),
+        patientName,
+      ).catch((err) =>
+        console.error("WhatsApp reminder schedule error (web booking):", err),
+      );
+    }
+
     return NextResponse.json({
       success: true,
       appointment: transformedAppointment,
@@ -194,7 +210,7 @@ export async function POST(request) {
         error: "Failed to create appointment",
         message: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

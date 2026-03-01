@@ -12,15 +12,17 @@ async function verifyDoctorSession() {
     return null;
   }
 
-  const { data: session, error } = await supabaseAdmin
+  const { data: session } = await supabaseAdmin
     .from(TABLES.USER_SESSIONS)
     .select("*, user:users(*)")
     .eq("session_token", sessionToken)
-    .eq("is_active", true)
-    .gt("expires_at", new Date().toISOString())
     .single();
 
-  if (error || !session || session.user?.role !== "doctor") {
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return null;
+  }
+
+  if (session.user?.role !== "doctor") {
     return null;
   }
 

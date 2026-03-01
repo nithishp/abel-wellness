@@ -7,8 +7,32 @@ import {
   APPOINTMENT_STATUS,
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
-import { sendWhatsAppNotification, scheduleAppointmentReminders } from "@/lib/whatsapp/notifications";
+import {
+  sendWhatsAppNotification,
+  scheduleAppointmentReminders,
+} from "@/lib/whatsapp/notifications";
 import { NOTIFICATION_TYPES } from "@/lib/whatsapp/constants";
+
+// Format date in IST for WhatsApp messages (consistent with chatbot)
+function formatDateIST(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+}
+
+function formatTimeIST(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
+}
 
 // Helper function to verify admin session
 async function verifyAdminSession() {
@@ -92,7 +116,7 @@ export async function POST(request) {
     if (!name || !email || !date) {
       return NextResponse.json(
         { error: "Name, email, and date are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -133,7 +157,7 @@ export async function POST(request) {
           console.error("Error creating patient:", createError);
           return NextResponse.json(
             { error: "Failed to create patient" },
-            { status: 500 }
+            { status: 500 },
           );
         }
         patient = newPatient;
@@ -168,7 +192,7 @@ export async function POST(request) {
       console.error("Error creating appointment:", appointmentError);
       return NextResponse.json(
         { error: "Failed to create appointment" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -203,8 +227,8 @@ export async function POST(request) {
             {
               name: doctor.user.full_name,
               specialization: doctor.specialization,
-            }
-          )
+            },
+          ),
         );
 
         // Notify doctor
@@ -218,8 +242,8 @@ export async function POST(request) {
                 name: name,
                 age: patient?.age,
                 reason: reason_for_visit || message,
-              }
-            )
+              },
+            ),
           );
         }
 
@@ -241,7 +265,7 @@ export async function POST(request) {
           date: formattedDate,
           time: formattedTime,
           service: service || "General Consultation",
-        })
+        }),
       );
     }
 
@@ -253,7 +277,7 @@ export async function POST(request) {
     console.error("Error creating appointment:", error);
     return NextResponse.json(
       { error: "Failed to create appointment" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -290,7 +314,7 @@ export async function GET(request) {
     }
     if (search) {
       countQuery = countQuery.or(
-        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`,
       );
     }
 
@@ -320,7 +344,7 @@ export async function GET(request) {
             email
           )
         )
-      `
+      `,
       )
       .order("created_at", { ascending: false });
 
@@ -338,20 +362,20 @@ export async function GET(request) {
 
     if (search) {
       query = query.or(
-        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
+        `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`,
       );
     }
 
     const { data: appointments, error } = await query.range(
       offset,
-      offset + limit - 1
+      offset + limit - 1,
     );
 
     if (error) {
       console.error("Supabase error fetching appointments:", error);
       return NextResponse.json(
         { error: "Failed to fetch appointments" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -372,7 +396,7 @@ export async function GET(request) {
     console.error("Error fetching appointments:", error);
     return NextResponse.json(
       { error: "Failed to fetch appointments" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -392,7 +416,7 @@ export async function PUT(request) {
     if (!appointmentId) {
       return NextResponse.json(
         { error: "Appointment ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -415,7 +439,7 @@ export async function PUT(request) {
             email
           )
         )
-      `
+      `,
       )
       .eq("id", appointmentId)
       .single();
@@ -423,7 +447,7 @@ export async function PUT(request) {
     if (!currentAppointment) {
       return NextResponse.json(
         { error: "Appointment not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -436,7 +460,7 @@ export async function PUT(request) {
         if (!doctorId) {
           return NextResponse.json(
             { error: "Doctor ID is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -451,7 +475,7 @@ export async function PUT(request) {
               full_name,
               email
             )
-          `
+          `,
           )
           .eq("id", doctorId)
           .single();
@@ -459,7 +483,7 @@ export async function PUT(request) {
         if (!doctor) {
           return NextResponse.json(
             { error: "Doctor not found" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
@@ -503,8 +527,8 @@ export async function PUT(request) {
               {
                 name: doctor.user.full_name,
                 specialization: doctor.specialization,
-              }
-            )
+              },
+            ),
           );
         }
 
@@ -521,8 +545,8 @@ export async function PUT(request) {
                 reason:
                   currentAppointment.reason_for_visit ||
                   currentAppointment.message,
-              }
-            )
+              },
+            ),
           );
         }
 
@@ -538,12 +562,18 @@ export async function PUT(request) {
 
         // Send WhatsApp notification to patient
         if (currentAppointment.phone) {
-          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_CONFIRMED, {
-            patientName: currentAppointment.name,
-            date: formattedDate,
-            time: formattedTime,
-            doctorName: doctor.user.full_name,
-          }).catch(err => console.error("WhatsApp notify error (assign):", err));
+          await sendWhatsAppNotification(
+            currentAppointment.phone,
+            NOTIFICATION_TYPES.APPOINTMENT_CONFIRMED,
+            {
+              patientName: currentAppointment.name,
+              date: formatDateIST(currentAppointment.date),
+              time: formatTimeIST(currentAppointment.date),
+              doctorName: doctor.user.full_name,
+            },
+          ).catch((err) =>
+            console.error("WhatsApp notify error (assign):", err),
+          );
 
           // Schedule appointment reminders
           await scheduleAppointmentReminders(
@@ -552,8 +582,10 @@ export async function PUT(request) {
             appointmentId,
             new Date(currentAppointment.date),
             currentAppointment.name,
-            doctor.user.full_name
-          ).catch(err => console.error("WhatsApp reminder schedule error:", err));
+            doctor.user.full_name,
+          ).catch((err) =>
+            console.error("WhatsApp reminder schedule error:", err),
+          );
         }
 
         return NextResponse.json({
@@ -599,18 +631,34 @@ export async function PUT(request) {
             emailTemplates.appointmentRejected(
               currentAppointment.name,
               { date: formattedDate, time: formattedTime },
-              reason
-            )
+              reason,
+            ),
           );
         }
 
         // Send WhatsApp notification to patient
         if (currentAppointment.phone) {
-          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_REJECTED, {
-            patientName: currentAppointment.name,
-            date: formattedDate,
-            reason: reason || null,
-          }).catch(err => console.error("WhatsApp notify error (reject):", err));
+          await sendWhatsAppNotification(
+            currentAppointment.phone,
+            NOTIFICATION_TYPES.APPOINTMENT_REJECTED,
+            {
+              patientName: currentAppointment.name,
+              date: formatDateIST(currentAppointment.date),
+              time: formatTimeIST(currentAppointment.date),
+              doctorName: currentAppointment.doctor?.user?.full_name || null,
+              reason: reason || "unavoidable circumstances",
+            },
+          ).catch((err) =>
+            console.error("WhatsApp notify error (reject):", err),
+          );
+
+          // Cancel any scheduled reminders for this rejected appointment
+          await supabaseAdmin
+            .from("whatsapp_scheduled_messages")
+            .update({ status: "cancelled" })
+            .eq("related_id", appointmentId)
+            .eq("status", "pending")
+            .catch(() => {});
         }
 
         return NextResponse.json({
@@ -625,7 +673,7 @@ export async function PUT(request) {
         if (!newDate) {
           return NextResponse.json(
             { error: "New date is required" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -676,14 +724,14 @@ export async function PUT(request) {
             year: "numeric",
             month: "long",
             day: "numeric",
-          }
+          },
         );
         const newFormattedTime = newAppointmentDate.toLocaleTimeString(
           "en-US",
           {
             hour: "2-digit",
             minute: "2-digit",
-          }
+          },
         );
 
         // Notify patient
@@ -693,19 +741,26 @@ export async function PUT(request) {
             emailTemplates.appointmentRescheduled(
               currentAppointment.name,
               { date: oldFormattedDate, time: oldFormattedTime },
-              { date: newFormattedDate, time: newFormattedTime }
-            )
+              { date: newFormattedDate, time: newFormattedTime },
+            ),
           );
         }
 
         // Send WhatsApp notification to patient
         if (currentAppointment.phone) {
-          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_RESCHEDULED, {
-            patientName: currentAppointment.name,
-            oldDate: `${oldFormattedDate} at ${oldFormattedTime}`,
-            newDate: newFormattedDate,
-            newTime: newFormattedTime,
-          }).catch(err => console.error("WhatsApp notify error (reschedule):", err));
+          await sendWhatsAppNotification(
+            currentAppointment.phone,
+            NOTIFICATION_TYPES.APPOINTMENT_RESCHEDULED,
+            {
+              patientName: currentAppointment.name,
+              oldDate: `${formatDateIST(currentAppointment.date)} at ${formatTimeIST(currentAppointment.date)}`,
+              newDate: formatDateIST(newDate),
+              newTime: formatTimeIST(newDate),
+              doctorName: currentAppointment.doctor?.user?.full_name || null,
+            },
+          ).catch((err) =>
+            console.error("WhatsApp notify error (reschedule):", err),
+          );
 
           // Cancel old reminders and schedule new ones
           await supabaseAdmin
@@ -720,8 +775,10 @@ export async function PUT(request) {
             currentAppointment.patient_id,
             appointmentId,
             new Date(newDate),
-            currentAppointment.name
-          ).catch(err => console.error("WhatsApp reminder schedule error:", err));
+            currentAppointment.name,
+          ).catch((err) =>
+            console.error("WhatsApp reminder schedule error:", err),
+          );
         }
 
         return NextResponse.json({
@@ -753,7 +810,7 @@ export async function PUT(request) {
           console.error("Supabase error updating appointment:", error);
           return NextResponse.json(
             { error: "Failed to update appointment" },
-            { status: 500 }
+            { status: 500 },
           );
         }
 
@@ -776,20 +833,23 @@ export async function PUT(request) {
             emailTemplates.appointmentCancelled(
               currentAppointment.name,
               { date: formattedDate, time: formattedTime },
-              cancellation_reason || "No specific reason provided."
-            )
+              cancellation_reason || "No specific reason provided.",
+            ),
           );
         }
 
         // Send WhatsApp cancellation notification
         if (status === "cancelled" && currentAppointment.phone) {
-          await sendWhatsAppNotification(currentAppointment.phone, NOTIFICATION_TYPES.APPOINTMENT_CANCELLED, {
-            patientName: currentAppointment.name,
-            date: (() => {
-              const d = new Date(currentAppointment.date);
-              return d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-            })(),
-          }).catch(err => console.error("WhatsApp notify error (cancel):", err));
+          await sendWhatsAppNotification(
+            currentAppointment.phone,
+            NOTIFICATION_TYPES.APPOINTMENT_CANCELLED,
+            {
+              patientName: currentAppointment.name,
+              date: formatDateIST(currentAppointment.date),
+            },
+          ).catch((err) =>
+            console.error("WhatsApp notify error (cancel):", err),
+          );
 
           // Cancel scheduled reminders
           await supabaseAdmin
@@ -810,7 +870,7 @@ export async function PUT(request) {
     console.error("Error updating appointment:", error);
     return NextResponse.json(
       { error: "Failed to update appointment" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -828,7 +888,7 @@ export async function DELETE(request) {
     if (!appointmentId) {
       return NextResponse.json(
         { error: "Appointment ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -841,7 +901,7 @@ export async function DELETE(request) {
       console.error("Supabase error deleting appointment:", error);
       return NextResponse.json(
         { error: "Failed to delete appointment" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -850,7 +910,7 @@ export async function DELETE(request) {
     console.error("Error deleting appointment:", error);
     return NextResponse.json(
       { error: "Failed to delete appointment" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

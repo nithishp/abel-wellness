@@ -377,6 +377,18 @@ const InventoryItemsContent = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
                     </td>
                   </tr>
+                ) : error && items.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center">
+                      <p className="text-red-400 mb-3">Failed to load items</p>
+                      <button
+                        onClick={reset}
+                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors"
+                      >
+                        Try Again
+                      </button>
+                    </td>
+                  </tr>
                 ) : items.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-400">
@@ -474,6 +486,12 @@ const InventoryItemsContent = () => {
             ref={sentinelRef}
             loading={loadingMore}
             hasMore={hasMore}
+            error={error}
+            itemCount={items.length}
+            totalCount={totalCount}
+            emptyMessage="No items found"
+            onRetry={reset}
+            loaderColor="emerald"
           />
         </div>
 

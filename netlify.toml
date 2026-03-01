@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Note: Netlify does not support built-in cron jobs like Vercel.
+# For the WhatsApp scheduled messages (reminders, follow-ups), use an external cron service:
+#
+# Option 1: cron-job.org (free tier, up to 4 jobs)
+#   - URL: GET https://your-site.netlify.app/api/whatsapp/cron?token=YOUR_CRON_SECRET
+#   - Schedule: Every 5 minutes (*/5 * * * *)
+#
+# Option 2: Upstash QStash (serverless cron, generous free tier)
+#   - Configure via Upstash dashboard
+#   - Set destination URL and Bearer token
+#
+# Option 3: EasyCron (free tier, 1 job)
+#   - URL: GET https://your-site.netlify.app/api/whatsapp/cron
+#   - Header: Authorization: Bearer YOUR_CRON_SECRET
+#   - Schedule: Every 5 minutes

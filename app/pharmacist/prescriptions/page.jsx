@@ -302,7 +302,27 @@ const PharmacistPrescriptionsPage = () => {
               </div>
 
               {/* Prescriptions List */}
-              {sortedPrescriptions.length === 0 ? (
+              {error && sortedPrescriptions.length === 0 ? (
+                <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 sm:p-12">
+                  <div className="text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <FiPackage className="w-6 h-6 sm:w-8 sm:h-8 text-red-400" />
+                    </div>
+                    <p className="text-red-400 font-medium text-base sm:text-lg">
+                      Failed to load prescriptions
+                    </p>
+                    <p className="text-slate-500 text-xs sm:text-sm mt-1 mb-4">
+                      Something went wrong. Please try again.
+                    </p>
+                    <button
+                      onClick={reset}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              ) : sortedPrescriptions.length === 0 ? (
                 <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 sm:p-12">
                   <div className="text-center">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-3 sm:mb-4">

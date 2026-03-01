@@ -81,7 +81,7 @@ const BlogsManagement = () => {
       if (!response.ok) throw new Error("Failed to fetch blogs");
       const data = await response.json();
       return {
-        items: data.documents || [],
+        items: data.blogs || [],
         total: data.pagination?.total || data.total || 0,
         hasMore: data.pagination?.hasMore || false,
       };

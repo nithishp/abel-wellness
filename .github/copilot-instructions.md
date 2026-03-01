@@ -129,7 +129,7 @@ abel-wellness/
 │   │       └── manage.js         # Status check, cancel, reschedule flows
 │   └── hooks/                    # useInfiniteScroll hook
 │
-├── supabase/migrations/          # 5 SQL migration files
+├── supabase/migrations/          # 6 SQL migration files
 ├── scripts/                      # seed-inventory.mjs, setup-admin.mjs
 ├── public/                       # Static assets (icons, profile images)
 └── documents/                    # Documentation files
@@ -293,7 +293,7 @@ Every role's dashboard follows the same layout:
 
 ## Database Schema (Supabase PostgreSQL)
 
-### 25 Tables across 5 migration files:
+### 25 Tables across 6 migration files:
 
 **Core (001):** `users`, `doctors`, `pharmacists`, `otp_codes`, `appointments`, `medical_records`, `prescriptions`, `prescription_items`, `notifications`, `user_sessions`
 
@@ -304,6 +304,8 @@ Every role's dashboard follows the same layout:
 **Billing (004):** `billing_settings`, `invoices`, `invoice_items`, `payments`, `payment_refunds`
 
 **WhatsApp (005):** `whatsapp_conversations`, `whatsapp_messages`, `whatsapp_scheduled_messages`
+
+**WhatsApp Enhancements (006):** Adds `opted_out` column to `whatsapp_conversations`, `updated_at` trigger to `whatsapp_scheduled_messages`
 
 ### Key Relationships
 
@@ -402,8 +404,12 @@ Email notifications are sent at each step via Nodemailer.
   - 24-hour and 1-hour appointment reminders (scheduled in `whatsapp_scheduled_messages`)
   - 7-day follow-up reminders (scheduled on consultation completion)
 - **Conversation timeout:** 30 minutes of inactivity resets to main menu
-- **Message types:** text, interactive buttons (max 3), interactive lists (sections with rows)
-- **DB Tables:** `whatsapp_conversations` (state machine), `whatsapp_messages` (audit log), `whatsapp_scheduled_messages` (reminders queue)
+- **Message types:** text, interactive buttons (max 3), interactive lists (sections with rows), Meta-approved templates
+- **Meta Templates:** 6 templates registered (`appointment_confirmation`, `appointment_cancelled`, `appointment_reminder`, `missed_appointment`, `rescheduled`, `rejected`) with graceful text fallback via `sendWithTemplateFallback()`
+- **Webhook Security:** Signature verification (`X-Hub-Signature-256`), rate limiting (60 req/min), idempotency dedup
+- **Opt-out:** Patients send STOP/START to manage notifications; checked at router, notification, and cron levels
+- **DB Tables:** `whatsapp_conversations` (state machine + opt-out), `whatsapp_messages` (audit log), `whatsapp_scheduled_messages` (reminders queue)
+- **Web booking integration:** Website bookings via `/api/appointments` also schedule WhatsApp reminders
 
 ---
 
@@ -470,13 +476,14 @@ Intersection Observer-based infinite scroll. Returns `{ items, loading, loadingM
 | `SMTP_SECURE`                   | Use TLS (`"true"/"false"`)                                  | Optional |
 | `OOREP_API_URL`                 | Local OOREP instance URL (default: `http://localhost:9000`) | Optional |
 | `NEXT_PUBLIC_OOREP_ENABLED`     | Enable OOREP feature (`"true"`)                             | Optional |
-| `WHATSAPP_ACCESS_TOKEN`         | Meta WhatsApp Business Cloud API access token               | Yes*     |
-| `WHATSAPP_PHONE_NUMBER_ID`      | WhatsApp Business phone number ID (from Meta dashboard)     | Yes*     |
-| `WHATSAPP_BUSINESS_ACCOUNT_ID`  | WhatsApp Business Account ID                                | Yes*     |
-| `WHATSAPP_VERIFY_TOKEN`         | Webhook verification token (set in Meta dashboard)          | Yes*     |
-| `CRON_SECRET`                   | Secret token for cron endpoint auth (`/api/whatsapp/cron`)  | Yes*     |
+| `WHATSAPP_ACCESS_TOKEN`         | Meta WhatsApp Business Cloud API access token               | Yes\*    |
+| `WHATSAPP_PHONE_NUMBER_ID`      | WhatsApp Business phone number ID (from Meta dashboard)     | Yes\*    |
+| `WHATSAPP_BUSINESS_ACCOUNT_ID`  | WhatsApp Business Account ID                                | Yes\*    |
+| `WHATSAPP_VERIFY_TOKEN`         | Webhook verification token (set in Meta dashboard)          | Yes\*    |
+| `WHATSAPP_APP_SECRET`           | Meta App Secret for webhook signature verification          | Yes\*    |
+| `CRON_SECRET`                   | Secret token for cron endpoint auth (`/api/whatsapp/cron`)  | Yes\*    |
 
-*Required if WhatsApp chatbot feature is enabled
+\*Required if WhatsApp chatbot feature is enabled
 
 ---
 
@@ -662,8 +669,8 @@ Before writing any new API route, server action, or page that interacts with the
 - Cards use the shadcn/ui `Card` component with `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`
 - Use `framer-motion` for animations — keep them subtle and consistent with existing patterns
 
-
 ### Do NOT
+
 - Do not create new UI component libraries or design tokens — use what exists
 - Do not use raw `<input>`, `<select>`, `<button>` elements — always use shadcn/ui equivalents
 - Do not mix CSS Modules, styled-components, or other CSS-in-JS — Tailwind only

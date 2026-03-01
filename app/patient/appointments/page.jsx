@@ -336,7 +336,25 @@ const PatientAppointmentsPage = () => {
               </div>
 
               {/* Appointments Grid */}
-              {sortedAppointments.length === 0 ? (
+              {error && sortedAppointments.length === 0 ? (
+                <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 sm:p-12 text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <FiCalendar className="w-8 h-8 sm:w-10 sm:h-10 text-red-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                    Failed to load appointments
+                  </h3>
+                  <p className="text-slate-400 mb-4 sm:mb-6 max-w-md mx-auto text-sm sm:text-base">
+                    Something went wrong. Please try again.
+                  </p>
+                  <button
+                    onClick={reset}
+                    className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-all font-medium text-sm sm:text-base"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : sortedAppointments.length === 0 ? (
                 <div className="rounded-xl sm:rounded-2xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 p-8 sm:p-12 text-center">
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-700/50 flex items-center justify-center mx-auto mb-4 sm:mb-6">
                     <FiCalendar className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500" />
@@ -524,6 +542,10 @@ const PatientAppointmentsPage = () => {
                     sentinelRef={sentinelRef}
                     loadingMore={loadingMore}
                     hasMore={hasMore}
+                    error={error}
+                    onRetry={reset}
+                    itemCount={sortedAppointments.length}
+                    totalCount={totalCount}
                   />
                 </div>
               )}

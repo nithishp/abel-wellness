@@ -585,7 +585,25 @@ const AppointmentsManagement = () => {
               </div>
 
               {/* Appointments Grid */}
-              {sortedAppointments.length === 0 && !loading ? (
+              {error && sortedAppointments.length === 0 && !loading ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                    <FiCalendar className="w-10 h-10 text-red-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-3">
+                    Failed to load appointments
+                  </h2>
+                  <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                    Something went wrong. Please try again.
+                  </p>
+                  <button
+                    onClick={reset}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-all"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : sortedAppointments.length === 0 && !loading ? (
                 <div className="text-center py-16">
                   <div className="w-20 h-20 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-6">
                     <FiCalendar className="w-10 h-10 text-slate-500" />

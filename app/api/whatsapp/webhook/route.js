@@ -4,13 +4,64 @@
 // POST — Incoming messages, status updates
 
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { parseIncomingMessage, handleIncomingMessage } from "@/lib/whatsapp/router";
+import { supabaseAdmin } from "@/lib/supabase.config";
+import { WA_TABLES } from "@/lib/whatsapp/constants";
+import { rateLimit } from "@/lib/rate-limit";
 
-// Webhook verification token — set this in your Meta developer dashboard
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "abel_wellness_whatsapp_verify_2026";
+// Webhook verification token — must be set in environment
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+
+// App secret for webhook signature verification
+const APP_SECRET = process.env.WHATSAPP_APP_SECRET;
+
+// Rate limiter: 60 requests per minute per IP
+const webhookLimiter = rateLimit({
+  interval: 60 * 1000,
+  maxRequests: 60,
+  prefix: "wa-webhook",
+});
+
+// Verify Meta webhook signature (X-Hub-Signature-256)
+function verifyWebhookSignature(rawBody, signature) {
+  if (!APP_SECRET) {
+    console.warn("WHATSAPP_APP_SECRET not set — skipping signature verification");
+    return true;
+  }
+  if (!signature) return false;
+
+  const expectedSignature = "sha256=" + crypto
+    .createHmac("sha256", APP_SECRET)
+    .update(rawBody)
+    .digest("hex");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature),
+  );
+}
+
+// Check if a message has already been processed (idempotency)
+async function isMessageAlreadyProcessed(waMessageId) {
+  if (!waMessageId) return false;
+  const { data } = await supabaseAdmin
+    .from(WA_TABLES.MESSAGES)
+    .select("id")
+    .eq("wa_message_id", waMessageId)
+    .eq("direction", "inbound")
+    .limit(1)
+    .maybeSingle();
+  return !!data;
+}
 
 // GET — Meta webhook verification challenge
 export async function GET(request) {
+  if (!VERIFY_TOKEN) {
+    console.error("WHATSAPP_VERIFY_TOKEN not configured");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+
   const { searchParams } = new URL(request.url);
 
   const mode = searchParams.get("hub.mode");
@@ -31,7 +82,24 @@ export async function GET(request) {
 // POST — Incoming messages and status updates
 export async function POST(request) {
   try {
-    const body = await request.json();
+    // Rate limiting
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const { success: rateLimitOk } = webhookLimiter.check(ip);
+    if (!rateLimitOk) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    // Read raw body for signature verification
+    const rawBody = await request.text();
+
+    // Verify webhook signature
+    const signature = request.headers.get("x-hub-signature-256");
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      console.error("Invalid webhook signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    }
+
+    const body = JSON.parse(rawBody);
 
     // Verify this is a WhatsApp message event
     if (body.object !== "whatsapp_business_account") {
@@ -53,6 +121,12 @@ export async function POST(request) {
 
         // Handle incoming messages
         for (const message of messages) {
+          // Idempotency check — skip if already processed
+          if (message.id && await isMessageAlreadyProcessed(message.id)) {
+            console.log(`Skipping duplicate message: ${message.id}`);
+            continue;
+          }
+
           const parsed = parseIncomingMessage(message);
           if (parsed) {
             // Process asynchronously — don't block the webhook response

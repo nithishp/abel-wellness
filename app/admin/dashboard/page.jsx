@@ -60,13 +60,13 @@ const AdminDashboard = () => {
       const blogsResponse = await fetch("/api/admin/blogs?limit=100");
       const blogsData = await blogsResponse.json();
 
-      if (blogsData.documents && Array.isArray(blogsData.documents)) {
-        const publishedCount = blogsData.documents.filter(
+      if (blogsData.blogs && Array.isArray(blogsData.blogs)) {
+        const publishedCount = blogsData.blogs.filter(
           (blog) => blog.published,
         ).length;
         setStats((prev) => ({
           ...prev,
-          totalBlogs: blogsData.documents.length || 0,
+          totalBlogs: blogsData.blogs.length || 0,
           publishedBlogs: publishedCount || 0,
         }));
       }
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
       }
 
       await fetchRecentActivity(
-        blogsData.documents || [],
+        blogsData.blogs || [],
         appointmentsData.appointments || [],
       );
     } catch (error) {
