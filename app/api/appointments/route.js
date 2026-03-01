@@ -39,6 +39,17 @@ export async function POST(request) {
       .eq("email", normalizedEmail)
       .single();
 
+    // Block staff accounts (doctors, pharmacists, admins) from booking appointments
+    if (existingUser && existingUser.role !== ROLES.PATIENT) {
+      return NextResponse.json(
+        {
+          error:
+            "This email is registered as a staff account and cannot be used to book patient appointments.",
+        },
+        { status: 403 },
+      );
+    }
+
     let patientId = existingUser?.id;
     let isExistingPatient = !!existingUser;
 

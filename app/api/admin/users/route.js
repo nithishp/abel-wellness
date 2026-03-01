@@ -62,7 +62,7 @@ export async function GET(request) {
 
     if (search) {
       countQuery = countQuery.or(
-        `full_name.ilike.%${search}%,email.ilike.%${search}%`
+        `full_name.ilike.%${search}%,email.ilike.%${search}%`,
       );
     }
 
@@ -93,7 +93,7 @@ export async function GET(request) {
       console.error("Error fetching users:", error);
       return NextResponse.json(
         { error: "Failed to fetch users" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -121,7 +121,7 @@ export async function GET(request) {
         // Remove password hash from response
         const { password_hash, ...safeUser } = user;
         return { ...safeUser, roleData };
-      })
+      }),
     );
 
     const hasMore = offset + users.length < totalCount;
@@ -140,7 +140,7 @@ export async function GET(request) {
     console.error("Error in GET users:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -160,7 +160,7 @@ export async function POST(request) {
     if (!email || !password || !name || !role) {
       return NextResponse.json(
         { error: "Email, password, name, and role are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -168,7 +168,7 @@ export async function POST(request) {
     if (![ROLES.DOCTOR, ROLES.PHARMACIST].includes(role)) {
       return NextResponse.json(
         { error: "Invalid role. Must be doctor or pharmacist" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -203,7 +203,7 @@ export async function POST(request) {
           console.error("Error reactivating user:", updateError);
           return NextResponse.json(
             { error: "Failed to reactivate user" },
-            { status: 500 }
+            { status: 500 },
           );
         }
 
@@ -293,7 +293,7 @@ export async function POST(request) {
       // If user is active, return error
       return NextResponse.json(
         { error: "A user with this email already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -318,7 +318,7 @@ export async function POST(request) {
       console.error("Error creating user:", userError);
       return NextResponse.json(
         { error: "Failed to create user" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -370,7 +370,7 @@ export async function POST(request) {
     console.error("Error in POST user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -389,7 +389,7 @@ export async function PUT(request) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -440,7 +440,7 @@ export async function PUT(request) {
         console.error("Error updating user:", userError);
         return NextResponse.json(
           { error: "Failed to update user" },
-          { status: 500 }
+          { status: 500 },
         );
       }
       updatedUser = userData;
@@ -498,12 +498,100 @@ export async function PUT(request) {
     console.error("Error in PUT user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-// DELETE - Hard delete user
+// PATCH - Toggle user active status (activate / deactivate)
+export async function PATCH(request) {
+  try {
+    const admin = await verifyAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("id");
+    const action = searchParams.get("action"); // "activate" | "deactivate"
+
+    if (!userId || !action) {
+      return NextResponse.json(
+        { error: "User ID and action are required" },
+        { status: 400 },
+      );
+    }
+
+    if (!["activate", "deactivate"].includes(action)) {
+      return NextResponse.json(
+        { error: "Action must be 'activate' or 'deactivate'" },
+        { status: 400 },
+      );
+    }
+
+    const isActive = action === "activate";
+
+    // If deactivating a doctor, check for active appointments first
+    if (!isActive) {
+      const { data: user } = await supabaseAdmin
+        .from(TABLES.USERS)
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (user?.role === ROLES.DOCTOR) {
+        const { data: activeAppointments } = await supabaseAdmin
+          .from(TABLES.APPOINTMENTS)
+          .select("id")
+          .eq("doctor_id", userId)
+          .in("status", ["pending", "confirmed", "in_progress"]);
+
+        if (activeAppointments && activeAppointments.length > 0) {
+          return NextResponse.json(
+            {
+              error: `Cannot deactivate doctor with ${activeAppointments.length} active appointment(s). Please complete or reassign them first.`,
+            },
+            { status: 400 },
+          );
+        }
+      }
+    }
+
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
+      .from(TABLES.USERS)
+      .update({ is_active: isActive })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating user status:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update user status" },
+        { status: 500 },
+      );
+    }
+
+    // Invalidate all sessions when deactivating
+    if (!isActive) {
+      await supabaseAdmin
+        .from(TABLES.USER_SESSIONS)
+        .delete()
+        .eq("user_id", userId);
+    }
+
+    const { password_hash, ...safeUser } = updatedUser;
+    return NextResponse.json({ success: true, user: safeUser });
+  } catch (error) {
+    console.error("Error in PATCH user:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE - Soft deactivate user
 export async function DELETE(request) {
   try {
     const admin = await verifyAdminSession();
@@ -517,7 +605,7 @@ export async function DELETE(request) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -532,7 +620,7 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check for active appointments (prevent deletion if doctor has pending appointments)
+    // Check for active appointments (prevent deactivation if doctor has pending appointments)
     if (user.role === ROLES.DOCTOR) {
       const { data: activeAppointments } = await supabaseAdmin
         .from(TABLES.APPOINTMENTS)
@@ -543,87 +631,39 @@ export async function DELETE(request) {
       if (activeAppointments && activeAppointments.length > 0) {
         return NextResponse.json(
           {
-            error: `Cannot delete doctor with ${activeAppointments.length} active appointment(s). Please complete or reassign them first.`,
+            error: `Cannot deactivate doctor with ${activeAppointments.length} active appointment(s). Please complete or reassign them first.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
 
-    // Handle appointments as patient - set patient_id to null to preserve appointment history
-    await supabaseAdmin
-      .from(TABLES.APPOINTMENTS)
-      .update({ patient_id: null })
-      .eq("patient_id", userId);
+    // Soft deactivate: set is_active = false
+    const { error: updateError } = await supabaseAdmin
+      .from(TABLES.USERS)
+      .update({ is_active: false })
+      .eq("id", userId);
 
-    // Handle appointments assigned_by this user
-    await supabaseAdmin
-      .from(TABLES.APPOINTMENTS)
-      .update({ assigned_by: null })
-      .eq("assigned_by", userId);
-
-    // Handle prescriptions as patient
-    await supabaseAdmin
-      .from(TABLES.PRESCRIPTIONS)
-      .update({ patient_id: null })
-      .eq("patient_id", userId);
-
-    // Handle medical records as patient
-    await supabaseAdmin
-      .from(TABLES.MEDICAL_RECORDS)
-      .update({ patient_id: null })
-      .eq("patient_id", userId);
-
-    // Disconnect user_id from role-specific records but keep historical data
-    if (user.role === ROLES.DOCTOR) {
-      // Set user_id to null in doctors table to break the link
-      // This keeps the doctor record with all specialization details intact
-      // All appointments, prescriptions, and medical records remain linked to the doctor record
-      await supabaseAdmin
-        .from(TABLES.DOCTORS)
-        .update({ user_id: null })
-        .eq("user_id", userId);
-    } else if (user.role === ROLES.PHARMACIST) {
-      // Set user_id to null in pharmacists table to break the link
-      // This keeps the pharmacist record intact with all prescriptions they dispensed
-      await supabaseAdmin
-        .from(TABLES.PHARMACISTS)
-        .update({ user_id: null })
-        .eq("user_id", userId);
+    if (updateError) {
+      console.error("Error deactivating user:", updateError);
+      return NextResponse.json(
+        { error: "Failed to deactivate user" },
+        { status: 500 },
+      );
     }
 
-    // Delete user notifications
-    await supabaseAdmin
-      .from(TABLES.NOTIFICATIONS)
-      .delete()
-      .eq("user_id", userId);
-
-    // Delete all sessions for this user
+    // Invalidate all active sessions for this user
     await supabaseAdmin
       .from(TABLES.USER_SESSIONS)
       .delete()
       .eq("user_id", userId);
-
-    // Finally, delete the user
-    const { error: deleteError } = await supabaseAdmin
-      .from(TABLES.USERS)
-      .delete()
-      .eq("id", userId);
-
-    if (deleteError) {
-      console.error("Error deleting user:", deleteError);
-      return NextResponse.json(
-        { error: "Failed to delete user" },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in DELETE user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

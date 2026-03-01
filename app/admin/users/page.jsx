@@ -24,6 +24,7 @@ import {
   FiClock,
   FiArrowUp,
   FiArrowDown,
+  FiUserCheck,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -44,6 +45,12 @@ const UserManagement = () => {
     userName: "",
   });
   const [deleting, setDeleting] = useState(false);
+  const [activateModal, setActivateModal] = useState({
+    open: false,
+    userId: null,
+    userName: "",
+  });
+  const [activating, setActivating] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -89,6 +96,7 @@ const UserManagement = () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        includeInactive: "true",
       });
       if (filterRole !== "all") {
         params.append("role", filterRole);
@@ -205,8 +213,10 @@ const UserManagement = () => {
         method: "DELETE",
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to deactivate user");
+        throw new Error(data.error || "Failed to deactivate user");
       }
 
       toast.success("User deactivated successfully!");
@@ -214,9 +224,40 @@ const UserManagement = () => {
       setConfirmModal({ open: false, userId: null, userName: "" });
     } catch (error) {
       console.error("Error deactivating user:", error);
-      toast.error("Failed to deactivate user");
+      toast.error(error.message || "Failed to deactivate user");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleActivate = (userId, userName) => {
+    setActivateModal({ open: true, userId, userName });
+  };
+
+  const confirmActivate = async () => {
+    const { userId } = activateModal;
+    setActivating(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/users?id=${userId}&action=activate`,
+        { method: "PATCH" },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to activate user");
+      }
+
+      toast.success("User activated successfully!");
+      reset();
+      setActivateModal({ open: false, userId: null, userName: "" });
+    } catch (error) {
+      console.error("Error activating user:", error);
+      toast.error(error.message || "Failed to activate user");
+    } finally {
+      setActivating(false);
     }
   };
 
@@ -450,22 +491,42 @@ const UserManagement = () => {
 
                           {/* Action buttons */}
                           <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => openEditModal(staffUser)}
-                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
-                              title="Edit"
-                            >
-                              <FiEdit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleDelete(staffUser.id, staffUser.full_name)
-                              }
-                              className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
-                              title="Delete"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                            </button>
+                            {staffUser.is_active ? (
+                              <>
+                                <button
+                                  onClick={() => openEditModal(staffUser)}
+                                  className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-white hover:bg-emerald-500 transition-colors"
+                                  title="Edit"
+                                >
+                                  <FiEdit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDelete(
+                                      staffUser.id,
+                                      staffUser.full_name,
+                                    )
+                                  }
+                                  className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                                  title="Deactivate"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  handleActivate(
+                                    staffUser.id,
+                                    staffUser.full_name,
+                                  )
+                                }
+                                className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors"
+                                title="Activate"
+                              >
+                                <FiUserCheck className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -850,7 +911,7 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* Confirm Delete Modal */}
+      {/* Confirm Deactivate Modal */}
       <ConfirmModal
         isOpen={confirmModal.open}
         onClose={() =>
@@ -863,6 +924,21 @@ const UserManagement = () => {
         cancelText="Cancel"
         variant="danger"
         loading={deleting}
+      />
+
+      {/* Confirm Activate Modal */}
+      <ConfirmModal
+        isOpen={activateModal.open}
+        onClose={() =>
+          setActivateModal({ open: false, userId: null, userName: "" })
+        }
+        onConfirm={confirmActivate}
+        title="Activate Staff Member"
+        message={`Are you sure you want to activate ${activateModal.userName}? They will be able to log in again.`}
+        confirmText="Activate"
+        cancelText="Cancel"
+        variant="success"
+        loading={activating}
       />
     </div>
   );
