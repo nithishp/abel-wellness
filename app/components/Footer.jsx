@@ -35,6 +35,7 @@ const Footer = () => {
     { name: "Terms & Conditions", href: "/terms-conditions" },
     { name: "Refund Policy", href: "/refund-policy" },
     { name: "Consent for Online Consultation", href: "/consent" },
+    { name: "Data Deletion Request", href: "/data-deletion" },
   ];
 
   return (
