@@ -10,6 +10,7 @@ import {
   FiGlobe,
   FiAlertTriangle,
   FiRefreshCw,
+  FiMessageCircle,
 } from "react-icons/fi";
 import Footer from "../components/Footer";
 
@@ -79,6 +80,21 @@ export default function TermsConditionsPage() {
         "AWHCC may update these Terms & Conditions at any time. Continued use implies acceptance of revised terms.",
       ],
     },
+    {
+      icon: <FiMessageCircle className="w-6 h-6" />,
+      title: "8. WhatsApp Communications",
+      content: [
+        "By providing your WhatsApp-registered mobile number and booking an appointment, you expressly consent to receive WhatsApp messages from AWHCC via the Meta WhatsApp Business Cloud API. These messages may include:",
+        "• Appointment confirmations, reminders (24 hours and 1 hour prior), and rescheduling notices",
+        "• Prescription readiness and dispensing notifications",
+        "• Follow-up reminders and general healthcare communications",
+        "• Responses to messages you initiate with our WhatsApp chatbot",
+        "Opt-Out: You may stop receiving WhatsApp messages at any time by sending the word STOP to our WhatsApp business number. You can restart notifications by sending START.",
+        "Message Frequency: Message frequency varies based on your appointments and interactions. Standard messaging rates from your mobile carrier may apply.",
+        "Third-Party Platform: WhatsApp messages are delivered through Meta Platforms, Inc. WhatsApp Business Cloud API. By opting in, you acknowledge that your phone number and message content are processed by Meta in accordance with Meta's Privacy Policy (https://www.facebook.com/privacy/policy/).",
+        "You are not required to consent to WhatsApp communications as a condition of receiving medical services from AWHCC.",
+      ],
+    },
   ];
 
   return (
@@ -105,7 +121,8 @@ export default function TermsConditionsPage() {
           </p>
           <p className="text-sm text-gray-500 mt-4">
             By booking an appointment or using our services, you agree to these
-            terms.
+            terms. This includes consent to receive WhatsApp communications as
+            described in Section 8.
           </p>
         </div>
 
@@ -139,8 +156,8 @@ export default function TermsConditionsPage() {
 
         <div className="mt-12 p-6 bg-gray-50 rounded-xl border border-gray-200">
           <p className="text-sm text-gray-500 text-center">
-            Last updated: January 2026 | For questions about these terms,
-            contact us at{" "}
+            Last updated: March 2026 | For questions about these terms, contact
+            us at{" "}
             <a
               href="mailto:abelwhcc@gmail.com"
               className="text-blue-600 hover:underline"

@@ -40,6 +40,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
     const includeInactive = searchParams.get("includeInactive") === "true";
+    const status = searchParams.get("status"); // "active" | "inactive" | null (all)
     const page = parseInt(searchParams.get("page")) || 1;
     const limit = parseInt(searchParams.get("limit")) || 10;
     const search = searchParams.get("search") || "";
@@ -56,7 +57,12 @@ export async function GET(request) {
       countQuery = countQuery.in("role", [ROLES.DOCTOR, ROLES.PHARMACIST]);
     }
 
-    if (!includeInactive) {
+    // Apply status filter: explicit status param takes priority over includeInactive
+    if (status === "active") {
+      countQuery = countQuery.eq("is_active", true);
+    } else if (status === "inactive") {
+      countQuery = countQuery.eq("is_active", false);
+    } else if (!includeInactive) {
       countQuery = countQuery.eq("is_active", true);
     }
 
@@ -77,7 +83,12 @@ export async function GET(request) {
       query = query.in("role", [ROLES.DOCTOR, ROLES.PHARMACIST]);
     }
 
-    if (!includeInactive) {
+    // Apply status filter: explicit status param takes priority over includeInactive
+    if (status === "active") {
+      query = query.eq("is_active", true);
+    } else if (status === "inactive") {
+      query = query.eq("is_active", false);
+    } else if (!includeInactive) {
       query = query.eq("is_active", true);
     }
 

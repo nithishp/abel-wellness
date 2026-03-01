@@ -70,6 +70,7 @@ const AppointmentsManagement = () => {
     message: "",
     doctorId: "",
   });
+  const [phoneError, setPhoneError] = useState("");
 
   // Debounce search input
   useEffect(() => {
@@ -344,6 +345,11 @@ const AppointmentsManagement = () => {
       return;
     }
 
+    if (createForm.phone && !/^\d{10}$/.test(createForm.phone)) {
+      setPhoneError("Enter a valid 10-digit mobile number");
+      return;
+    }
+
     setProcessing(true);
     const loadingToast = toast.loading("Creating appointment...");
 
@@ -357,7 +363,7 @@ const AppointmentsManagement = () => {
         body: JSON.stringify({
           name: createForm.name,
           email: createForm.email,
-          phone: createForm.phone,
+          phone: createForm.phone ? `+91${createForm.phone}` : "",
           date: dateTime.toISOString(),
           service: createForm.service,
           message: createForm.message,
@@ -374,6 +380,7 @@ const AppointmentsManagement = () => {
       toast.dismiss(loadingToast);
       toast.success("Appointment created successfully!");
       setShowCreateModal(false);
+      setPhoneError("");
       setCreateForm({
         name: "",
         email: "",
@@ -1031,7 +1038,10 @@ const AppointmentsManagement = () => {
                 Create New Appointment
               </h3>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setPhoneError("");
+                }}
                 className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
               >
                 <FiX className="w-5 h-5" />
@@ -1073,14 +1083,35 @@ const AppointmentsManagement = () => {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Phone
                 </label>
-                <input
-                  type="tel"
-                  value={createForm.phone}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, phone: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-                />
+                <div className="flex">
+                  <span className="flex items-center px-4 py-3 bg-slate-700 border border-slate-600 rounded-l-xl text-slate-300 text-sm font-medium border-r-0 select-none">
+                    🇮🇳 +91
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={createForm.phone}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/[^0-9]/g, "");
+                      setCreateForm({ ...createForm, phone: digits });
+                      if (digits && !/^\d{10}$/.test(digits)) {
+                        setPhoneError("Enter a valid 10-digit mobile number");
+                      } else {
+                        setPhoneError("");
+                      }
+                    }}
+                    placeholder="9876543210"
+                    className={`flex-1 px-4 py-3 bg-slate-700/50 border rounded-r-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
+                      phoneError
+                        ? "border-red-500/60 focus:ring-red-500/40"
+                        : "border-slate-600 focus:border-emerald-500/50"
+                    }`}
+                  />
+                </div>
+                {phoneError && (
+                  <p className="mt-1.5 text-xs text-red-400">{phoneError}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1179,7 +1210,10 @@ const AppointmentsManagement = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setPhoneError("");
+                  }}
                   className="flex-1 py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
                   disabled={processing}
                 >

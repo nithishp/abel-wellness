@@ -34,6 +34,7 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("created");
   const [sortOrder, setSortOrder] = useState("desc");
   const [showModal, setShowModal] = useState(false);
@@ -101,6 +102,9 @@ const UserManagement = () => {
       if (filterRole !== "all") {
         params.append("role", filterRole);
       }
+      if (filterStatus !== "all") {
+        params.append("status", filterStatus);
+      }
       if (debouncedSearch) {
         params.append("search", debouncedSearch);
       }
@@ -113,7 +117,7 @@ const UserManagement = () => {
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [filterRole, debouncedSearch],
+    [filterRole, filterStatus, debouncedSearch],
   );
 
   const {
@@ -128,7 +132,7 @@ const UserManagement = () => {
   } = useInfiniteScroll(fetchUsers, {
     limit: 12,
     enabled: !!user && user.role === "admin" && !authLoading,
-    dependencies: [filterRole, debouncedSearch],
+    dependencies: [filterRole, filterStatus, debouncedSearch],
   });
 
   // Client-side sorting
@@ -398,6 +402,24 @@ const UserManagement = () => {
                   </select>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <FiUserCheck className="text-slate-400 w-5 h-5" />
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-transparent text-white border-none focus:outline-none focus:ring-0 cursor-pointer"
+                  >
+                    <option value="all" className="bg-slate-800">
+                      All Status
+                    </option>
+                    <option value="active" className="bg-slate-800">
+                      Active
+                    </option>
+                    <option value="inactive" className="bg-slate-800">
+                      Inactive
+                    </option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
@@ -442,7 +464,7 @@ const UserManagement = () => {
                     No staff found
                   </h2>
                   <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                    {debouncedSearch || filterRole !== "all"
+                    {debouncedSearch || filterRole !== "all" || filterStatus !== "all"
                       ? "Try adjusting your search or filter to find what you're looking for"
                       : "Add your first staff member to get started"}
                   </p>
@@ -463,12 +485,18 @@ const UserManagement = () => {
                     {sortedUsers.map((staffUser) => (
                       <div
                         key={staffUser.id}
-                        className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden hover:border-slate-600/50 hover:shadow-xl transition-all duration-300"
+                        className={`group backdrop-blur-sm border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 ${
+                          staffUser.is_active
+                            ? "bg-slate-800/50 border-slate-700/50 hover:border-slate-600/50"
+                            : "bg-slate-800/30 border-slate-700/30 opacity-70 hover:opacity-90 hover:border-slate-600/40"
+                        }`}
                       >
                         {/* Header with gradient */}
                         <div
                           className={`relative h-20 ${
-                            staffUser.role === "doctor"
+                            !staffUser.is_active
+                              ? "bg-gradient-to-r from-slate-600/20 to-slate-700/20"
+                              : staffUser.role === "doctor"
                               ? "bg-gradient-to-r from-blue-500/20 to-indigo-500/20"
                               : "bg-gradient-to-r from-emerald-500/20 to-teal-500/20"
                           }`}
@@ -476,7 +504,9 @@ const UserManagement = () => {
                           <div className="absolute -bottom-10 left-6">
                             <div
                               className={`w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-slate-800 ${
-                                staffUser.role === "doctor"
+                                !staffUser.is_active
+                                  ? "bg-gradient-to-br from-slate-500 to-slate-600"
+                                  : staffUser.role === "doctor"
                                   ? "bg-gradient-to-br from-blue-500 to-indigo-600"
                                   : "bg-gradient-to-br from-emerald-500 to-teal-600"
                               }`}

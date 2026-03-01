@@ -8,6 +8,8 @@ import {
   FiUser,
   FiLink,
   FiRefreshCw,
+  FiMessageCircle,
+  FiBell,
 } from "react-icons/fi";
 import Footer from "../components/Footer";
 
@@ -20,10 +22,11 @@ export default function PrivacyPolicyPage() {
       title: "1. Information Collected",
       content: [
         "We may collect:",
-        "• Personal details (name, contact information)",
+        "• Personal details (name, contact information including WhatsApp-registered mobile number)",
         "• Medical history and consultation details",
         "• Reports and prescriptions",
         "• Payment and appointment information",
+        "• WhatsApp conversation data (messages exchanged with our chatbot, message timestamps, delivery status, and opt-in/opt-out status)",
       ],
     },
     {
@@ -33,6 +36,7 @@ export default function PrivacyPolicyPage() {
         "Collected information is used for:",
         "• Providing medical care and follow-up",
         "• Appointment scheduling and communication",
+        "• Sending WhatsApp notifications (appointment reminders, prescription alerts, follow-ups) where you have opted in",
         "• Legal and regulatory compliance",
       ],
     },
@@ -73,6 +77,29 @@ export default function PrivacyPolicyPage() {
       title: "7. Policy Updates",
       content: [
         "This Privacy Policy may be updated periodically. Continued use of services indicates acceptance.",
+      ],
+    },
+    {
+      icon: <FiMessageCircle className="w-6 h-6" />,
+      title: "8. WhatsApp & Meta Data Processing",
+      content: [
+        "AWHCC uses the Meta WhatsApp Business Cloud API to send appointment reminders, prescription notifications, and other healthcare communications to patients who have provided their WhatsApp-registered mobile number.",
+        "Data shared with Meta/WhatsApp:",
+        "• Your WhatsApp-registered phone number",
+        "• Message content (appointment details, prescription status, reminders)",
+        "• Message metadata (timestamps, delivery and read receipts)",
+        "Meta Platforms, Inc. processes this data as a data sub-processor in accordance with their own Privacy Policy, available at: https://www.facebook.com/privacy/policy/. AWHCC does not control Meta's data processing practices.",
+        "Data Retention: WhatsApp message logs are retained in our systems for up to 12 months for audit and compliance purposes, after which they are deleted.",
+        "Opt-In: By providing your mobile number when booking an appointment, you consent to receive WhatsApp messages from AWHCC.",
+        "Opt-Out: You may withdraw consent at any time by sending STOP to our WhatsApp business number, or by contacting us at abelwhcc@gmail.com. Opting out will not affect your ability to receive medical services.",
+        "We do not sell or share your WhatsApp data with third parties other than Meta as the communication platform provider.",
+      ],
+    },
+    {
+      icon: <FiBell className="w-6 h-6" />,
+      title: "9. Cookies & Analytics",
+      content: [
+        "Our website uses minimal analytics to improve user experience. No personally identifiable information is tracked across websites or shared with advertising platforms.",
       ],
     },
   ];
@@ -131,8 +158,8 @@ export default function PrivacyPolicyPage() {
 
         <div className="mt-12 p-6 bg-gray-50 rounded-xl border border-gray-200">
           <p className="text-sm text-gray-500 text-center">
-            Last updated: January 2026 | For questions about this policy,
-            contact us at{" "}
+            Last updated: March 2026 | For questions about this policy, contact
+            us at{" "}
             <a
               href="mailto:abelwhcc@gmail.com"
               className="text-blue-600 hover:underline"
