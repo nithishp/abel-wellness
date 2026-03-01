@@ -96,7 +96,7 @@ const PatientManagement = () => {
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [filterStatus, debouncedSearch]
+    [filterStatus, debouncedSearch],
   );
 
   // Use infinite scroll hook
@@ -175,7 +175,7 @@ const PatientManagement = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(formData),
-        }
+        },
       );
 
       const data = await response.json();
@@ -279,7 +279,7 @@ const PatientManagement = () => {
 
     try {
       const response = await fetch(
-        `/api/admin/patients/records?patientId=${patient.id}`
+        `/api/admin/patients/records?patientId=${patient.id}`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -497,7 +497,7 @@ const PatientManagement = () => {
                                 onClick={() =>
                                   handleDeactivate(
                                     patient.id,
-                                    patient.full_name
+                                    patient.full_name,
                                   )
                                 }
                                 className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
@@ -510,7 +510,7 @@ const PatientManagement = () => {
                                 onClick={() =>
                                   handleReactivate(
                                     patient.id,
-                                    patient.full_name
+                                    patient.full_name,
                                   )
                                 }
                                 className="p-2 bg-slate-900/80 backdrop-blur-md rounded-lg text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors"
@@ -583,7 +583,8 @@ const PatientManagement = () => {
                                   month: "short",
                                   day: "numeric",
                                   year: "numeric",
-                                }
+                                  timeZone: "Asia/Kolkata",
+                                },
                               )}
                             </span>
                             {patient.recordsCount > 0 && (
@@ -939,7 +940,7 @@ const PatientManagement = () => {
                             {/* Vital Signs */}
                             {record.vital_signs &&
                               Object.values(record.vital_signs).some(
-                                (v) => v
+                                (v) => v,
                               ) && (
                                 <div>
                                   <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-2">

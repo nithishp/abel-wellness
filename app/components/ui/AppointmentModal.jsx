@@ -60,11 +60,12 @@ const AppointmentModal = ({ isOpen, onClose, onSuccess }) => {
           .toString()
           .padStart(2, "0")}`;
         const displayStr = new Date(
-          `2000-01-01T${timeStr}:00`
+          `2000-01-01T${timeStr}:00`,
         ).toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
+          timeZone: "Asia/Kolkata",
         });
         slots.push({ value: timeStr, display: displayStr });
       }

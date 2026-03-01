@@ -52,7 +52,7 @@ export default function LedgerPage() {
       const [entriesRes, summaryRes] = await Promise.all([
         fetch(`/api/billing/ledger?${params}`),
         fetch(
-          `/api/billing/ledger?summary=true&start_date=${startDate}&end_date=${endDate}`
+          `/api/billing/ledger?summary=true&start_date=${startDate}&end_date=${endDate}`,
         ),
       ]);
 
@@ -127,6 +127,7 @@ export default function LedgerPage() {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Kolkata",
     });
   };
 

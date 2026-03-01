@@ -528,12 +528,13 @@ const AdminDashboard = () => {
                                 </span>
                                 <span className="text-xs text-slate-500">
                                   {new Date(activity.timestamp).toLocaleString(
-                                    [],
+                                    "en-IN",
                                     {
                                       month: "short",
                                       day: "numeric",
                                       hour: "2-digit",
                                       minute: "2-digit",
+                                      timeZone: "Asia/Kolkata",
                                     },
                                   )}
                                 </span>

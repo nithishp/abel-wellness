@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin, TABLES } from "@/lib/supabase.config";
+import { formatDateForInput } from "@/lib/utils";
 
 // Helper to verify admin/pharmacist session
 async function verifyAdminOrPharmacist() {
@@ -46,7 +47,7 @@ export async function GET(request) {
         current_stock,
         cost_price,
         category:inventory_categories(name)
-      `
+      `,
       )
       .eq("is_active", true);
 
@@ -89,10 +90,10 @@ export async function GET(request) {
       console.error("Error fetching movements:", movError);
     }
 
-    // Aggregate movements by day
+    // Aggregate movements by day (using IST date)
     const movementsByDay = {};
     for (const mov of movements || []) {
-      const date = new Date(mov.created_at).toISOString().split("T")[0];
+      const date = formatDateForInput(mov.created_at);
       if (!movementsByDay[date]) {
         movementsByDay[date] = {
           date,
@@ -148,7 +149,9 @@ export async function GET(request) {
         .select("status, total_amount")
         .gte(
           "created_at",
-          new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString()
+          new Date(
+            new Date().setMonth(new Date().getMonth() - 3),
+          ).toISOString(),
         );
 
       if (!poError && poStats) {
@@ -207,7 +210,7 @@ export async function GET(request) {
       }
       const expiryDate = new Date(batch.expiry_date);
       const daysUntilExpiry = Math.ceil(
-        (expiryDate - today) / (1000 * 60 * 60 * 24)
+        (expiryDate - today) / (1000 * 60 * 60 * 24),
       );
 
       if (daysUntilExpiry <= 0) expired++;
@@ -227,7 +230,7 @@ export async function GET(request) {
           name,
           items: data.count,
           value: Math.round(data.value),
-        })
+        }),
       ),
       typeDistribution: Object.entries(typeData).map(([name, data]) => ({
         name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -246,7 +249,7 @@ export async function GET(request) {
           status: status.charAt(0).toUpperCase() + status.slice(1),
           count: data.count,
           value: Math.round(data.value),
-        })
+        }),
       ),
       expiryDistribution: [
         { name: "Expired", value: expiredCount, fill: "var(--color-expired)" },
@@ -260,7 +263,7 @@ export async function GET(request) {
     console.error("Error fetching analytics:", error);
     return NextResponse.json(
       { error: "Failed to fetch analytics" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

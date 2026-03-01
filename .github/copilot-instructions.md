@@ -422,7 +422,7 @@ Email notifications are sent at each step via Nodemailer.
 
 ### IST Date/Time (India Standard Time — `Asia/Kolkata`)
 
-All date formatting functions are IST-aware: `formatDateIST()`, `formatTimeIST()`, `formatDateTimeIST()`, `formatRelativeTimeIST()`, `getTodayIST()`, `getStartOfDayIST()`, `getEndOfDayIST()`, `isTodayIST()`, `isPastIST()`, `isFutureIST()`, `addDaysIST()`, `formatDateForInput()`, `formatDateForDB()`, etc.
+All date formatting functions are IST-aware: `formatDateIST()`, `formatTimeIST()`, `formatDateTimeIST()`, `formatRelativeTimeIST()`, `getTodayIST()`, `getStartOfDayIST()`, `getEndOfDayIST()`, `isTodayIST()`, `isPastIST()`, `isFutureIST()`, `addDaysIST()`, `formatDateForInput()`, `formatDateForDB()`, `formatDateForEmail()`, `formatTimeForEmail()`, `formatDueDateIST()`, `istDateTimeToUTC()`, `getUTCISOString()`, etc.
 
 ### Currency
 
@@ -528,11 +528,19 @@ Intersection Observer-based infinite scroll. Returns `{ items, loading, loadingM
 - Return `{ success: boolean, error?: string, ...data }` consistently
 - Use `supabaseAdmin` for database access
 
-### Date & Currency
+### Date, Timezone & Currency
 
-- **Always use IST** — use utility functions from `@/lib/utils` (never raw `new Date().toLocaleString()`)
-- **Always use INR** — use `formatCurrencyINR()` for currency display
-- Store dates as ISO strings in the database via `formatDateForDB()`
+**Timezone strategy:** Store UTC in the database → display IST (`Asia/Kolkata`) everywhere.
+
+- **Database storage:** All `TIMESTAMPTZ` columns store UTC internally. Use `formatDateForDB()` or `getUTCISOString()` for timestamps, `getTodayIST()` for date-only columns (YYYY-MM-DD in IST).
+- **Never use `new Date().toISOString().split("T")[0]`** — this returns the UTC date, which is wrong after 6:30 PM IST. Use `getTodayIST()` instead.
+- **Never use bare `new Date().setHours(0,0,0,0)`** for "start of today" on the server — this gives UTC midnight, not IST midnight. Use `getStartOfDayIST()` / `getEndOfDayIST()`.
+- **Client-side formatting:** Every `toLocaleDateString()` / `toLocaleTimeString()` / `Intl.DateTimeFormat` call **must** include `{ timeZone: "Asia/Kolkata" }`. Use locale `"en-IN"` for Indian date format.
+- **Email formatting:** Use `formatDateForEmail(date)` and `formatTimeForEmail(date)` from `@/lib/utils` — these include IST timezone automatically.
+- **WhatsApp formatting:** Use `formatDateLongIST()` and `formatTimeIST()` from `@/lib/utils` for IST-aware display.
+- **IST date arithmetic:** Use `formatDueDateIST(daysFromNow)` for future date calculations (e.g., invoice due dates). Use `addDaysIST()` for general date addition.
+- **IST→UTC conversion:** Use `istDateTimeToUTC(date, timeStr)` when converting user-provided IST date+time to UTC for storage.
+- **Always use INR** — use `formatCurrencyINR()` for currency display, `formatNumberINR()` for Indian number formatting.
 
 ---
 

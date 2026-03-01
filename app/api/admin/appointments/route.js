@@ -12,27 +12,13 @@ import {
   scheduleAppointmentReminders,
 } from "@/lib/whatsapp/notifications";
 import { NOTIFICATION_TYPES } from "@/lib/whatsapp/constants";
-
-// Format date in IST for WhatsApp messages (consistent with chatbot)
-function formatDateIST(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Asia/Kolkata",
-  });
-}
-
-function formatTimeIST(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Kolkata",
-  });
-}
+import {
+  formatDateLongIST,
+  formatTimeIST,
+  formatDateForEmail,
+  formatTimeForEmail,
+  IST_TIMEZONE,
+} from "@/lib/utils";
 
 // Helper function to verify admin session
 async function verifyAdminSession() {
@@ -196,18 +182,10 @@ export async function POST(request) {
       );
     }
 
-    // Format dates for emails
+    // Format dates for emails (IST)
     const appointmentDate = new Date(date);
-    const formattedDate = appointmentDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const formattedDate = formatDateForEmail(appointmentDate);
+    const formattedTime = formatTimeForEmail(appointmentDate);
 
     // If doctor is assigned, send notifications
     if (doctorId) {
@@ -504,18 +482,10 @@ export async function PUT(request) {
           throw error;
         }
 
-        // Format dates for emails
+        // Format dates for emails (IST)
         const appointmentDate = new Date(currentAppointment.date);
-        const formattedDate = appointmentDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        const formattedDate = formatDateForEmail(appointmentDate);
+        const formattedTime = formatTimeForEmail(appointmentDate);
 
         // Notify patient
         if (currentAppointment.email) {
@@ -567,7 +537,7 @@ export async function PUT(request) {
             NOTIFICATION_TYPES.APPOINTMENT_CONFIRMED,
             {
               patientName: currentAppointment.name,
-              date: formatDateIST(currentAppointment.date),
+              date: formatDateLongIST(currentAppointment.date),
               time: formatTimeIST(currentAppointment.date),
               doctorName: doctor.user.full_name,
             },
@@ -614,16 +584,8 @@ export async function PUT(request) {
 
         // Notify patient
         const appointmentDate = new Date(currentAppointment.date);
-        const formattedDate = appointmentDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        const formattedDate = formatDateForEmail(appointmentDate);
+        const formattedTime = formatTimeForEmail(appointmentDate);
 
         if (currentAppointment.email) {
           await sendEmail(
@@ -643,7 +605,7 @@ export async function PUT(request) {
             NOTIFICATION_TYPES.APPOINTMENT_REJECTED,
             {
               patientName: currentAppointment.name,
-              date: formatDateIST(currentAppointment.date),
+              date: formatDateLongIST(currentAppointment.date),
               time: formatTimeIST(currentAppointment.date),
               doctorName: currentAppointment.doctor?.user?.full_name || null,
               reason: reason || "unavoidable circumstances",
@@ -702,37 +664,15 @@ export async function PUT(request) {
           throw error;
         }
 
-        // Format dates
+        // Format dates (IST)
         const oldDate = new Date(currentAppointment.date);
         const newAppointmentDate = new Date(newDate);
 
-        const oldFormattedDate = oldDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        const oldFormattedTime = oldDate.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        const oldFormattedDate = formatDateForEmail(oldDate);
+        const oldFormattedTime = formatTimeForEmail(oldDate);
 
-        const newFormattedDate = newAppointmentDate.toLocaleDateString(
-          "en-US",
-          {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          },
-        );
-        const newFormattedTime = newAppointmentDate.toLocaleTimeString(
-          "en-US",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          },
-        );
+        const newFormattedDate = formatDateForEmail(newAppointmentDate);
+        const newFormattedTime = formatTimeForEmail(newAppointmentDate);
 
         // Notify patient
         if (currentAppointment.email) {
@@ -753,8 +693,8 @@ export async function PUT(request) {
             NOTIFICATION_TYPES.APPOINTMENT_RESCHEDULED,
             {
               patientName: currentAppointment.name,
-              oldDate: `${formatDateIST(currentAppointment.date)} at ${formatTimeIST(currentAppointment.date)}`,
-              newDate: formatDateIST(newDate),
+              oldDate: `${formatDateLongIST(currentAppointment.date)} at ${formatTimeIST(currentAppointment.date)}`,
+              newDate: formatDateLongIST(newDate),
               newTime: formatTimeIST(newDate),
               doctorName: currentAppointment.doctor?.user?.full_name || null,
             },
@@ -817,16 +757,8 @@ export async function PUT(request) {
         // Send cancellation email if status is cancelled and reason provided
         if (status === "cancelled" && currentAppointment.email) {
           const appointmentDate = new Date(currentAppointment.date);
-          const formattedDate = appointmentDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          });
-          const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          const formattedDate = formatDateForEmail(appointmentDate);
+          const formattedTime = formatTimeForEmail(appointmentDate);
 
           await sendEmail(
             currentAppointment.email,
@@ -845,7 +777,7 @@ export async function PUT(request) {
             NOTIFICATION_TYPES.APPOINTMENT_CANCELLED,
             {
               patientName: currentAppointment.name,
-              date: formatDateIST(currentAppointment.date),
+              date: formatDateLongIST(currentAppointment.date),
             },
           ).catch((err) =>
             console.error("WhatsApp notify error (cancel):", err),

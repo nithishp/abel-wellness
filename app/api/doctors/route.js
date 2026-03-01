@@ -31,13 +31,13 @@ export async function GET(request) {
       console.error("Error fetching doctors:", error);
       return NextResponse.json(
         { error: "Failed to fetch doctors" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Filter out inactive users
     const activeDoctors = doctors.filter(
-      (doctor) => doctor.user && doctor.user.is_active
+      (doctor) => doctor.user && doctor.user.is_active,
     );
 
     // If a date is provided, check appointments for that date
@@ -79,7 +79,7 @@ export async function GET(request) {
     console.error("Error in GET doctors:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -92,7 +92,7 @@ export async function POST(request) {
     if (!doctorId || !date) {
       return NextResponse.json(
         { error: "Doctor ID and date are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,7 +109,7 @@ export async function POST(request) {
           phone,
           avatar_url
         )
-      `
+      `,
       )
       .eq("id", doctorId)
       .single();
@@ -135,7 +135,10 @@ export async function POST(request) {
 
     // Get day of week for working hours
     const dayOfWeek = new Date(date)
-      .toLocaleDateString("en-US", { weekday: "long" })
+      .toLocaleDateString("en-US", {
+        weekday: "long",
+        timeZone: "Asia/Kolkata",
+      })
       .toLowerCase();
 
     const workingHours = doctor.working_hours?.[dayOfWeek];
@@ -160,7 +163,7 @@ export async function POST(request) {
     console.error("Error in POST doctor availability:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

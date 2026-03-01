@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin, TABLES, ROLES } from "@/lib/supabase.config";
+import { getStartOfDayIST, getEndOfDayIST } from "@/lib/utils";
 
 // Helper function to verify doctor session
 async function verifyDoctorSession() {
@@ -44,19 +45,17 @@ export async function GET(request) {
 
     const { doctor } = auth;
 
-    // Get today's date range
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get today's date range in IST
+    const todayStart = getStartOfDayIST();
+    const todayEnd = getEndOfDayIST();
 
     // Get today's appointments count
     const { count: todayAppointments } = await supabaseAdmin
       .from(TABLES.APPOINTMENTS)
       .select("*", { count: "exact", head: true })
       .eq("doctor_id", doctor.id)
-      .gte("date", today.toISOString())
-      .lt("date", tomorrow.toISOString())
+      .gte("date", todayStart.toISOString())
+      .lte("date", todayEnd.toISOString())
       .in("status", ["approved", "completed"]);
 
     // Get pending consultations (approved but not completed)
@@ -73,8 +72,8 @@ export async function GET(request) {
       .select("*", { count: "exact", head: true })
       .eq("doctor_id", doctor.id)
       .eq("consultation_status", "completed")
-      .gte("completed_at", today.toISOString())
-      .lt("completed_at", tomorrow.toISOString());
+      .gte("completed_at", todayStart.toISOString())
+      .lte("completed_at", todayEnd.toISOString());
 
     // Get total unique patients
     const { data: patientIds } = await supabaseAdmin
@@ -99,7 +98,7 @@ export async function GET(request) {
           age,
           sex
         )
-      `
+      `,
       )
       .eq("doctor_id", doctor.id)
       .eq("status", "approved")
@@ -121,7 +120,7 @@ export async function GET(request) {
     console.error("Error fetching doctor dashboard:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -617,6 +617,7 @@ const InventoryDashboardPage = () => {
                           new Date(value).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
+                            timeZone: "Asia/Kolkata",
                           })
                         }
                       />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase.config";
 import { TABLES, PRESCRIPTION_STATUS } from "@/lib/supabase.config";
+import { getStartOfDayIST, getEndOfDayIST } from "@/lib/utils";
 
 // Helper to verify pharmacist session
 async function verifyPharmacistSession() {
@@ -43,18 +44,16 @@ export async function GET() {
       .select("*", { count: "exact", head: true })
       .eq("status", PRESCRIPTION_STATUS.PENDING);
 
-    // Get today's dispensed count
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get today's dispensed count (IST boundaries)
+    const todayStart = getStartOfDayIST();
+    const todayEnd = getEndOfDayIST();
 
     const { count: dispensedTodayCount } = await supabaseAdmin
       .from(TABLES.PRESCRIPTIONS)
       .select("*", { count: "exact", head: true })
       .eq("status", PRESCRIPTION_STATUS.DISPENSED)
-      .gte("dispensed_at", today.toISOString())
-      .lt("dispensed_at", tomorrow.toISOString());
+      .gte("dispensed_at", todayStart.toISOString())
+      .lte("dispensed_at", todayEnd.toISOString());
 
     // Get total dispensed count
     const { count: totalDispensedCount } = await supabaseAdmin
@@ -74,7 +73,7 @@ export async function GET() {
         patient:patient_id(id, full_name, email, phone),
         doctor:doctor_id(id, user:user_id(full_name)),
         items:prescription_items(*)
-      `
+      `,
       )
       .eq("status", PRESCRIPTION_STATUS.PENDING)
       .order("created_at", { ascending: true })
@@ -106,7 +105,7 @@ export async function GET() {
     console.error("Error fetching pharmacist dashboard:", error);
     return NextResponse.json(
       { error: "Failed to fetch dashboard data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

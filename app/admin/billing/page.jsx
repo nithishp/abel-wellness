@@ -62,7 +62,7 @@ export default function BillingDashboard() {
 
       // Fetch recent invoices
       const invoicesRes = await fetch(
-        "/api/billing/invoices?limit=5&sortBy=created_at&sortOrder=desc"
+        "/api/billing/invoices?limit=5&sortBy=created_at&sortOrder=desc",
       );
       const invoicesData = await invoicesRes.json();
       if (invoicesData.success) {
@@ -71,7 +71,7 @@ export default function BillingDashboard() {
 
       // Fetch outstanding invoices
       const outstandingRes = await fetch(
-        "/api/billing/reports?type=outstanding&limit=5"
+        "/api/billing/reports?type=outstanding&limit=5",
       );
       const outstandingData = await outstandingRes.json();
       if (outstandingData.success) {
@@ -99,6 +99,7 @@ export default function BillingDashboard() {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      timeZone: "Asia/Kolkata",
     });
   };
 
@@ -504,7 +505,7 @@ export default function BillingDashboard() {
                       <p className="font-semibold text-red-400">
                         {formatCurrency(
                           parseFloat(invoice.total_amount) -
-                            parseFloat(invoice.amount_paid)
+                            parseFloat(invoice.amount_paid),
                         )}
                       </p>
                       <p className="text-xs text-slate-500">

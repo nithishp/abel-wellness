@@ -78,7 +78,7 @@ const PharmacistDashboardPage = () => {
         `/api/pharmacist/prescriptions/${prescriptionId}/dispense`,
         {
           method: "POST",
-        }
+        },
       );
 
       if (response.ok) {
@@ -99,6 +99,7 @@ const PharmacistDashboardPage = () => {
       month: "short",
       day: "numeric",
       year: "numeric",
+      timeZone: "Asia/Kolkata",
     });
   };
 
@@ -370,14 +371,14 @@ const PharmacistDashboardPage = () => {
                     <div className="space-y-2 sm:space-y-3">
                       {prescriptions.slice(0, 5).map((prescription) => {
                         const statusConfig = getStatusConfig(
-                          prescription.status || "pending"
+                          prescription.status || "pending",
                         );
                         return (
                           <div
                             key={prescription.id}
                             onClick={() =>
                               router.push(
-                                `/pharmacist/prescriptions/${prescription.id}`
+                                `/pharmacist/prescriptions/${prescription.id}`,
                               )
                             }
                             className="group flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-all duration-200 border border-transparent hover:border-slate-600/50"

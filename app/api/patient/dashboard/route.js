@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase.config";
 import { TABLES } from "@/lib/supabase.config";
+import { getTodayIST } from "@/lib/utils";
 
 // Helper to verify patient session
 async function verifyPatientSession() {
@@ -37,8 +38,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayStr = getTodayIST();
 
     // Get total appointments count
     const { count: totalAppointments } = await supabaseAdmin
@@ -52,7 +52,7 @@ export async function GET() {
       .select("*", { count: "exact", head: true })
       .eq("patient_id", patient.id)
       .in("status", ["pending", "approved"])
-      .gte("date", today.toISOString().split("T")[0]);
+      .gte("date", todayStr);
 
     // Get completed consultations count
     const { count: completedConsultations } = await supabaseAdmin
@@ -78,11 +78,11 @@ export async function GET() {
         status,
         reason_for_visit,
         doctor:doctor_id(id, user:user_id(full_name))
-      `
+      `,
       )
       .eq("patient_id", patient.id)
       .in("status", ["pending", "approved"])
-      .gte("date", today.toISOString().split("T")[0])
+      .gte("date", todayStr)
       .order("date", { ascending: true })
       .order("time", { ascending: true })
       .limit(5);
@@ -97,7 +97,7 @@ export async function GET() {
         created_at,
         doctor:doctor_id(id, user:user_id(full_name)),
         items:prescription_items(medication_name)
-      `
+      `,
       )
       .eq("patient_id", patient.id)
       .order("created_at", { ascending: false })
@@ -138,7 +138,7 @@ export async function GET() {
     console.error("Error fetching patient dashboard:", error);
     return NextResponse.json(
       { error: "Failed to fetch dashboard data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -107,8 +107,9 @@ const AppointmentSection = ({ id }) => {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
+      timeZone: "Asia/Kolkata",
     };
-    return new Date(date).toLocaleString("en-US", options); // Use 'en-US' for AM/PM format
+    return new Date(date).toLocaleString("en-US", options);
   };
 
   const onSubmit = async (e) => {
@@ -554,8 +555,7 @@ const AppointmentSection = ({ id }) => {
                       htmlFor="sex"
                       className="text-sm font-medium text-neutral-700 mb-2"
                     >
-                      Sex{" "}
-                      <span className="text-neutral-400">(optional)</span>
+                      Sex <span className="text-neutral-400">(optional)</span>
                     </label>
                     <select
                       id="sex"

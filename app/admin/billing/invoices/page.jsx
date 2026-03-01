@@ -104,6 +104,7 @@ function InvoicesListContent() {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      timeZone: "Asia/Kolkata",
     });
   };
 
@@ -439,7 +440,7 @@ function InvoicesListContent() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(
-                                  `/admin/billing/invoices/${invoice.id}`
+                                  `/admin/billing/invoices/${invoice.id}`,
                                 );
                               }}
                               className="p-2 text-slate-400 hover:text-white hover:bg-slate-600 rounded-lg transition-colors"
@@ -451,7 +452,7 @@ function InvoicesListContent() {
                                 handleDownloadPDF(
                                   e,
                                   invoice.id,
-                                  invoice.invoice_number
+                                  invoice.invoice_number,
                                 )
                               }
                               className="p-2 text-slate-400 hover:text-white hover:bg-slate-600 rounded-lg transition-colors"

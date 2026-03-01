@@ -7,6 +7,7 @@ import {
 } from "@/lib/supabase.config";
 import { sendEmail, emailTemplates } from "@/lib/email/service";
 import { scheduleAppointmentReminders } from "@/lib/whatsapp/notifications";
+import { formatDateForEmail, formatTimeForEmail } from "@/lib/utils";
 
 export async function POST(request) {
   try {
@@ -132,18 +133,10 @@ export async function POST(request) {
       );
     }
 
-    // Format date for emails
+    // Format date for emails (IST)
     const appointmentDate = new Date(data.schedule);
-    const formattedDate = appointmentDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const formattedDate = formatDateForEmail(appointmentDate);
+    const formattedTime = formatTimeForEmail(appointmentDate);
 
     // Send confirmation email to patient
     await sendEmail(

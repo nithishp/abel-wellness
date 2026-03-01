@@ -71,7 +71,7 @@ const BlogsManagement = () => {
       if (filterStatus !== "all") {
         params.append(
           "published",
-          filterStatus === "published" ? "true" : "false"
+          filterStatus === "published" ? "true" : "false",
         );
       }
       if (debouncedSearch) {
@@ -86,7 +86,7 @@ const BlogsManagement = () => {
         hasMore: data.pagination?.hasMore || false,
       };
     },
-    [filterStatus, debouncedSearch]
+    [filterStatus, debouncedSearch],
   );
 
   const {
@@ -157,7 +157,7 @@ const BlogsManagement = () => {
 
   const handleToggleStatus = async (blog) => {
     const loadingToast = toast.loading(
-      `${blog.published ? "Unpublishing" : "Publishing"} blog post...`
+      `${blog.published ? "Unpublishing" : "Publishing"} blog post...`,
     );
 
     try {
@@ -179,7 +179,7 @@ const BlogsManagement = () => {
       reset();
       toast.dismiss(loadingToast);
       toast.success(
-        `Blog ${blog.published ? "unpublished" : "published"} successfully!`
+        `Blog ${blog.published ? "unpublished" : "published"} successfully!`,
       );
     } catch (error) {
       console.error("Error updating blog status:", error);
@@ -456,7 +456,8 @@ const BlogsManagement = () => {
                                   month: "short",
                                   day: "numeric",
                                   year: "numeric",
-                                }
+                                  timeZone: "Asia/Kolkata",
+                                },
                               )}
                             </span>
                           </div>
