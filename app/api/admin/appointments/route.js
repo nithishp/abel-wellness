@@ -96,6 +96,7 @@ export async function POST(request) {
       doctorId,
       patientId,
       reason_for_visit,
+      createAccount,
     } = data;
 
     // Validate required fields
@@ -108,13 +109,18 @@ export async function POST(request) {
 
     // Check if patient exists or create one
     let patient = null;
+    let isExistingPatient = false;
+    let patientCreated = false;
+
     if (patientId) {
+      // Existing patient selected by ID
       const { data: existingPatient } = await supabaseAdmin
         .from(TABLES.USERS)
         .select("*")
         .eq("id", patientId)
         .single();
       patient = existingPatient;
+      isExistingPatient = !!existingPatient;
     } else {
       // Check if user exists by email
       const { data: existingUser } = await supabaseAdmin
@@ -125,8 +131,9 @@ export async function POST(request) {
 
       if (existingUser) {
         patient = existingUser;
-      } else {
-        // Create new patient user
+        isExistingPatient = true;
+      } else if (createAccount !== false) {
+        // Create new patient user only if createAccount is not explicitly false
         const { data: newPatient, error: createError } = await supabaseAdmin
           .from(TABLES.USERS)
           .insert({
@@ -147,6 +154,7 @@ export async function POST(request) {
           );
         }
         patient = newPatient;
+        patientCreated = true;
       }
     }
 
@@ -250,6 +258,9 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       appointment: transformAppointment(appointment),
+      isExistingPatient,
+      patientCreated,
+      patientName: patient?.full_name || name,
     });
   } catch (error) {
     console.error("Error creating appointment:", error);
@@ -619,8 +630,7 @@ export async function PUT(request) {
             .from("whatsapp_scheduled_messages")
             .update({ status: "cancelled" })
             .eq("related_id", appointmentId)
-            .eq("status", "pending")
-            .catch(() => {});
+            .eq("status", "pending");
         }
 
         return NextResponse.json({
@@ -707,8 +717,7 @@ export async function PUT(request) {
             .from("whatsapp_scheduled_messages")
             .update({ status: "cancelled" })
             .eq("related_id", appointmentId)
-            .eq("status", "pending")
-            .catch(() => {});
+            .eq("status", "pending");
 
           await scheduleAppointmentReminders(
             currentAppointment.phone,
@@ -788,8 +797,7 @@ export async function PUT(request) {
             .from("whatsapp_scheduled_messages")
             .update({ status: "cancelled" })
             .eq("related_id", appointmentId)
-            .eq("status", "pending")
-            .catch(() => {});
+            .eq("status", "pending");
         }
 
         return NextResponse.json({

@@ -72,6 +72,16 @@ const AppointmentsManagement = () => {
   });
   const [phoneError, setPhoneError] = useState("");
 
+  // Patient mode for create appointment
+  const [patientMode, setPatientMode] = useState("new"); // "new" | "existing"
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [createAccount, setCreateAccount] = useState(true);
+  const [patientSearchTerm, setPatientSearchTerm] = useState("");
+  const [patientSearchResults, setPatientSearchResults] = useState([]);
+  const [searchingPatients, setSearchingPatients] = useState(false);
+  const [existingPatientNote, setExistingPatientNote] = useState("");
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -79,6 +89,96 @@ const AppointmentsManagement = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Search patients for existing patient mode
+  useEffect(() => {
+    if (!patientSearchTerm || patientSearchTerm.length < 2) {
+      setPatientSearchResults([]);
+      setShowPatientDropdown(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearchingPatients(true);
+      try {
+        const res = await fetch(
+          `/api/admin/patients/search?q=${encodeURIComponent(patientSearchTerm)}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setPatientSearchResults(data.patients || []);
+          setShowPatientDropdown(true);
+        }
+      } catch (err) {
+        console.error("Patient search error:", err);
+      } finally {
+        setSearchingPatients(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientSearchTerm]);
+
+  // Check if email exists when typing in new patient mode
+  const handleEmailBlur = async () => {
+    if (patientMode !== "new" || !createForm.email) {
+      setExistingPatientNote("");
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/admin/patients/search?q=${encodeURIComponent(createForm.email.trim())}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const exactMatch = data.patients?.find(
+          (p) =>
+            p.email?.toLowerCase() === createForm.email.trim().toLowerCase(),
+        );
+        if (exactMatch) {
+          setExistingPatientNote(
+            `A patient account already exists for this email (${exactMatch.full_name}). No new account will be created.`,
+          );
+          setCreateAccount(false);
+          setSelectedPatient(exactMatch);
+        } else {
+          setExistingPatientNote("");
+          setSelectedPatient(null);
+        }
+      }
+    } catch (err) {
+      console.error("Email check error:", err);
+    }
+  };
+
+  // Select an existing patient from search results
+  const handleSelectPatient = (patient) => {
+    setSelectedPatient(patient);
+    setPatientSearchTerm(patient.full_name);
+    setCreateForm({
+      ...createForm,
+      name: patient.full_name,
+      email: patient.email || "",
+      phone: patient.phone?.replace("+91", "") || "",
+    });
+    setShowPatientDropdown(false);
+    setExistingPatientNote("");
+  };
+
+  // Reset patient mode
+  const handlePatientModeChange = (mode) => {
+    setPatientMode(mode);
+    setSelectedPatient(null);
+    setPatientSearchTerm("");
+    setPatientSearchResults([]);
+    setShowPatientDropdown(false);
+    setExistingPatientNote("");
+    setCreateAccount(true);
+    setCreateForm({
+      ...createForm,
+      name: "",
+      email: "",
+      phone: "",
+    });
+  };
 
   // Fetch function for infinite scroll
   const fetchAppointments = useCallback(
@@ -335,6 +435,12 @@ const AppointmentsManagement = () => {
   const handleCreateAppointment = async (e) => {
     e.preventDefault();
 
+    // Validate based on patient mode
+    if (patientMode === "existing" && !selectedPatient) {
+      toast.error("Please select an existing patient");
+      return;
+    }
+
     if (
       !createForm.name ||
       !createForm.email ||
@@ -357,30 +463,59 @@ const AppointmentsManagement = () => {
       // Combine date and time
       const dateTime = new Date(`${createForm.date}T${createForm.time}`);
 
+      const requestBody = {
+        name: createForm.name,
+        email: createForm.email,
+        phone: createForm.phone ? `+91${createForm.phone}` : "",
+        date: dateTime.toISOString(),
+        service: createForm.service,
+        message: createForm.message,
+        doctorId: createForm.doctorId || null,
+        createAccount: patientMode === "existing" ? false : createAccount,
+      };
+
+      // If existing patient is selected, send patientId
+      if (selectedPatient?.id) {
+        requestBody.patientId = selectedPatient.id;
+      }
+
       const response = await fetch("/api/admin/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: createForm.name,
-          email: createForm.email,
-          phone: createForm.phone ? `+91${createForm.phone}` : "",
-          date: dateTime.toISOString(),
-          service: createForm.service,
-          message: createForm.message,
-          doctorId: createForm.doctorId || null,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create appointment");
+        throw new Error(responseData.error || "Failed to create appointment");
       }
 
       reset();
       toast.dismiss(loadingToast);
-      toast.success("Appointment created successfully!");
+
+      // Show contextual success message
+      if (responseData.isExistingPatient) {
+        toast.success(
+          `Appointment created for existing patient ${responseData.patientName || createForm.name}`,
+        );
+      } else if (responseData.patientCreated) {
+        toast.success(
+          `Appointment created. New patient account created for ${responseData.patientName || createForm.name}`,
+        );
+      } else {
+        toast.success("Appointment created successfully!");
+      }
+
       setShowCreateModal(false);
       setPhoneError("");
+      setPatientMode("new");
+      setSelectedPatient(null);
+      setPatientSearchTerm("");
+      setPatientSearchResults([]);
+      setShowPatientDropdown(false);
+      setExistingPatientNote("");
+      setCreateAccount(true);
       setCreateForm({
         name: "",
         email: "",
@@ -1041,6 +1176,7 @@ const AppointmentsManagement = () => {
                 onClick={() => {
                   setShowCreateModal(false);
                   setPhoneError("");
+                  handlePatientModeChange("new");
                 }}
                 className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
               >
@@ -1048,71 +1184,261 @@ const AppointmentsManagement = () => {
               </button>
             </div>
 
+            {/* Patient Mode Toggle */}
+            <div className="mb-5">
+              <div className="flex bg-slate-700/50 rounded-2xl p-1 border border-slate-600">
+                <button
+                  type="button"
+                  onClick={() => handlePatientModeChange("existing")}
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                    patientMode === "existing"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <FiUser className="w-4 h-4" />
+                  Existing Patient
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePatientModeChange("new")}
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                    patientMode === "new"
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <FiPlus className="w-4 h-4" />
+                  New Patient
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleCreateAppointment} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Patient Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={createForm.name}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, name: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-                  required
-                />
-              </div>
+              {/* Existing Patient Mode - Search & Select */}
+              {patientMode === "existing" && (
+                <div className="relative">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Search Patient <span className="text-red-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={patientSearchTerm}
+                      onChange={(e) => {
+                        setPatientSearchTerm(e.target.value);
+                        if (selectedPatient) {
+                          setSelectedPatient(null);
+                          setCreateForm({
+                            ...createForm,
+                            name: "",
+                            email: "",
+                            phone: "",
+                          });
+                        }
+                      }}
+                      placeholder="Search by name, email, or phone..."
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    />
+                    {searchingPatients && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={createForm.email}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, email: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-                  required
-                />
-              </div>
+                  {/* Search Results Dropdown */}
+                  {showPatientDropdown &&
+                    patientSearchResults.length > 0 &&
+                    !selectedPatient && (
+                      <div className="absolute z-10 w-full mt-1 bg-slate-700 border border-slate-600 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                        {patientSearchResults.map((patient) => (
+                          <button
+                            key={patient.id}
+                            type="button"
+                            onClick={() => handleSelectPatient(patient)}
+                            className="w-full px-4 py-3 text-left hover:bg-slate-600/50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                          >
+                            <p className="text-sm font-medium text-white">
+                              {patient.full_name}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              {patient.email}
+                              {patient.phone && ` · ${patient.phone}`}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Phone
-                </label>
-                <div className="flex">
-                  <span className="flex items-center px-4 py-3 bg-slate-700 border border-slate-600 rounded-l-xl text-slate-300 text-sm font-medium border-r-0 select-none">
-                    🇮🇳 +91
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={createForm.phone}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/[^0-9]/g, "");
-                      setCreateForm({ ...createForm, phone: digits });
-                      if (digits && !/^\d{10}$/.test(digits)) {
-                        setPhoneError("Enter a valid 10-digit mobile number");
-                      } else {
-                        setPhoneError("");
-                      }
-                    }}
-                    placeholder="9876543210"
-                    className={`flex-1 px-4 py-3 bg-slate-700/50 border rounded-r-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
-                      phoneError
-                        ? "border-red-500/60 focus:ring-red-500/40"
-                        : "border-slate-600 focus:border-emerald-500/50"
-                    }`}
-                  />
+                  {showPatientDropdown &&
+                    patientSearchResults.length === 0 &&
+                    patientSearchTerm.length >= 2 &&
+                    !searchingPatients && (
+                      <div className="absolute z-10 w-full mt-1 bg-slate-700 border border-slate-600 rounded-xl shadow-xl p-4">
+                        <p className="text-sm text-slate-400 text-center">
+                          No patients found. Try a different search or switch to
+                          &quot;New Patient&quot;.
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Selected Patient Info */}
+                  {selectedPatient && (
+                    <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FiUserCheck className="w-4 h-4 text-emerald-400" />
+                          <span className="text-sm font-medium text-emerald-400">
+                            Selected Patient
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPatient(null);
+                            setPatientSearchTerm("");
+                            setCreateForm({
+                              ...createForm,
+                              name: "",
+                              email: "",
+                              phone: "",
+                            });
+                          }}
+                          className="text-xs text-slate-400 hover:text-white transition-colors"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <p className="text-sm text-white mt-1">
+                        {selectedPatient.full_name}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {selectedPatient.email}
+                        {selectedPatient.phone && ` · ${selectedPatient.phone}`}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                {phoneError && (
-                  <p className="mt-1.5 text-xs text-red-400">{phoneError}</p>
-                )}
-              </div>
+              )}
+
+              {/* New Patient Mode - Manual Entry */}
+              {patientMode === "new" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Patient Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={createForm.name}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, name: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Email <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) => {
+                        setCreateForm({ ...createForm, email: e.target.value });
+                        if (existingPatientNote) {
+                          setExistingPatientNote("");
+                          setSelectedPatient(null);
+                          setCreateAccount(true);
+                        }
+                      }}
+                      onBlur={handleEmailBlur}
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                      required
+                    />
+                    {existingPatientNote && (
+                      <div className="mt-2 p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
+                        <FiUserCheck className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-blue-300">
+                          {existingPatientNote}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Phone
+                    </label>
+                    <div className="flex">
+                      <span className="flex items-center px-4 py-3 bg-slate-700 border border-slate-600 rounded-l-xl text-slate-300 text-sm font-medium border-r-0 select-none">
+                        +91
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={createForm.phone}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/[^0-9]/g, "");
+                          setCreateForm({ ...createForm, phone: digits });
+                          if (digits && !/^\d{10}$/.test(digits)) {
+                            setPhoneError(
+                              "Enter a valid 10-digit mobile number",
+                            );
+                          } else {
+                            setPhoneError("");
+                          }
+                        }}
+                        placeholder="9876543210"
+                        className={`flex-1 px-4 py-3 bg-slate-700/50 border rounded-r-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
+                          phoneError
+                            ? "border-red-500/60 focus:ring-red-500/40"
+                            : "border-slate-600 focus:border-emerald-500/50"
+                        }`}
+                      />
+                    </div>
+                    {phoneError && (
+                      <p className="mt-1.5 text-xs text-red-400">
+                        {phoneError}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Create Account Toggle */}
+                  {!existingPatientNote && (
+                    <div className="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/50 rounded-xl">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-300">
+                          Create patient account
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {createAccount
+                            ? "A new patient account will be created with these details"
+                            : "Only the appointment will be created — no patient account"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCreateAccount(!createAccount)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-3 ${
+                          createAccount ? "bg-emerald-500" : "bg-slate-600"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            createAccount ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1213,6 +1539,7 @@ const AppointmentsManagement = () => {
                   onClick={() => {
                     setShowCreateModal(false);
                     setPhoneError("");
+                    handlePatientModeChange("new");
                   }}
                   className="flex-1 py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
                   disabled={processing}
@@ -1221,8 +1548,11 @@ const AppointmentsManagement = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={processing}
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50"
+                  disabled={
+                    processing ||
+                    (patientMode === "existing" && !selectedPatient)
+                  }
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {processing ? "Creating..." : "Create Appointment"}
                 </button>

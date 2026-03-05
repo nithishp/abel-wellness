@@ -668,6 +668,55 @@ Before writing any new API route, server action, or page that interacts with the
 6. Update this copilot-instructions.md if schema changed
 ```
 
+---
+
+## Agent Rules: Fixing Bugs Systematically
+
+**When fixing a bug or issue, always verify if the same problem exists elsewhere in the codebase and fix all instances.**
+
+### Bug Fix Workflow
+
+1. **Fix the reported issue** — Address the immediate problem identified by the user
+2. **Search for similar patterns** — Use `grep_search` to find all occurrences of the problematic code pattern across the entire codebase
+3. **Review each occurrence** — Read the context around each match to determine if it's the same issue or a legitimate use case
+4. **Fix all instances** — Use `multi_replace_string_in_file` to fix multiple occurrences efficiently in a single operation
+5. **Report findings** — Inform the user how many total instances were found and fixed
+
+### Example Patterns to Search For
+
+When you fix an issue, search for similar patterns:
+
+- **API errors:** If you fix an error in one API route, check similar routes (e.g., all routes that verify sessions, all routes that query the same table)
+- **Syntax errors:** If you fix incorrect usage of a library/API (e.g., Supabase `.catch()` on queries), search for all similar usages
+- **Missing error handling:** If you add error handling to one function, check similar functions
+- **Styling inconsistencies:** If you fix styling in one component, check similar UI elements (e.g., all modals, all tab bars, all cards)
+- **Security issues:** If you fix a vulnerability, search for the same pattern everywhere (e.g., missing input validation, SQL injection risks)
+- **Type mismatches:** If you fix a type/prop error, check for similar component usages
+
+### Search Strategy
+
+Use broad regex patterns to catch variations:
+
+```javascript
+// Example: Finding all Supabase queries with .catch()
+grep_search: \.from\(.*\).*\.catch\(
+
+// Example: Finding all date formatting without IST
+grep_search: toLocaleDateString|toLocaleTimeString
+
+// Example: Finding all similar component patterns
+grep_search: className=.*rounded-lg.*tab
+```
+
+### When NOT to Apply This Rule
+
+- **Intentional variations:** Different contexts may require different implementations
+- **Minor styling tweaks:** User-requested styling changes that are specific to one component
+- **Experimental fixes:** When trying a specific fix that may not apply elsewhere
+- **Legacy code patterns:** When the "bug" is actually an older pattern being phased out
+
+---
+
 ### Styling Rules
 
 - **Always use Tailwind CSS** — never write custom CSS or inline styles
