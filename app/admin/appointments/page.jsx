@@ -157,7 +157,7 @@ const AppointmentsManagement = () => {
       ...createForm,
       name: patient.full_name,
       email: patient.email || "",
-      phone: patient.phone?.replace("+91", "") || "",
+      phone: patient.phone?.replace(/[\s\-]/g, "").replace(/^\+91/, "") || "",
     });
     setShowPatientDropdown(false);
     setExistingPatientNote("");
@@ -1166,10 +1166,10 @@ const AppointmentsManagement = () => {
 
       {/* Create Appointment Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 xs:p-4 z-50">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-4 xs:p-5 sm:p-6 max-h-[95vh] xs:max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 xs:mb-5 sm:mb-6">
+              <h3 className="text-lg xs:text-xl font-bold text-white pr-2">
                 Create New Appointment
               </h3>
               <button
@@ -1178,43 +1178,48 @@ const AppointmentsManagement = () => {
                   setPhoneError("");
                   handlePatientModeChange("new");
                 }}
-                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors"
+                className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors flex-shrink-0"
               >
                 <FiX className="w-5 h-5" />
               </button>
             </div>
 
             {/* Patient Mode Toggle */}
-            <div className="mb-5">
-              <div className="flex bg-slate-700/50 rounded-2xl p-1 border border-slate-600">
+            <div className="mb-4 xs:mb-5">
+              <div className="flex bg-slate-700/50 rounded-xl xs:rounded-2xl p-1 border border-slate-600">
                 <button
                   type="button"
                   onClick={() => handlePatientModeChange("existing")}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2 xs:py-2.5 px-2 xs:px-4 rounded-[10px] xs:rounded-[14px] text-xs xs:text-sm font-medium transition-all flex items-center justify-center gap-1 xs:gap-2 ${
                     patientMode === "existing"
                       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <FiUser className="w-4 h-4" />
-                  Existing Patient
+                  <FiUser className="w-3.5 h-3.5 xs:w-4 xs:h-4" />
+                  <span className="hidden xs:inline">Existing Patient</span>
+                  <span className="xs:hidden">Existing</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handlePatientModeChange("new")}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2 xs:py-2.5 px-2 xs:px-4 rounded-[10px] xs:rounded-[14px] text-xs xs:text-sm font-medium transition-all flex items-center justify-center gap-1 xs:gap-2 ${
                     patientMode === "new"
                       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm"
                       : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <FiPlus className="w-4 h-4" />
-                  New Patient
+                  <FiPlus className="w-3.5 h-3.5 xs:w-4 xs:h-4" />
+                  <span className="hidden xs:inline">New Patient</span>
+                  <span className="xs:hidden">New</span>
                 </button>
               </div>
             </div>
 
-            <form onSubmit={handleCreateAppointment} className="space-y-4">
+            <form
+              onSubmit={handleCreateAppointment}
+              className="space-y-3 xs:space-y-4"
+            >
               {/* Existing Patient Mode - Search & Select */}
               {patientMode === "existing" && (
                 <div className="relative">
@@ -1239,7 +1244,7 @@ const AppointmentsManagement = () => {
                         }
                       }}
                       placeholder="Search by name, email, or phone..."
-                      className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                     />
                     {searchingPatients && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -1336,7 +1341,7 @@ const AppointmentsManagement = () => {
                       onChange={(e) =>
                         setCreateForm({ ...createForm, name: e.target.value })
                       }
-                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                      className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                       required
                     />
                   </div>
@@ -1357,7 +1362,7 @@ const AppointmentsManagement = () => {
                         }
                       }}
                       onBlur={handleEmailBlur}
-                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                      className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                       required
                     />
                     {existingPatientNote && (
@@ -1375,7 +1380,7 @@ const AppointmentsManagement = () => {
                       Phone
                     </label>
                     <div className="flex">
-                      <span className="flex items-center px-4 py-3 bg-slate-700 border border-slate-600 rounded-l-xl text-slate-300 text-sm font-medium border-r-0 select-none">
+                      <span className="flex items-center px-2.5 xs:px-4 py-2.5 xs:py-3 bg-slate-700 border border-slate-600 rounded-l-xl text-slate-300 text-xs xs:text-sm font-medium border-r-0 select-none">
                         +91
                       </span>
                       <input
@@ -1395,7 +1400,7 @@ const AppointmentsManagement = () => {
                           }
                         }}
                         placeholder="9876543210"
-                        className={`flex-1 px-4 py-3 bg-slate-700/50 border rounded-r-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
+                        className={`flex-1 px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border rounded-r-xl text-sm xs:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
                           phoneError
                             ? "border-red-500/60 focus:ring-red-500/40"
                             : "border-slate-600 focus:border-emerald-500/50"
@@ -1411,12 +1416,12 @@ const AppointmentsManagement = () => {
 
                   {/* Create Account Toggle */}
                   {!existingPatientNote && (
-                    <div className="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/50 rounded-xl">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-300">
+                    <div className="flex items-center justify-between p-2.5 xs:p-3 bg-slate-700/30 border border-slate-600/50 rounded-xl">
+                      <div className="flex-1 pr-2">
+                        <p className="text-xs xs:text-sm font-medium text-slate-300">
                           Create patient account
                         </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5 hidden xs:block">
                           {createAccount
                             ? "A new patient account will be created with these details"
                             : "Only the appointment will be created — no patient account"}
@@ -1425,7 +1430,7 @@ const AppointmentsManagement = () => {
                       <button
                         type="button"
                         onClick={() => setCreateAccount(!createAccount)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-3 ${
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-2 xs:ml-3 ${
                           createAccount ? "bg-emerald-500" : "bg-slate-600"
                         }`}
                       >
@@ -1440,7 +1445,7 @@ const AppointmentsManagement = () => {
                 </>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 xs:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Date <span className="text-red-400">*</span>
@@ -1452,7 +1457,7 @@ const AppointmentsManagement = () => {
                       setCreateForm({ ...createForm, date: e.target.value })
                     }
                     min={new Date().toISOString().split("T")[0]}
-                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                     required
                   />
                 </div>
@@ -1466,7 +1471,7 @@ const AppointmentsManagement = () => {
                     onChange={(e) =>
                       setCreateForm({ ...createForm, time: e.target.value })
                     }
-                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                     required
                   />
                 </div>
@@ -1481,7 +1486,7 @@ const AppointmentsManagement = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, service: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                  className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                 >
                   <option value="General Consultation">
                     General Consultation
@@ -1503,7 +1508,7 @@ const AppointmentsManagement = () => {
                   onChange={(e) =>
                     setCreateForm({ ...createForm, doctorId: e.target.value })
                   }
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                  className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
                 >
                   <option value="">-- Leave Pending --</option>
                   {doctors.map((doctor) => (
@@ -1529,11 +1534,11 @@ const AppointmentsManagement = () => {
                     setCreateForm({ ...createForm, message: e.target.value })
                   }
                   rows={3}
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all resize-none"
+                  className="w-full px-3 xs:px-4 py-2.5 xs:py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-sm xs:text-base text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all resize-none"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col xs:flex-row gap-2.5 xs:gap-3 pt-3 xs:pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -1541,7 +1546,7 @@ const AppointmentsManagement = () => {
                     setPhoneError("");
                     handlePatientModeChange("new");
                   }}
-                  className="flex-1 py-3 px-4 border border-slate-600 text-slate-300 rounded-xl font-medium hover:bg-slate-700 transition-colors"
+                  className="flex-1 py-2.5 xs:py-3 px-4 border border-slate-600 text-slate-300 rounded-xl text-sm xs:text-base font-medium hover:bg-slate-700 transition-colors order-2 xs:order-1"
                   disabled={processing}
                 >
                   Cancel
@@ -1552,7 +1557,7 @@ const AppointmentsManagement = () => {
                     processing ||
                     (patientMode === "existing" && !selectedPatient)
                   }
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 xs:py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm xs:text-base font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed order-1 xs:order-2"
                 >
                   {processing ? "Creating..." : "Create Appointment"}
                 </button>
